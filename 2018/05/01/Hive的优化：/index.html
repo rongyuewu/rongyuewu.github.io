@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>HIVE 总结 | Hexo</title>
+
+  <!-- keywords -->
+  
+
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="description" content="HIVE 总结：内部表(管理表)内部表也称之为 MANAGED_TABLE；默认存储在/user/hive/warehouse下，也可以通过location指定; **重点**：删除表时也会删除元数据和数据本身 外部表(托管表)外部表也称之为 EXTERNAL_TABLE;在创建表时可以自己指定目录位置(location); **重点**：删除表时只会删除元数据不会删除数据本身 分区表：分区表实际">
+<meta property="og:type" content="article">
+<meta property="og:title" content="HIVE 总结">
+<meta property="og:url" content="http://yoursite.com/2018/05/01/Hive的优化：/index.html">
+<meta property="og:site_name" content="Hexo">
+<meta property="og:description" content="HIVE 总结：内部表(管理表)内部表也称之为 MANAGED_TABLE；默认存储在/user/hive/warehouse下，也可以通过location指定; **重点**：删除表时也会删除元数据和数据本身 外部表(托管表)外部表也称之为 EXTERNAL_TABLE;在创建表时可以自己指定目录位置(location); **重点**：删除表时只会删除元数据不会删除数据本身 分区表：分区表实际">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:updated_time" content="2018-05-02T14:51:08.958Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="HIVE 总结">
+<meta name="twitter:description" content="HIVE 总结：内部表(管理表)内部表也称之为 MANAGED_TABLE；默认存储在/user/hive/warehouse下，也可以通过location指定; **重点**：删除表时也会删除元数据和数据本身 外部表(托管表)外部表也称之为 EXTERNAL_TABLE;在创建表时可以自己指定目录位置(location); **重点**：删除表时只会删除元数据不会删除数据本身 分区表：分区表实际">
+  
+    <link rel="alternative" href="/atom.xml" title="Hexo" type="application/atom+xml">
+  
+  
+    <link rel="icon" href="http://7xkj1z.com1.z0.glb.clouddn.com/head.jpg">
+  
+  <link rel="stylesheet" href="/css/style.css">
+  
+  
+
+  <script src="//cdn.bootcss.com/require.js/2.3.2/require.min.js"></script>
+  <script src="//cdn.bootcss.com/jquery/3.1.1/jquery.min.js"></script>
+
+  
+</head>
+<body>
+  <div id="container">
+    <div id="particles-js"></div>
+    <div class="left-col">
+    <div class="overlay"></div>
+<div class="intrude-less">
+	<header id="header" class="inner">
+		<a href="/" class="profilepic">
+			
+			<img lazy-src="http://7xkj1z.com1.z0.glb.clouddn.com/head.jpg" class="js-avatar">
+			
+		</a>
+
+		<hgroup>
+		  <h1 class="header-author"><a href="/">rongyuewu</a></h1>
+		</hgroup>
+
+		
+
+		
+			<div class="switch-btn">
+				<div class="icon">
+					<div class="icon-ctn">
+						<div class="icon-wrap icon-house" data-idx="0">
+							<div class="birdhouse"></div>
+							<div class="birdhouse_holes"></div>
+						</div>
+						<div class="icon-wrap icon-ribbon hide" data-idx="1">
+							<div class="ribbon"></div>
+						</div>
+						
+						<div class="icon-wrap icon-link hide" data-idx="2">
+							<div class="loopback_l"></div>
+							<div class="loopback_r"></div>
+						</div>
+						
+						
+					</div>
+					
+				</div>
+				<div class="tips-box hide">
+					<div class="tips-arrow"></div>
+					<ul class="tips-inner">
+						<li>菜单</li>
+						<li>标签</li>
+						
+						<li>友情链接</li>
+						
+						
+					</ul>
+				</div>
+			</div>
+		
+
+		<div class="switch-area">
+			<div class="switch-wrap">
+				<section class="switch-part switch-part1">
+					<nav class="header-menu">
+						<ul>
+						
+							<li><a href="/">主页</a></li>
+				        
+							<li><a href="/archives">所有文章</a></li>
+				        
+						</ul>
+					</nav>
+					<nav class="header-nav">
+						<div class="social">
+							
+						</div>
+					</nav>
+				</section>
+				
+				
+				<section class="switch-part switch-part2">
+					<div class="widget tagcloud" id="js-tagcloud">
+						
+					</div>
+				</section>
+				
+				
+				
+				<section class="switch-part switch-part3">
+					<div id="js-friends">
+					
+			          <a target="_blank" class="main-nav-link switch-friends-link" href="https://github.com/smackgg/hexo-theme-smackdown">smackdown</a>
+			        
+			        </div>
+				</section>
+				
+
+				
+			</div>
+		</div>
+	</header>				
+</div>
+    </div>
+    <div class="mid-col">
+      <nav id="mobile-nav">
+  	<div class="overlay">
+  		<div class="slider-trigger"></div>
+  		<h1 class="header-author js-mobile-header hide">rongyuewu</h1>
+  	</div>
+	<div class="intrude-less">
+		<header id="header" class="inner">
+			<div class="profilepic">
+				<img lazy-src="http://7xkj1z.com1.z0.glb.clouddn.com/head.jpg" class="js-avatar">
+			</div>
+			<hgroup>
+			  <h1 class="header-author">rongyuewu</h1>
+			</hgroup>
+			
+			<nav class="header-menu">
+				<ul>
+				
+					<li><a href="/">主页</a></li>
+		        
+					<li><a href="/archives">所有文章</a></li>
+		        
+		        <div class="clearfix"></div>
+				</ul>
+			</nav>
+			<nav class="header-nav">
+				<div class="social">
+					
+				</div>
+			</nav>
+		</header>				
+	</div>
+</nav>
+      <div class="body-wrap"><article id="post-Hive的优化：" class="article article-type-post" itemscope itemprop="blogPost">
+  
+    <div class="article-meta">
+      <a href="/2018/05/01/Hive的优化：/" class="article-date">
+  	<time datetime="2018-05-01T13:29:30.000Z" itemprop="datePublished">2018-05-01</time>
+</a>
+    </div>
+  
+  <div class="article-inner">
+    
+      <input type="hidden" class="isFancy" />
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="article-title" itemprop="name">
+      HIVE 总结
+      
+    </h1>
+  
+
+      </header>
+      
+      <div class="article-info article-info-post">
+        
+        
+
+        
+        <div class="clearfix"></div>
+      </div>
+      
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <h3 id="HIVE-总结："><a href="#HIVE-总结：" class="headerlink" title="HIVE 总结："></a>HIVE 总结：</h3><h4 id="内部表-管理表"><a href="#内部表-管理表" class="headerlink" title="内部表(管理表)"></a>内部表(管理表)</h4><pre><code>内部表也称之为 MANAGED_TABLE；默认存储在/user/hive/warehouse下，也可以通过location指定;
+**重点**：删除表时也会删除元数据和数据本身
+</code></pre><h4 id="外部表-托管表"><a href="#外部表-托管表" class="headerlink" title="外部表(托管表)"></a>外部表(托管表)</h4><pre><code>外部表也称之为 EXTERNAL_TABLE;在创建表时可以自己指定目录位置(location);
+**重点**：删除表时只会删除元数据不会删除数据本身
+</code></pre><h3 id="分区表："><a href="#分区表：" class="headerlink" title="分区表："></a>分区表：</h3><pre><code>分区表实际上就是对应一个hdfs文件系统上的独立的文件夹，该文件夹下是该分区的所有数据文件。
+hive中的分区就是分目录，把大的数据集根据业务分割成更小的数据集。
+**作用**：在查询时通过where子句中的表达式来选择查询所需要的指定分区，这样的查询效率会提高很高。
+</code></pre><h5 id="分区表的修复："><a href="#分区表的修复：" class="headerlink" title="分区表的修复："></a>分区表的修复：</h5><pre><code>面试题：
+    方法一[msck repair table emp]：加入创建了一个hive分区表，然后用hdfs的方式去-mkdir分区字段的目录，然后向这个目录下-put数据文件，然后去select,会显示表的内容为空，但是数据在的，这个时候查看元数据的partitions里面是没有这个分区字段的，此时可以用 **msck repair table emp** 命令来进行修复后就可以查到内容
+    方法二[alter table emp add partition(day = 15)]
+</code></pre><h3 id="hive中的高级查询："><a href="#hive中的高级查询：" class="headerlink" title="hive中的高级查询："></a>hive中的高级查询：</h3><pre><code>1. order by  ---&gt; 对全局数据的排序，仅仅只有一个reduce ***数据量比较大的时候慎用！！！
+2. sort by ---&gt;对每一个reduce内部数据进行排序，对于全局结果集来说不是排序 使用前先设置reduce的个数：set mapreduce.job.reduces = 3
+3. distribute by ---&gt; 作用就是分区(partition) ,类似于MapReduce中分区partition，对数据进行分区，结合sort by进行使用 如：select * from emp distribute by depno sort by empno asc;
+    注意：distribute by 要放在 sort by 前面[先分区再排序]
+4.cluster by ---&gt; 当distribute by 和 sort by字段相同时可以使用cluster by
+</code></pre><h3 id="UDF【user-defined-function】"><a href="#UDF【user-defined-function】" class="headerlink" title="UDF【user defined function】:"></a>UDF【user defined function】:</h3><h6 id="hive自带了很多UDF，如：max、min、split，但是往往在开发中不能满足我们的也无需求"><a href="#hive自带了很多UDF，如：max、min、split，但是往往在开发中不能满足我们的也无需求" class="headerlink" title="hive自带了很多UDF，如：max、min、split，但是往往在开发中不能满足我们的也无需求"></a>hive自带了很多UDF，如：max、min、split，但是往往在开发中不能满足我们的也无需求</h6><pre><code>UDF 一进一出;         
+UDAF(aggregation) 多进一出;  
+UDTF(table-generating) 一进多出
+</code></pre><p>UDF开发步骤：</p>
+<pre><code>1.继承hive.ql.UDF类
+2.实现一个或多个evaluate方法 即：重载
+3.把程序打成jar包 
+4. [jar包在本地]: 
+   4.11 add jar /xxx/xxx.jar 
+   4.12 create temporary function funcname as &quot;类的全路径&quot; 
+   [jar包在hdfs] 
+   4.2 create function funcname as &quot;类的全路径&quot; using jar &apos;hdfs://xxx/xx.jar&apos;
+</code></pre><p>UDF开发注意事项：</p>
+<pre><code>1.UDF必须要有返回值，不能为void，且可以返回null
+2.UDF中常用Text/LongWritable等类型，不推荐使用java类型，因为hive底层是用MapReduce，而mr的实现里面都是他自己独有的可序列化类型
+</code></pre><h2 id="Hive的优化："><a href="#Hive的优化：" class="headerlink" title="Hive的优化："></a>Hive的优化：</h2><h4 id="优化1-数据压缩-使用snappy格式-snappy是谷歌开源的"><a href="#优化1-数据压缩-使用snappy格式-snappy是谷歌开源的" class="headerlink" title="优化1.数据压缩 [使用snappy格式]    **snappy是谷歌开源的"></a>优化1.数据压缩 [使用snappy格式]    **snappy是谷歌开源的</h4><pre><code>作用：数据量小，减少网络IO流
+hive底层还是走的MapReduce，也就是压缩mr阶段的数据；
+具体--&gt; 1.1 CompressedInput上传之前进行压缩;  然后客户端进行InputSplit分片，这个阶段不需要配置，因为如果是压缩后的snappy文件，map会自动进行解压
+       1.2map接收数据后进行DecompressInput[解压缩]对数据进行处理
+       1.3 map阶段SpillToDisk的时候进行压缩 
+               配置：mapreduce.map.output.compress=true;
+    mapreduce.map.output.compress.codec=org.apache.hadoop.io.compress.Defaul tCodec
+       1.4 reduce 来map的disk取数据后进行解压缩
+       1.5 reduce 进行数据汇总 然后 进行压缩 输出[CompressReduceOutput]
+       配置：mapreduce.output.fileoutputformat.compress=true;
+    mapreduce.output.fileoutputformat.compress.codec=org.apache.hadoop.io.compress.Defaul tCodec
+</code></pre><h4 id="优化2-数据的存储格式【storage-format】：列式存储的Parquet是Apache的顶级项目"><a href="#优化2-数据的存储格式【storage-format】：列式存储的Parquet是Apache的顶级项目" class="headerlink" title="优化2.数据的存储格式【storage format】：列式存储的Parquet是Apache的顶级项目"></a>优化2.数据的存储格式【storage format】：列式存储的Parquet是Apache的顶级项目</h4><h6 id="我们一般select-name-age-from-table-group-by-xx-都是查询的列，如果读取文件时按照列来读取，那么效率会高很多"><a href="#我们一般select-name-age-from-table-group-by-xx-都是查询的列，如果读取文件时按照列来读取，那么效率会高很多" class="headerlink" title="我们一般select name,age from table group by xx..都是查询的列，如果读取文件时按照列来读取，那么效率会高很多"></a>我们一般select name,age from table group by xx..都是查询的列，如果读取文件时按照列来读取，那么效率会高很多</h6><pre><code>SequenceFile、TextFile：按行存储数据
+ParquetFile、ORCFile ：按列存储数据 【ORC里面是 strip index，索引查找】
+**重要**测试显示存储在hdfs上的相同文件 create table name(...) stored as orc;和 create...stored as textfile;文件大小比例：orc : text = 1:7 大大的减少了存储的数据大小
+小结：1.orc和parquet的存储格式使得存储相同的数据占得空间变小，尤其是orc
+     2.而列式存储相对于text、sequence的行式存储查询也是很占优势的
+</code></pre><h5 id="以上两点：压缩-数据存储格式-两者结合效果更好"><a href="#以上两点：压缩-数据存储格式-两者结合效果更好" class="headerlink" title="以上两点：压缩+数据存储格式 两者结合效果更好"></a>以上两点：压缩+数据存储格式 两者结合效果更好</h5><pre><code>create table page_views_orc_snappy(...) row format ... stored as orc tblproperties (&apos;orc.compress&apos;=&apos;SNAPPY&apos;);
+insert into table page_views_orc_snappy select * from page_views;
+//注释：这个插入语句会执行三个job: 查询page_views + 转化为orc格式 + snappy compress[压缩]
+</code></pre><h4 id="总结："><a href="#总结：" class="headerlink" title="总结："></a>总结：</h4><pre><code>在实际的项目开发中，hive表的数据
+    *存储格式
+        orcfile / parquet
+    *数据压缩
+        snappy
+</code></pre><h4 id="优化3-Fetch-Task-值改为-more"><a href="#优化3-Fetch-Task-值改为-more" class="headerlink" title="优化3.Fetch-Task     值改为 more"></a>优化3.Fetch-Task     值改为 more</h4><pre><code>存在的问题分析：select * from t 不会走mr，select name from t 就会走mr，为什么？
+因为：
+    在hive-default.xml里面有个&lt;property&gt;是hive.fetch.task.conversion = minimal
+[默认的--只有三种情况下不会走MapReduce：1.select * from t 2.select * from t where partitionname = xx 3.select * from t limit n]
+我们可以在hive-site.xml里配置这个属性的值为 more 
+</code></pre><h3 id="优化4-hive高级优化"><a href="#优化4-hive高级优化" class="headerlink" title="优化4.hive高级优化"></a>优化4.hive高级优化</h3><pre><code>1.大表拆成子表 
+    create table table1... AS select * from table2
+    比如订单表，都是几百列，当我们不同需求的时候只用一些字段的时候，就到大表创建的字表里取查询，这样就比较快
+2.外部表 + 分区表   [因为有可能多个部门同时在用这些数据] + [一般二级分区表较多--月/日]
+  create internal table name ... partitioned by (month string,day string) row format delimited...
+3.数据存储格式 + 压缩   [orcfile/parquetfile   +   snappy]
+
+    set parquet.compress = snappy;
+    create table order_parquet_snappy(...) 
+    row format ... 
+    stored as parquet 
+    as select * from order;
+4.SQL语句的优化
+</code></pre><h3 id="优化5-数据倾斜问题："><a href="#优化5-数据倾斜问题：" class="headerlink" title="优化5.数据倾斜问题："></a>优化5.数据倾斜问题：</h3><pre><code>Join:
+    1.Shuffle/Reduce/Commen Join
+        连接发生的阶段是 Reduce Task
+        一般是大表对大表
+        每个表的数据都是从文件中读取的
+    2.Map Join
+        连接发生在 Map Task
+        一般是小表对大表
+        大表的数据从文件中读取，小表的数据从内存中读取
+        用到了 DistributedCache，把小表缓存到了个个节点的内存中
+    3.SMB Join   [Sort + Merge + Bucket]
+        一般在大公司里会用到，其实就是对reduce join的优化，因为两个大表都特别大，那么会吃不消的
+        set hive.enforce.bucketing = true;
+        set mapreduce.job.reduces = 4  [举例]
+        create table tablename(...) clustered by (cid) into 4 buckets row format ...
+        load data inpath &apos;xxx&apos; into ...实质上是 hdfs dfs -put xxx 不会走MapReduce的
+        所以插入分桶表bucket需要用 insert into table table_bucket select * from xxx cluster by (cid),这样才会走mr
+    4.group by 和 count(distinct)容易造成数据倾斜 //todo:待解决
+</code></pre><p>hdfs dfs -du -h /root/xxx 是看目录或者文件有多大</p>
+
+      
+    </div>
+    
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2018/05/01/点击流日志分析流程/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">&lt;</strong>
+      <div class="article-nav-title">
+        
+          点击流日志分析流程
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2018/05/01/sparkstreaming&kafka/" id="article-nav-older" class="article-nav-link-wrap">
+      <div class="article-nav-title">将offsets存储在HBase中</div>
+      <strong class="article-nav-caption">&gt;</strong>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+
+<div class="ds-share share" data-thread-key="Hive的优化：" data-title="HIVE 总结" data-url="http://yoursite.com/2018/05/01/Hive的优化：/"  data-images="http://7xkj1z.com1.z0.glb.clouddn.com/head.jpg" data-content="HIVE 总结">
+    <div class="ds-share-inline">
+      <ul  class="ds-share-icons-16">
+      	<li data-toggle="ds-share-icons-more"><a class="ds-more" href="javascript:void(0);">分享到：</a></li>
+        <li><a class="ds-weibo" href="javascript:void(0);" data-service="weibo">微博</a></li>
+        <li><a class="ds-qzone" href="javascript:void(0);" data-service="qzone">QQ空间</a></li>
+        <li><a class="ds-qqt" href="javascript:void(0);" data-service="qqt">腾讯微博</a></li>
+        <li><a class="ds-wechat" href="javascript:void(0);" data-service="wechat">微信</a></li>
+      </ul>
+      <div class="ds-share-icons-more">
+      </div>
+    </div>
+ </div>
+ 
+
+
+
+
+
+</div>
+      <footer id="footer">
+  <div class="outer">
+    <div id="footer-info">
+      <div class="footer-left">
+        &copy; 2018 rongyuewu
+      </div>
+        <div class="footer-right">
+          <a href="http://hexo.io/" target="_blank">Hexo</a>  Theme <a href="https://github.com/smackgg/hexo-theme-smackdown" target="_blank">Smackdown</a>
+        </div>
+    </div>
+  </div>
+</footer>
+    </div>
+    
+  <link rel="stylesheet" href="/fancybox/jquery.fancybox.css">
+
+
+<script>
+	var yiliaConfig = {
+		fancybox: true,
+		mathjax: true,
+		animate: true,
+		isHome: false,
+		isPost: true,
+		isArchive: false,
+		isTag: false,
+		isCategory: false,
+		open_in_new: false
+	}
+</script>
+<script src="/js/main.js"></script>
+
+
+
+<script type="text/x-mathjax-config">
+MathJax.Hub.Config({
+    tex2jax: {
+        inlineMath: [ ['$','$'], ["\\(","\\)"]  ],
+        processEscapes: true,
+        skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+    }
+});
+
+MathJax.Hub.Queue(function() {
+    var all = MathJax.Hub.getAllJax(), i;
+    for(i=0; i < all.length; i += 1) {
+        all[i].SourceElement().parentNode.className += ' has-jax';                 
+    }       
+});
+</script>
+
+<script src="//cdn.bootcss.com/mathjax/2.7.0/MathJax.js"></script>
+
+
+  </div>
+</body>
+</html>

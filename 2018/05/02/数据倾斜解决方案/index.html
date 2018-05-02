@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>Hive 数据倾斜解决方案 | Hexo</title>
+
+  <!-- keywords -->
+  
+
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="description" content="Hive 数据倾斜解决方案：1.调节参数     hive.map.aggr=true  Map端部分聚合，相当于combiner     hive.groupby.skewindata=true         有数据倾斜的时候进行负载均衡，当选项设定为true，生成的查询计划会有两个mr job，         第一个job中，map的输出结果集合会随机分不到reduce中，每个reduce">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Hive 数据倾斜解决方案">
+<meta property="og:url" content="http://yoursite.com/2018/05/02/数据倾斜解决方案/index.html">
+<meta property="og:site_name" content="Hexo">
+<meta property="og:description" content="Hive 数据倾斜解决方案：1.调节参数     hive.map.aggr=true  Map端部分聚合，相当于combiner     hive.groupby.skewindata=true         有数据倾斜的时候进行负载均衡，当选项设定为true，生成的查询计划会有两个mr job，         第一个job中，map的输出结果集合会随机分不到reduce中，每个reduce">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:updated_time" content="2018-05-02T14:45:42.281Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Hive 数据倾斜解决方案">
+<meta name="twitter:description" content="Hive 数据倾斜解决方案：1.调节参数     hive.map.aggr=true  Map端部分聚合，相当于combiner     hive.groupby.skewindata=true         有数据倾斜的时候进行负载均衡，当选项设定为true，生成的查询计划会有两个mr job，         第一个job中，map的输出结果集合会随机分不到reduce中，每个reduce">
+  
+    <link rel="alternative" href="/atom.xml" title="Hexo" type="application/atom+xml">
+  
+  
+    <link rel="icon" href="http://7xkj1z.com1.z0.glb.clouddn.com/head.jpg">
+  
+  <link rel="stylesheet" href="/css/style.css">
+  
+  
+
+  <script src="//cdn.bootcss.com/require.js/2.3.2/require.min.js"></script>
+  <script src="//cdn.bootcss.com/jquery/3.1.1/jquery.min.js"></script>
+
+  
+</head>
+<body>
+  <div id="container">
+    <div id="particles-js"></div>
+    <div class="left-col">
+    <div class="overlay"></div>
+<div class="intrude-less">
+	<header id="header" class="inner">
+		<a href="/" class="profilepic">
+			
+			<img lazy-src="http://7xkj1z.com1.z0.glb.clouddn.com/head.jpg" class="js-avatar">
+			
+		</a>
+
+		<hgroup>
+		  <h1 class="header-author"><a href="/">rongyuewu</a></h1>
+		</hgroup>
+
+		
+
+		
+			<div class="switch-btn">
+				<div class="icon">
+					<div class="icon-ctn">
+						<div class="icon-wrap icon-house" data-idx="0">
+							<div class="birdhouse"></div>
+							<div class="birdhouse_holes"></div>
+						</div>
+						<div class="icon-wrap icon-ribbon hide" data-idx="1">
+							<div class="ribbon"></div>
+						</div>
+						
+						<div class="icon-wrap icon-link hide" data-idx="2">
+							<div class="loopback_l"></div>
+							<div class="loopback_r"></div>
+						</div>
+						
+						
+					</div>
+					
+				</div>
+				<div class="tips-box hide">
+					<div class="tips-arrow"></div>
+					<ul class="tips-inner">
+						<li>菜单</li>
+						<li>标签</li>
+						
+						<li>友情链接</li>
+						
+						
+					</ul>
+				</div>
+			</div>
+		
+
+		<div class="switch-area">
+			<div class="switch-wrap">
+				<section class="switch-part switch-part1">
+					<nav class="header-menu">
+						<ul>
+						
+							<li><a href="/">主页</a></li>
+				        
+							<li><a href="/archives">所有文章</a></li>
+				        
+						</ul>
+					</nav>
+					<nav class="header-nav">
+						<div class="social">
+							
+						</div>
+					</nav>
+				</section>
+				
+				
+				<section class="switch-part switch-part2">
+					<div class="widget tagcloud" id="js-tagcloud">
+						
+					</div>
+				</section>
+				
+				
+				
+				<section class="switch-part switch-part3">
+					<div id="js-friends">
+					
+			          <a target="_blank" class="main-nav-link switch-friends-link" href="https://github.com/smackgg/hexo-theme-smackdown">smackdown</a>
+			        
+			        </div>
+				</section>
+				
+
+				
+			</div>
+		</div>
+	</header>				
+</div>
+    </div>
+    <div class="mid-col">
+      <nav id="mobile-nav">
+  	<div class="overlay">
+  		<div class="slider-trigger"></div>
+  		<h1 class="header-author js-mobile-header hide">rongyuewu</h1>
+  	</div>
+	<div class="intrude-less">
+		<header id="header" class="inner">
+			<div class="profilepic">
+				<img lazy-src="http://7xkj1z.com1.z0.glb.clouddn.com/head.jpg" class="js-avatar">
+			</div>
+			<hgroup>
+			  <h1 class="header-author">rongyuewu</h1>
+			</hgroup>
+			
+			<nav class="header-menu">
+				<ul>
+				
+					<li><a href="/">主页</a></li>
+		        
+					<li><a href="/archives">所有文章</a></li>
+		        
+		        <div class="clearfix"></div>
+				</ul>
+			</nav>
+			<nav class="header-nav">
+				<div class="social">
+					
+				</div>
+			</nav>
+		</header>				
+	</div>
+</nav>
+      <div class="body-wrap"><article id="post-数据倾斜解决方案" class="article article-type-post" itemscope itemprop="blogPost">
+  
+    <div class="article-meta">
+      <a href="/2018/05/02/数据倾斜解决方案/" class="article-date">
+  	<time datetime="2018-05-02T13:29:30.000Z" itemprop="datePublished">2018-05-02</time>
+</a>
+    </div>
+  
+  <div class="article-inner">
+    
+      <input type="hidden" class="isFancy" />
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="article-title" itemprop="name">
+      Hive 数据倾斜解决方案
+      
+    </h1>
+  
+
+      </header>
+      
+      <div class="article-info article-info-post">
+        
+        
+
+        
+        <div class="clearfix"></div>
+      </div>
+      
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <h4 id="Hive-数据倾斜解决方案："><a href="#Hive-数据倾斜解决方案：" class="headerlink" title="Hive 数据倾斜解决方案："></a>Hive 数据倾斜解决方案：</h4><pre><code>1.调节参数
+    hive.map.aggr=true  Map端部分聚合，相当于combiner
+    hive.groupby.skewindata=true
+        有数据倾斜的时候进行负载均衡，当选项设定为true，生成的查询计划会有两个mr job，
+        第一个job中，map的输出结果集合会随机分不到reduce中，每个reduce做部分聚合操作，
+        并输出结果，这样的处理结果是相同的groupByKey会分到不同的reduce中，从而达到敷在君更的目的；
+        第二个job再根据预处理的数据结果按照GroupByKey分不到redcue，最终完成聚合
+2. 小表和大表进行join操作
+    使用map join让小的维度表(1000条以下的记录数)先进内存[distributedCache],在map端完成reduce
+
+3.1 空值产生的数据倾斜
+    赋予空值新的key值
+        select *
+        from log a
+        left join users b
+        on
+        case when 
+                a.user_id is null 
+                then 
+                concat(&apos;hive&apos;,rand())
+                else a.user_id
+                end = b.user_id
+    好处：这个方法只有一个job，把空值的key变成了字符串加上随机数，就能把倾斜的数据分到不同的reduce上，
+    解决数据倾斜问题。
+3.2 不同数据类型关联产生数据倾斜
+    比如 用户表user_id为int类型，log表中的user_id 字段既有int也有string类型，
+    当按照user_id进行两个表的join操作时，默认的hash操作会按照int类型的id来进行分配，
+    这样就会导致所有string类型的id记录都分配到一个reducer中
+    解决：把数字类型转换成字符串类型
+        select * 
+        from 
+            users a
+        left outer join logs b
+        on
+        a.user_id = cast(b.user_id as string)
+3.3 users表有600w+的记录，把users分发到所有的map也是不小的开销，而且map join不支持这么大的小表，
+如果用普通的join，又会碰到数据倾斜的问题
+    解决：
+        select * from log a
+            left outer join 
+                (
+                    select d.* from (select distinct user_id from log) c
+                    join users d
+                    on c.user_id = d.user_id
+                ) x
+            on a.user_id = x.user_id;
+</code></pre><h4 id="spark解决数据倾斜："><a href="#spark解决数据倾斜：" class="headerlink" title="spark解决数据倾斜："></a>spark解决数据倾斜：</h4><pre><code>1.增加并行度，也就是增加task的个数，可以缓解数据倾斜 这样可以将分配到统一task上的key散开，
+2.自定义 partition 默认是 HashPartition，这样可以将不同的key分配到多个task上，
+但是也只是缓解，而且也不灵活，不能解决同一个key数据量很好的场景
+3.将reduce端join变成map端join -- broadcast 
+    优势：
+        避免了shuffle，彻底解除了数据倾斜
+    劣势：
+        要求join的一侧数据集合足够小，适用于join，不适用于聚合
+4.在数据倾斜的key前面加前缀，让这个key分不到不同的task中
+    将有数据倾斜的RDD中倾斜Key对应的数据集单独抽取出来加上随机前缀，
+    另外一个RDD每条数据分别与随机前缀结合形成新的RDD（相当于将其数据增到到原来的N    倍，N即为随机前缀的总个数），然后将二者Join并去掉前缀。然后将不包含倾斜Key的剩余数据进行Join。
+    最后将两次Join的结果集通过union合并，即可得到全部Join结果。
+</code></pre>
+      
+    </div>
+    
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2018/05/02/随笔/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">&lt;</strong>
+      <div class="article-nav-title">
+        
+          随笔
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2018/05/01/kafka - scala 语言写的 版本 1.0.0 scala 2.11 官方推荐/" id="article-nav-older" class="article-nav-link-wrap">
+      <div class="article-nav-title">kafka总结相关笔记</div>
+      <strong class="article-nav-caption">&gt;</strong>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+
+<div class="ds-share share" data-thread-key="数据倾斜解决方案" data-title="Hive 数据倾斜解决方案" data-url="http://yoursite.com/2018/05/02/数据倾斜解决方案/"  data-images="http://7xkj1z.com1.z0.glb.clouddn.com/head.jpg" data-content="Hive 数据倾斜解决方案">
+    <div class="ds-share-inline">
+      <ul  class="ds-share-icons-16">
+      	<li data-toggle="ds-share-icons-more"><a class="ds-more" href="javascript:void(0);">分享到：</a></li>
+        <li><a class="ds-weibo" href="javascript:void(0);" data-service="weibo">微博</a></li>
+        <li><a class="ds-qzone" href="javascript:void(0);" data-service="qzone">QQ空间</a></li>
+        <li><a class="ds-qqt" href="javascript:void(0);" data-service="qqt">腾讯微博</a></li>
+        <li><a class="ds-wechat" href="javascript:void(0);" data-service="wechat">微信</a></li>
+      </ul>
+      <div class="ds-share-icons-more">
+      </div>
+    </div>
+ </div>
+ 
+
+
+
+
+
+</div>
+      <footer id="footer">
+  <div class="outer">
+    <div id="footer-info">
+      <div class="footer-left">
+        &copy; 2018 rongyuewu
+      </div>
+        <div class="footer-right">
+          <a href="http://hexo.io/" target="_blank">Hexo</a>  Theme <a href="https://github.com/smackgg/hexo-theme-smackdown" target="_blank">Smackdown</a>
+        </div>
+    </div>
+  </div>
+</footer>
+    </div>
+    
+  <link rel="stylesheet" href="/fancybox/jquery.fancybox.css">
+
+
+<script>
+	var yiliaConfig = {
+		fancybox: true,
+		mathjax: true,
+		animate: true,
+		isHome: false,
+		isPost: true,
+		isArchive: false,
+		isTag: false,
+		isCategory: false,
+		open_in_new: false
+	}
+</script>
+<script src="/js/main.js"></script>
+
+
+
+<script type="text/x-mathjax-config">
+MathJax.Hub.Config({
+    tex2jax: {
+        inlineMath: [ ['$','$'], ["\\(","\\)"]  ],
+        processEscapes: true,
+        skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+    }
+});
+
+MathJax.Hub.Queue(function() {
+    var all = MathJax.Hub.getAllJax(), i;
+    for(i=0; i < all.length; i += 1) {
+        all[i].SourceElement().parentNode.className += ' has-jax';                 
+    }       
+});
+</script>
+
+<script src="//cdn.bootcss.com/mathjax/2.7.0/MathJax.js"></script>
+
+
+  </div>
+</body>
+</html>

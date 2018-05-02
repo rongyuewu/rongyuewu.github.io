@@ -1,0 +1,763 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>点击流日志分析流程 | Hexo</title>
+
+  <!-- keywords -->
+  
+
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="description" content="点击流日志分析流程流程图如下：         原始数据：194.237.142.21 - - [18/Sep/2013:06:49:18 +0000] &amp;quot;GET /wp-content/uploads/2013/07/rstudio-git3.png HTTP/1.1&amp;quot; 304 0 &amp;quot;-&amp;quot; &amp;quot;Mozilla/4.0 (compatible;)&amp;q">
+<meta property="og:type" content="article">
+<meta property="og:title" content="点击流日志分析流程">
+<meta property="og:url" content="http://yoursite.com/2018/05/01/点击流日志分析流程/index.html">
+<meta property="og:site_name" content="Hexo">
+<meta property="og:description" content="点击流日志分析流程流程图如下：         原始数据：194.237.142.21 - - [18/Sep/2013:06:49:18 +0000] &amp;quot;GET /wp-content/uploads/2013/07/rstudio-git3.png HTTP/1.1&amp;quot; 304 0 &amp;quot;-&amp;quot; &amp;quot;Mozilla/4.0 (compatible;)&amp;q">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="http://m.qpic.cn/psb?/V11BXxlE33Kp9F/UbKrmZeyW3FpirSZBEMFrDGawneMp6lIpLWKfxekmLw!/b/dJUAAAAAAAAA&bo=QgauAgAAAAARB9g!&rf=viewer_4">
+<meta property="og:image" content="http://m.qpic.cn/psb?/V11BXxlE33Kp9F/FimQ39x6PIwqFTl56xYF*n.qFv3LMDsUx5Bk7YsN*vs!/b/dGoBAAAAAAAA&bo=kgU4BAAAAAARB5s!&rf=viewer_4">
+<meta property="og:updated_time" content="2018-05-02T14:47:09.737Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="点击流日志分析流程">
+<meta name="twitter:description" content="点击流日志分析流程流程图如下：         原始数据：194.237.142.21 - - [18/Sep/2013:06:49:18 +0000] &amp;quot;GET /wp-content/uploads/2013/07/rstudio-git3.png HTTP/1.1&amp;quot; 304 0 &amp;quot;-&amp;quot; &amp;quot;Mozilla/4.0 (compatible;)&amp;q">
+<meta name="twitter:image" content="http://m.qpic.cn/psb?/V11BXxlE33Kp9F/UbKrmZeyW3FpirSZBEMFrDGawneMp6lIpLWKfxekmLw!/b/dJUAAAAAAAAA&bo=QgauAgAAAAARB9g!&rf=viewer_4">
+  
+    <link rel="alternative" href="/atom.xml" title="Hexo" type="application/atom+xml">
+  
+  
+    <link rel="icon" href="http://7xkj1z.com1.z0.glb.clouddn.com/head.jpg">
+  
+  <link rel="stylesheet" href="/css/style.css">
+  
+  
+
+  <script src="//cdn.bootcss.com/require.js/2.3.2/require.min.js"></script>
+  <script src="//cdn.bootcss.com/jquery/3.1.1/jquery.min.js"></script>
+
+  
+</head>
+<body>
+  <div id="container">
+    <div id="particles-js"></div>
+    <div class="left-col">
+    <div class="overlay"></div>
+<div class="intrude-less">
+	<header id="header" class="inner">
+		<a href="/" class="profilepic">
+			
+			<img lazy-src="http://7xkj1z.com1.z0.glb.clouddn.com/head.jpg" class="js-avatar">
+			
+		</a>
+
+		<hgroup>
+		  <h1 class="header-author"><a href="/">rongyuewu</a></h1>
+		</hgroup>
+
+		
+
+		
+			<div class="switch-btn">
+				<div class="icon">
+					<div class="icon-ctn">
+						<div class="icon-wrap icon-house" data-idx="0">
+							<div class="birdhouse"></div>
+							<div class="birdhouse_holes"></div>
+						</div>
+						<div class="icon-wrap icon-ribbon hide" data-idx="1">
+							<div class="ribbon"></div>
+						</div>
+						
+						<div class="icon-wrap icon-link hide" data-idx="2">
+							<div class="loopback_l"></div>
+							<div class="loopback_r"></div>
+						</div>
+						
+						
+					</div>
+					
+				</div>
+				<div class="tips-box hide">
+					<div class="tips-arrow"></div>
+					<ul class="tips-inner">
+						<li>菜单</li>
+						<li>标签</li>
+						
+						<li>友情链接</li>
+						
+						
+					</ul>
+				</div>
+			</div>
+		
+
+		<div class="switch-area">
+			<div class="switch-wrap">
+				<section class="switch-part switch-part1">
+					<nav class="header-menu">
+						<ul>
+						
+							<li><a href="/">主页</a></li>
+				        
+							<li><a href="/archives">所有文章</a></li>
+				        
+						</ul>
+					</nav>
+					<nav class="header-nav">
+						<div class="social">
+							
+						</div>
+					</nav>
+				</section>
+				
+				
+				<section class="switch-part switch-part2">
+					<div class="widget tagcloud" id="js-tagcloud">
+						
+					</div>
+				</section>
+				
+				
+				
+				<section class="switch-part switch-part3">
+					<div id="js-friends">
+					
+			          <a target="_blank" class="main-nav-link switch-friends-link" href="https://github.com/smackgg/hexo-theme-smackdown">smackdown</a>
+			        
+			        </div>
+				</section>
+				
+
+				
+			</div>
+		</div>
+	</header>				
+</div>
+    </div>
+    <div class="mid-col">
+      <nav id="mobile-nav">
+  	<div class="overlay">
+  		<div class="slider-trigger"></div>
+  		<h1 class="header-author js-mobile-header hide">rongyuewu</h1>
+  	</div>
+	<div class="intrude-less">
+		<header id="header" class="inner">
+			<div class="profilepic">
+				<img lazy-src="http://7xkj1z.com1.z0.glb.clouddn.com/head.jpg" class="js-avatar">
+			</div>
+			<hgroup>
+			  <h1 class="header-author">rongyuewu</h1>
+			</hgroup>
+			
+			<nav class="header-menu">
+				<ul>
+				
+					<li><a href="/">主页</a></li>
+		        
+					<li><a href="/archives">所有文章</a></li>
+		        
+		        <div class="clearfix"></div>
+				</ul>
+			</nav>
+			<nav class="header-nav">
+				<div class="social">
+					
+				</div>
+			</nav>
+		</header>				
+	</div>
+</nav>
+      <div class="body-wrap"><article id="post-点击流日志分析流程" class="article article-type-post" itemscope itemprop="blogPost">
+  
+    <div class="article-meta">
+      <a href="/2018/05/01/点击流日志分析流程/" class="article-date">
+  	<time datetime="2018-05-01T13:29:30.000Z" itemprop="datePublished">2018-05-01</time>
+</a>
+    </div>
+  
+  <div class="article-inner">
+    
+      <input type="hidden" class="isFancy" />
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="article-title" itemprop="name">
+      点击流日志分析流程
+      
+    </h1>
+  
+
+      </header>
+      
+      <div class="article-info article-info-post">
+        
+        
+
+        
+        <div class="clearfix"></div>
+      </div>
+      
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <h1 id="点击流日志分析流程"><a href="#点击流日志分析流程" class="headerlink" title="点击流日志分析流程"></a>点击流日志分析流程</h1><p>流程图如下：<br>    <img src="http://m.qpic.cn/psb?/V11BXxlE33Kp9F/UbKrmZeyW3FpirSZBEMFrDGawneMp6lIpLWKfxekmLw!/b/dJUAAAAAAAAA&amp;bo=QgauAgAAAAARB9g!&amp;rf=viewer_4" alt=""><br>    <img src="http://m.qpic.cn/psb?/V11BXxlE33Kp9F/FimQ39x6PIwqFTl56xYF*n.qFv3LMDsUx5Bk7YsN*vs!/b/dGoBAAAAAAAA&amp;bo=kgU4BAAAAAARB5s!&amp;rf=viewer_4" alt=""></p>
+<h6 id="原始数据："><a href="#原始数据：" class="headerlink" title="原始数据："></a>原始数据：</h6><pre><code>194.237.142.21 - - [18/Sep/2013:06:49:18 +0000] &quot;GET /wp-content/uploads/2013/07/rstudio-git3.png HTTP/1.1&quot; 304 0 &quot;-&quot; &quot;Mozilla/4.0 (compatible;)&quot;
+字段解析:
+1、访客 ip 地址: 58.215.204.118
+2、访客用户信息: - -
+3、请求时间:[18/Sep/2013:06:51:35 +0000]
+4、请求方式:GET
+5、请求的 url:/wp-includes/js/jquery/jquery.js?ver=1.10.2 6、请求所用协议:HTTP/1.1
+7、响应码:304
+8、返回的数据流量:0
+9、访客的来源 url:http://blog.fens.me/nodejs-socketio-chat/
+10 、 访 客 所 用 浏 览 器 : Mozilla/5.0 (Windows NT 5.1; rv:23.0) Firefox/23.0
+Gecko/20100101
+</code></pre><p>1.根据原始数据生成点击流模型 PageViews 和 Visits</p>
+<pre><code>PageViews:
+    根据IP判断是否是同一用户，根据前后两条日志时间相差是否在30分钟内，
+    判断访问日志是否是属于同一个session[会话]，按照时间顺序标上步骤，
+    这样就构成了一条访问轨迹线;
+Visits：
+    侧重于体现用户在一次session中的进入离开时间、进入离开页面，
+    还有统计出在本次session中用户总共访问了几个页面
+</code></pre><p>2.漏斗模型</p>
+<pre><code>逐层递减
+</code></pre><p>3.常见指标：</p>
+<pre><code>骨灰级指标：
+    IP：1天内访问网站的不重复IP总数
+    PV[PageView]:用户每打开1次网页，记录1个PV
+    UV[Unique Pageview]:1天以内，访问网站不重复的用户数据(以cookie为依据)，1天内同1访客多次访问网站只被计算1次
+基础级指标：
+    访问次数：
+        访客从进入网站到离开网站一系列活动极为一次访问，也就是session
+    网站停留时间：
+        访问者在网站上花费的时间
+    页面停留时间：
+        访问者在某个特定页面或某组网页上所花费的时间
+复合级指标:
+    人均浏览页面：
+        浏览次数/独立访客数  --体现网站对访客的吸引程度
+    二跳率：
+        二跳率的概念是当网站页面展开后，用户在页面上产生的首次点击被称为“二跳”，二跳的次数即为“二跳量”。二跳量与到达量（进入网站的人）的比值称为页面的二跳率。
+    跳出率：
+        跳出率是指在只访问了入口页面（例如网站首页）就离开的访问量与所产生总访问量的百分比。跳出率计算公式：跳出率=访问一个页面后离开网站的次数/总访问次数。
+    二跳率越高越好，跳出率越低越好。
+4.基础分析(PV,IP,UV)
+5.来源分析
+6.受访分析
+7.访客分析
+    终端详情[PC,移动端]新老访客、忠诚度、活跃度
+8.转化路径分析
+</code></pre><blockquote>
+<blockquote>
+<blockquote>
+<p>数据处理流程：</p>
+</blockquote>
+</blockquote>
+</blockquote>
+<pre><code>&gt; 数据采集
+    Flume采集需要在配置文件里配置source、channel、sink：
+        source:
+            1.spoolDir的作用是：监控文件夹，如果有新的文件产生，采集开始
+            2.exec tail -f access.log 只能监听文件追加的内容
+    以上1和2都没办法满足我们的log日志采集，因为既要监控文件也要监控文件夹，
+    **好在Flume1.7的稳定版本提供了TAILDIR类型的source，
+    可以监控一个目录，并且使用正则表达式匹配目录中的文件名进行实时收集，具体配置详情如下：
+        a1.sources.r1.type = TAILDIR
+        a1.sources.r1.positionFile = /var/log/flume/taildir_position.json
+        a1.sources.r1.filegroups = f1 f2
+        a1.sources.r1.filegroups.f1 = /var/log/test1/example.log 
+        a1.sources.r1.filegroups.f2 = /var/log/test2/.*log.*
+    解释：
+        filegroups:指定 filegroups，可以有多个[每个还可以使用正则表达式来匹配]，
+        以空格分隔;(TailSource 可以同时监控 tail 多个目录中的文件)
+      **positionFile:解决了机器重启后无法**断点续传**的问题[检查点文件会以 json 格式保存已经 tail 文件的位置]
+
+&gt; 数据预处理
+    通过MapReduce程序对采集到的原始日志数据进行预处理，
+    比如清洗，格式整理，滤除脏数据等，并且梳理成点击流模型数据
+        1.一般来说，开发中针对不合法的数据，我们不是直接删除，而是打个标签 比如true或者false，
+        因为这些数据可能对这个场景是无用的，但是对其他场景是有用的
+        2.编写MapReduce程序，只有map没有reduce，因为输入一条数据，处理完后直接输出不需要聚合,setReduceNum = 0 ,输出的结果文件就是part-m
+        3.编写相对应的Javabean的时候要实现Writable接口，
+        重写toString方法的时候是按照Hive的默认分隔符&apos;\001&apos;进行分割的，
+        导入hive表的时候直接按照默认的分隔符就ok了,
+        注意：readFields 和 write 的方法写得时候要一致对应
+        4.业务要求状态码为400以上的设置valid为false，还有时间不合法[为null或者双引号]
+        5.过滤掉静态资源[图片/css/js],这个标准是根据业务来定的，一般会在mapper的set up 
+        初始化方法里定义hashSet来存这些准则，然后进行标记清除
+        6.PageViews数据生成： (session[UUID] + stayTime + step)
+        ---------------------------------------------------------------------------------------
+                    Session + IP + 地址 + 时间 + 访问页面 + URL + 停留时长 + 第几步
+        ---------------------------------------------------------------------------------------
+            a) 编写MapReduce程序，map端以Ip为key，Javabean为value，发送到reduce，
+            reduce端进行values的排序，这里需要遍历values，每一次都new
+            一个新的Javabean然后进行赋值[因为Javabean是引用类型，然后添加入新的ArrayList中，
+            如果不重新new 一个新的对象的话，那么到最后ArrayList里面的对象就是同一个，因为他们指向的都是同一块堆内存！！！]，
+            再把这个Javabean添加到新的ArrayList中
+            b) 按照时间排序,然后对新的ArrayList进行排序，Collections.sort(beansList,new Comparabtor(javabean){中间获取时间来进行升序排序})
+            c) 从有序的beans中分辨出歌词visit，并对一次visit中所访问的page按顺序标号step
+                核心思想：比较相邻两条记录中的时间差，如果时间差&lt;30分钟，则该两条记录属于同一个session[生成UUID]，否则属于不同的session
+                只有1条的和大于1条的，他们的默认时间都是60秒
+        7.Visits模型：数据来自PageViews模型
+        ---------------------------------------------------------------------------------------
+        Session + 起始时间 + 结束时间 + 进入页面URL + 离开页面URL + 访问页面数 + 停留时长 + IP + referer
+        ---------------------------------------------------------------------------------------
+             编写MapReduce程序：
+                 mapper端：k为session，value：javabean
+                 reduce端：
+                     以step进行排序
+
+
+&gt; 数据入库
+    将预处理之后的数据导入到Hive仓库中相应的库和表中
+&gt; 数据分析
+    项目的核心内容，即根据需求开发ETL分析语句，得出各种统计结果
+&gt; 工作流调度：
+    简单的任务调度:
+        可以使用Linux的crontab -e 来设置调度，但是其缺点是无法设置依赖
+    复杂的任务调度：
+        推荐使用 : azkaban [Java语言实现的，他有管理页面，配置起来比较简单]
+            azkaban是由LinkedIn公司推出的一个批量工作流任务调度器，
+            用于在一个工作流内以一个特定的顺序运行一组工作和流程。
+            使用job配置文件简历任务之间的依赖关系，并提供了一个已使用的web用户界面维护和跟踪工作流。
+            支持command、Java、Hive、pig、Hadoop，而且是基于java开发，代码结构清晰，抑郁二次开发
+                azkaban的组成：
+                    1.mysql服务器
+                        用于存储项目、日志或者执行计划[执行周期等]之类的信息
+                    2.web服务器：
+                        使用jetty[开源的serverlet容器]对外提供web服务，使用户可以通过wen页面方便管理
+                    3.executor服务器：
+                        负责具体的工作流的提交、执行
+           配置azkaban步骤：[cluster模式]
+                   1.生成keystore证书文件，mv到webserver下
+                   2.配置为年修改一下时区：Asia/Shanghai
+                   3.配置数据库mysql
+                   4.配置user admin的登录
+          使用azkaban的步骤：
+                  1.创建a.job文件并且已经配置b.job ，里面的type为command，中间可以配置的dependencies=b，然后command=xxxx
+                    期间要把这些job打成zip包，通过web提交上去配置立刻执行还是scheduler定期执行
+                      # a.job
+                    type=command
+                    dependencies=b
+                    command=echo hahaha
+                这样的话a的job任务就会等待b结束后再执行
+                2.hdfs操作任务
+                    command=/home/hadoop/apps/hadoop-2.6.1/bin/hadoop fs -mkdir /azaz
+                  3.MapReduce操作任务
+                      command=/home/hadoop/apps/hadoop-2.6.1/bin/hadoop jar hadoop-mapreduce- examples-2.6.1.jar wordcount /wordcount/input /wordcount/azout
+                  4.hive操作任务
+                      执行一个命令是 command=/xx/hive -e &apos;show tables&apos;
+                      执行一个文件，里面是hive sql语句， commmand=/xx/hive -f &apos;test.sql&apos;
+                      Hive 脚本: test.sql
+                        type=command
+                        command=/home/hadoop/apps/hadoop-2.6.1/bin/hadoop jar hadoop-mapreduce- examples-2.6.1.jar wordcount /wordcount/input /wordcount/azout
+                        use default;
+                        drop table aztest;
+                        create table aztest(id int,name string) row format delimited fields terminated by &apos;,&apos;;
+                        load data inpath &apos;/aztest/hiveinput&apos; into table aztest;
+                        create table azres as select * from aztest;
+                        insert overwrite directory &apos;/aztest/hiveoutput&apos; select count(1) from aztest;
+        不推荐使用: ooize[虽然是Apache旗下的，但是工作流的过程是编写大量的XML文件配置，而且代码复杂度比较高，不易于二次开发]
+&gt; 数据展现
+    将分析所得到的数据进行数据可视化，一般通过图表[百度的echarts]进行展示
+</code></pre><h2 id="模块开发-数据仓库的设计"><a href="#模块开发-数据仓库的设计" class="headerlink" title="模块开发-数据仓库的设计"></a>模块开发-数据仓库的设计</h2><pre><code>1.纬度建模
+    纬度表(demension)
+        通常指 按照类别、区域或者时间等等来分析，维度表数据比较固定，数据量小
+     事实表
+        事实表的设计是以能够正确记录历史信息为准则也就是一条一条的数据，就像是消费记录里面有product_id
+        维度表的设计是以能够以合适的角度来聚合主题内容为准则  这边有product_id对应的产品信息
+2.纬度建模三种模式：
+    2.1 星型模式 [像星星一样]
+            由一个事实表和一组维度表组成    
+                比如：
+                    事实表里有地域主键、时间键、部门键、产品键 对应有4个维度表相关联
+    2.2 雪花模式[不常用，因为不容易维护！！！]
+            在星型模式基础上，维度表还有维度表
+    2.3 星座模式 [开发常用！！！]
+        基于多张事实表，而且共享纬度信息
+</code></pre><p>本项目数据仓库的设计：</p>
+<pre><code>1.事实表的设计 ods_weblog_orgin =&gt; 对应mr清洗完之后的数据 【窄表】和【宽表或者明细表】
+    窄表：对应原始数据表，字段跟数据中一一对应，但是不利于分析
+---------------------------------------------------------------------------------------------------------------
+        valid  remote_addr remote_user time_local  request status  body_bytes_sent http_referer  http_user_agent
+        是否有效 访客IP         访客用户信息  请求时间     请求url  响应码    相应字节数       来源url         访客终端信息
+---------------------------------------------------------------------------------------------------------------
+    宽表：把某些融合各种信息的字段 提取出不同的信息作为新的字段
+        相对于之前的窄表 字段增加了，所以叫宽表，
+        比如时间戳，如果是之前的话 &apos;2018-09-09 18:09:09&apos;这种时间不利于分析，
+        如果分成年，月，日，那么分析时直接group by day 或者 year 或者day 就ok了
+        还有referer_url也是如此，可以拆分为host或者参数之类的
+
+2.维度表的设计如：
+    时间维度 t_dim_time: date_key year month day hour 
+    访客地域纬度t_dim_area: area_ID 北京 上海 广州 深圳
+    终端类型维度 t_dim_termination: uc firefox chrome safari ios android
+    网站栏目纬度 t_dim_section: 进口食品、生鲜日配、时令果蔬、奶制品、
+                                休闲保健、酒饮冲调茶叶、粮油副食、母婴玩具、个护清洁、家具家电
+    维度表的数据一般要结合业务情况自己写脚本按照规则生成，也可以用工具来生成，方便后续关联分析
+    比如事先生成时间维度表中的数据，跨度从业务需求的日期到当前的日期即可，具体根据分析粒度，
+    库生成年，季，月，周，天，时等相关信息，用于分析
+</code></pre><p>数据仓库三层架构：</p>
+<pre><code>ods层：数据就是通过mr清洗过的数据，带有标签valid或者标识的数据
+    1.创建ODS层数据表
+        1.1. 原始日志数据表 :创建按照时间来分区的hive 分区表
+            drop table if exists ods_weblog_origin;
+            create table ods_weblog_origin
+            (
+            valid string,remote_addr string,remote_user string, time_local string,request string,status string, body_bytes_sent string, http_referer string, http_user_agent string
+            )
+            partitioned by (datestr string)
+            row format delimited 
+            fields terminated by &apos;\001&apos;;
+        1.2. 点击流模型 PageViews表
+            drop table if exists ods_click_pageviews;
+            create table ods_click_pageviews
+            (
+            session string,remote_addr string,remote_user string, time_local string,request string,visit_step string, page_staylong string, http_referer string, http_user_agent string, body_bytes_sent string, status string
+            )
+            partitioned by (datestr string)
+            row format delimited 
+            fields terminated by &apos;\001&apos;;
+        1.3. 点击流模型 Visits
+            drop table if exists ods_click_visits;
+            create table ods_click_visits
+            (
+            )
+            partitioned by (datestr string)
+            row format delimited 
+            fields terminated by &apos;\001&apos;;
+        1.4. 维度表创建(这里举例：时间，年、月、日、时)
+            drop table if exists t_dim_time;
+            create table t_dim_time 
+            (
+            date_key int,...
+            )
+            row format delimited 
+            fields terminated by &apos;,&apos;;
+        1.5 创建明细宽表 ods_weblog_detail 时间可以明细为 年月日时分秒，
+            referer_url 可以明细为 host、path、query、queryid
+            从预清洗后的表中得到这些数据，如果是referer_url 需要使用Hive里定义的函数：
+                lateral view parse_url_tuple(正则表达式)这个方法，自动把url转换为host、path等
+            如果是时间拓宽明细表的话 就是 substring
+dw层：ods通过ETL处理之后得到dw层
+        多维度统计PV总量：
+            b) 与时间维度表关联查询
+                insert into table dw_pvs_everyday select count(*) as pvs,a.month as month,a.day as day 
+                from 
+                (select distinct month, day from t_dim_time) a 
+                join 
+                ods_weblog_detail b 
+                on a.month=b.month and a.day=b.day group by a.month,a.day;
+            c) 按照referer维度进行统计每小时各来访 url 产生的 PV 量
+                insert into table dw_pvs_referer_everyhour partition(datestr=&apos;20130918&apos;)
+                select http_referer,ref_host,month,day,hour,count(1) as pv_referer_cnt
+                from 
+                ods_weblog_detail
+                group by http_referer,ref_host,month,day,hour
+                having ref_host is not null
+                order by hour asc,day asc,month asc,pv_referer_cnt desc;
+            d) 人均浏览量
+                统计今日所有来访者平均请求的页面数。
+                    insert into table dw_avgpv_user_everyday
+                    select 
+                    &apos;20130918&apos;,sum(b.pvs)/count(b.remote_addr) 
+                    from
+                    (select remote_addr,count(1) as pvs from ods_weblog_detail where datestr=&apos;20130918&apos; group by remote_addr) b; 
+            e)特别重要：分组求TopN ************非常重要**********
+                row_number()函数
+                    row_number() over (partition by xxx order by xxx) rank
+                insert into table dw_pvs_refhost_topn_everyhour partition(datestr=&apos;20130918&apos;) 
+                select t.hour,t.od,t.ref_host,t.ref_host_cnts 
+                from(
+                select ref_host,ref_host_cnts,concat(month,day,hour) as hour,row_number() over (partition by concat(month,day,hour) order by ref_host_cnts desc
+                ) as od 
+                from 
+                dw_pvs_refererhost_everyhour) t 
+                where od&lt;=3;
+            f) 受访分析(从页面的角度分析)
+                热门页面统计
+                    统计每日最热门的页面 top10
+                        insert into table dw_hotpages_everydayselect &apos;20130918&apos;,a.request,a.request_counts 
+                        from
+                        (select request as request,count(request) as request_counts 
+                        from 
+                        ods_weblog_detail 
+                        where datestr=&apos;20130918&apos; 
+                        group by request having request is not null
+                        ) a 
+                        order by a.request_counts desc 
+                        limit 10;
+            g) 每小时独立访客及其产生的 pv
+                insert into table dw_user_dstc_ip_h 
+                select remote_addr,count(1) as pvs,concat(month,day,hour) as hour 
+                from 
+                ods_weblog_detail Where datestr=&apos;20130918&apos; 
+                group by concat(month,day,hour),remote_addr;
+                    在以上的结果基础上，统计每小时独立访客总数
+                        select count(1) as dstc_ip_cnts,hour from dw_user_dstc_ip_h group by hour;
+                    统计每日独立访客总数
+                        select remote_addr,count(1) as counts,concat(month,day) as day 
+                        from 
+                        ods_weblog_detail Where datestr=&apos;20130918&apos; 
+                        group by concat(month,day),remote_addr;
+                    统计每月独立访客总数
+                        select 
+                        remote_addr,count(1) as counts,month 
+                        from 
+                        ods_weblog_detail 
+                        group by month,remote_addr;
+            h) 每日新访访客 today left join old ***************非常重要*************
+                insert into table dw_user_new_d partition(datestr=&apos;20130918&apos;) 
+                select tmp.day as day,tmp.today_addr as new_ip 
+                from 
+                ( select today.day as day,today.remote_addr as today_addr,old.ip as old_addr from (select distinct remote_addr as remote_addr,&quot;20130918&quot; as day from ods_weblog_detail where datestr=&quot;20130918&quot;) today left outer join dw_user_dsct_history old on today.remote_addr=old.ip ) tmp 
+                where tmp.old_addr is null;
+            注意：每日新用户追加到累计表
+            i) 访客 Visit 分析(点击流模型)
+                查询今日所有回头访客及其访问次数。
+                    insert overwrite table dw_user_returning partition(datestr=&apos;20130918&apos;) 
+                    select tmp.day,tmp.remote_addr,tmp.acc_cnt 
+                    from 
+                    (select &apos;20130918&apos; as day,remote_addr,count(session) as acc_cnt from ods_click_stream_visit group by remote_addr) tmp 
+                    where tmp.acc_cnt&gt;1;
+            j) 人均访问频次
+                统计出每天所有用户访问网站的平均次数(visit)
+                    select sum(pagevisits)/count(distinct remote_addr) from ods_click_stream_visit where datestr=&apos;20130918&apos;;
+            k) 关键路径转化率分析(漏斗模型) -- 基于PageViews模型
+                定义好业务流程中的页面标识，下例中的步骤为[模型设计]: Step1、 /item
+                                                          Step2、 /category
+                                                         Step3、 /index
+                                                        Step4、 /order
+                --查询每一步人数存入 dw_oute_numbs
+                create table dw_oute_numbs as
+                select &apos;step1&apos; as step,count(distinct remote_addr) and request like &apos;/item%&apos;
+                union
+                select &apos;step2&apos; as step,count(distinct remote_addr) and request like &apos;/category%&apos;
+                union
+                select &apos;step3&apos; as step,count(distinct remote_addr) and request like &apos;/order%&apos;
+                union
+                select &apos;step4&apos; as step,count(distinct remote_addr) and request like &apos;/index%&apos;;
+                as numbs from ods_click_pageviews where datestr=&apos;20130920&apos;
+                as numbs from ods_click_pageviews where datestr=&apos;20130920&apos;
+                as numbs from ods_click_pageviews where datestr=&apos;20130920&apos;
+                as numbs from ods_click_pageviews where datestr=&apos;20130920&apos;
+                注:UNION 将多个 SELECT 语句的结果集合并为一个独立的结果集。
+                ***利用级联求和自己和自己join ******************非常重要********************
+                inner join
+                select abs.step,abs.numbs,abs.rate as abs_ratio,rel.rate as leakage_rate
+                from
+                (
+                select tmp.rnstep as step,tmp.rnnumbs as numbs,tmp.rnnumbs/tmp.rrnumbs as rate
+                from
+                (
+                select rn.step as rnstep,rn.numbs as rnnumbs,rr.step as rrstep,rr.numbs as rrnumbs inner join
+                dw_oute_numbs rr) tmp
+                where tmp.rrstep=&apos;step1&apos;
+                ) abs
+                left outer join
+                (
+                select tmp.rrstep as step,tmp.rrnumbs/tmp.rnnumbs as rate
+                from
+                (
+                select rn.step as rnstep,rn.numbs as rnnumbs,rr.step as rrstep,rr.numbs as rrnumbs inner join
+                dw_oute_numbs rr) tmp
+                where cast(substr(tmp.rnstep,5,1) as int)=cast(substr(tmp.rrstep,5,1) as int)-1
+                ) rel
+                on abs.step=rel.step;
+                from dw_oute_numbs rn
+                其中 cast(substr(tmp.rnstep,5,1) as int) 是 把字符串截取字符 然后强制转化为int
+            ) 还可以按照栏目纬度和UA（user agent）纬度来分析PV,
+                为了说明PV是可以从各个纬度去分析的
+
+app层：应用层来拿数据展示
+</code></pre><p>Sqoop：是Hadoop和关系数据库服务器之间传送数据的一种工具-sql到Hadoop和Hadoop到sql</p>
+<pre><code>sqoop工作机制是将导入或导出命令翻译成MapReduce程序来实现，
+在翻译出的MapReduce中主要是对inputformat和outputformat进行定制
+1.从关系型数据库(mysql)导入到hadoop 是 DBIputformat，import命令
+    bin/sqoop import \
+    --connect jdbc:mysql://node-21:3306/sqoopdb \ --username root \
+    --password hadoop \
+    --target-dir /sqoopresult \ //--target-dir 可以用来指定导出数据存放至 HDFS 的目录;
+    --table emp --m 1   //m 1 表示一个map来跑
+2.导入 mysql 表数据到 HIVE
+    2.1 将关系型数据的表结构复制到 hive 中
+    bin/sqoop create-hive-table \
+    --connect jdbc:mysql://node-21:3306/sqoopdb \ --table emp_add \
+    --username root \
+    --password hadoop \
+    --hive-table test.emp_add_sp
+    2.2 以上只是复制表的结构，并没有将数据导进去，将数据导入Hive表中
+        bin/sqoop import \
+        --connect jdbc:mysql://node-21:3306/sqoopdb \ --username root \
+        --password hadoop \
+        --table emp_add \
+        --hive-table test.emp_add_sp \
+        --hive-import \   ****
+        --m 1
+    2.3 复杂查询条件:如果不指定分隔符是默认逗号
+        bin/sqoop import \
+        --connect jdbc:mysql://node-21:3306/sqoopdb \ --username root \
+        --password hadoop \
+        --target-dir /wherequery12 \
+        --query &apos;select id,name,deg from emp WHERE --split-by id \
+        --fields-terminated-by &apos;\t&apos; \
+        --m 1
+    2.4 下面的命令用于在 EMP 表执行增量导入:
+        bin/sqoop import \
+        --connect jdbc:mysql://node-21:3306/sqoopdb \ --username root \
+        --password hadoop \
+        --table emp --m 1 \
+        --incremental append \  ****
+        --check-column id \  ****
+        --last-value 1205    ****
+    3. Sqoop 导出
+        将数据从 HDFS 导出到 RDBMS 数据库导出前，目标表必须存在于目标数据库中。
+        bin/sqoop export \
+        --connect jdbc:mysql://node-21:3306/sqoopdb \ --username root \
+        --password hadoop \
+        --table employee \
+        --export-dir /emp/emp_data
+        还可以用下面命令指定输入文件的分隔符
+        --input-fields-terminated-by &apos;\t&apos;
+</code></pre><h4 id="工作流调度："><a href="#工作流调度：" class="headerlink" title="工作流调度："></a>工作流调度：</h4><pre><code>整个项目的数据按照处理过程，从数据采集到数据分析，再到结果数据的到处，
+一系列的任务可以分割成若干个azkaban的job单元，然后由工作流调度器调度执行。
+调度脚本的编写难点在于shell脚本
+shell脚本大体框架如下：
+    #!/bin/bash
+    #set java env
+    #set hadoop env
+    #设置一些主类、目录等常量
+    #获取时间信息
+    #shell 主程序、结合流程控制(if....else)去分别执行 shell 命令。 更多工作流及 hql 脚本定义见参考资料。
+    hive -e执行sql语句
+</code></pre><h4 id="数据可视化"><a href="#数据可视化" class="headerlink" title="数据可视化"></a>数据可视化</h4><pre><code>Echarts：
+    百度前端技术部开发的，基于JavaScript的数据可视化图标库，
+    可以构建折线图(区域图)、柱状 图(条状图)、散点图(气泡图)、饼图(环形图)、
+    K 线图、地图、力导向布局图以及和弦图， 同时支持任意维度的堆积和多图表混合展现。
+javaEE中web.xml 的&lt;url-pattern&gt;/&lt;/url-pattern&gt; 是拦截所有，jsp除外
+
+1.Mybatis example 排序问题 example.setOrderByClause(&quot;`dateStr` ASC&quot;);
+查询结果便可以根据 dataStr 字段正序排列(从小到大)
+如何区分不同数据仓库层的表：
+2.Echarts 前端数据格式问题
+注意，当异步加载数据的时候，前端一般需要的是数据格式是数组。一定要对应上。在 这里我们可以使用 Java Bean 封装数据，然后转换成 json 扔到前端，对应    上相应的字段即 可。
+ObjectMapper om = new ObjectMapper(); beanJson = om.writeValueAsString(bean);
+3.Controller 返回的 json @RequestMapping(value=&quot;/xxxx&quot;,produces=&quot;application/json;charset=UTF-8&quot;)
+@ResponseBody    
+
+一般使用第一种[业内默认的]
+1.表之前加前缀 ods_T_access.log
+                dw_T_access.log
+2.针对不同的数据仓库层 建立对应的数据库 database
+</code></pre>
+      
+    </div>
+    
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2018/05/01/HDFS读写流程&Yarn执行流程/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">&lt;</strong>
+      <div class="article-nav-title">
+        
+          客户端向HDFS读写数据流程
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2018/05/01/Hive的优化：/" id="article-nav-older" class="article-nav-link-wrap">
+      <div class="article-nav-title">HIVE 总结</div>
+      <strong class="article-nav-caption">&gt;</strong>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+
+<div class="ds-share share" data-thread-key="点击流日志分析流程" data-title="点击流日志分析流程" data-url="http://yoursite.com/2018/05/01/点击流日志分析流程/"  data-images="http://7xkj1z.com1.z0.glb.clouddn.com/head.jpg" data-content="点击流日志分析流程">
+    <div class="ds-share-inline">
+      <ul  class="ds-share-icons-16">
+      	<li data-toggle="ds-share-icons-more"><a class="ds-more" href="javascript:void(0);">分享到：</a></li>
+        <li><a class="ds-weibo" href="javascript:void(0);" data-service="weibo">微博</a></li>
+        <li><a class="ds-qzone" href="javascript:void(0);" data-service="qzone">QQ空间</a></li>
+        <li><a class="ds-qqt" href="javascript:void(0);" data-service="qqt">腾讯微博</a></li>
+        <li><a class="ds-wechat" href="javascript:void(0);" data-service="wechat">微信</a></li>
+      </ul>
+      <div class="ds-share-icons-more">
+      </div>
+    </div>
+ </div>
+ 
+
+
+
+
+
+</div>
+      <footer id="footer">
+  <div class="outer">
+    <div id="footer-info">
+      <div class="footer-left">
+        &copy; 2018 rongyuewu
+      </div>
+        <div class="footer-right">
+          <a href="http://hexo.io/" target="_blank">Hexo</a>  Theme <a href="https://github.com/smackgg/hexo-theme-smackdown" target="_blank">Smackdown</a>
+        </div>
+    </div>
+  </div>
+</footer>
+    </div>
+    
+  <link rel="stylesheet" href="/fancybox/jquery.fancybox.css">
+
+
+<script>
+	var yiliaConfig = {
+		fancybox: true,
+		mathjax: true,
+		animate: true,
+		isHome: false,
+		isPost: true,
+		isArchive: false,
+		isTag: false,
+		isCategory: false,
+		open_in_new: false
+	}
+</script>
+<script src="/js/main.js"></script>
+
+
+
+<script type="text/x-mathjax-config">
+MathJax.Hub.Config({
+    tex2jax: {
+        inlineMath: [ ['$','$'], ["\\(","\\)"]  ],
+        processEscapes: true,
+        skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+    }
+});
+
+MathJax.Hub.Queue(function() {
+    var all = MathJax.Hub.getAllJax(), i;
+    for(i=0; i < all.length; i += 1) {
+        all[i].SourceElement().parentNode.className += ' has-jax';                 
+    }       
+});
+</script>
+
+<script src="//cdn.bootcss.com/mathjax/2.7.0/MathJax.js"></script>
+
+
+  </div>
+</body>
+</html>
