@@ -163,10 +163,10 @@
 </nav>
       <div class="body-wrap">
   
-    <article id="post-ID-Mapping" class="article article-type-post" itemscope itemprop="blogPost">
+    <article id="post-storm的架构" class="article article-type-post" itemscope itemprop="blogPost">
   
     <div class="article-meta">
-      <a href="/2018/05/01/ID-Mapping/" class="article-date">
+      <a href="/2018/05/01/storm的架构/" class="article-date">
   	<time datetime="2018-05-01T13:29:30.000Z" itemprop="datePublished">2018-05-01</time>
 </a>
     </div>
@@ -180,8 +180,8 @@
         
   
     <h1 itemprop="name">
-      <a class="article-title" href="/2018/05/01/ID-Mapping/">
-        解密大数据ID-Mapping
+      <a class="article-title" href="/2018/05/01/storm的架构/">
+        storm
         
       </a>
     </h1>
@@ -192,28 +192,80 @@
     
     <div class="article-entry" itemprop="articleBody">
       
-        <p>集奥聚合带你解密大数据ID-Mapping<br>来源：数据观 时间：2016-06-27 14:46:24 作者：集奥聚合<br>　　谈到大数据，有一个非常基本但又关键的环节就是ID-Mapping（Identifier -Mapping）。ID-Mapping通俗的说就是把几份不同来源的数据，通过各种技术手段识别为同一个对象或主体，例如同一台设备（直接），同一个用户（间接），同一家企业（间接）等等，可以形象地理解为用户画像的“拼图”过程。一个用户的行为信息、属性数据是分散在很多不同的数据来源的，因此从单个数据来看，都相当于“盲人摸象”，看到的只是这个用户一个片面的画像，而ID-Mapping能把碎片化的数据全部串联起来，消除数据孤岛，提供一个用户的完整信息视图，同时让某一个领域的数据在另一个领域绽放出巨大的价值。<br>　　ID-Mapping有非常多的用处，比如跨屏跟踪和跨设备跟踪，将一个用户的手机、PC、平板等设备的上的行为信息串联到一起。再比如这两年非常热的程序化交易，它的一个重要环节就是要把当前广告请求的用户和第一方DMP平台里的用户历史兴趣数据匹配起来。可以说，没有ID-Mapping，程序化交易就变成了盲目投放，它的实时竞价，精准投放的优势也就不存在了。<br>　　ID-Mapping既然有这么大的作用，那么应该如何做好ID-Mapping呢？这个环节不是一个简单的按照Key匹配的过程，集奥聚合作为领先的第三方大数据公司，研发了多项ID-Mapping 的独家技术，用新的匹配技术和算法模型来重塑了ID-Mapping过程。据粗略评估，集奥聚合ID-Mapping系统有能力把十几个数据源的 56亿ID（Identifier，即标识符）匹配到一起，准确率达到 95%以上，有效用户总量提升了30%，平均每个用户的标签量提升200%以上。值得注意的是，这里的Identifier是指标识符，而并非Identity（身份信息），集奥聚合可在完全脱敏，不（也无需）识别、指出用户姓甚名谁的身份信息的情况下合法地将标识符对应至某匿名用户。<br>　　简单来说，集奥聚合ID-Mapping体系有三个层面。<br>　　第一个层面是物理Mapping<br>　　这是最单纯基本的层面，也就是如何精准地记录和标识一个用户，例如利用硬件设备码生成一个统一的设备码，利用一些强账号来标识用户等等。这个层面上主要的技术难度在于ID的稳定性、唯一性和持久性。<br>　　第二个层面是基于用户行为做迭代滚动Mapping<br>　　由于原始数据存在噪音，同一个用户的多份数据、多种ID之间是“多对多”的关系。那么哪些ID是可信的呢？<br>　　我们设计了一个置信度传播的机器学习图模型来帮助确定哪些身份ID是可信的。</p>
-<p>　　算法示意图如上，每个节点是一个UID或QQ号或GID等标识的潜在的“用户”<br>　　 一开始节点之间关系的概率是随机的<br>　　 其中总有两个ID的关系是强置信的prior<br>　　 迭代收敛后，哪些ID是归属于同一个用户的标识符被识别出来<br>　　大体来说，这个算法的过程是给每一个ID，以及两个ID，如IMEI和邮箱之间的pair关系都有一个预设的置信度。而所有的ID根据两两关联构成了一张图，那么每个ID的置信度根据这张网的结构传播给相关联的ID，同时也从其他ID那边接收置信度，而pair关系的置信度不变。当算法迭代收敛时，高置信度的ID就是可信的。同一个子图内的ID就标识了同一个用户。用类似的算法，我们也可以评价每个数据源的质量等。<br>　　第三个层面是基于用户兴趣做相似用户的合并<br>　　如果说层面二主要还在判断标识一个用户的ID是否正确，那么层面三致力于把行为相似的用户给合并起来。<br>　　例如，某一个用户的设备多次连接同一个Wi-Fi网关，但是每次链接都会随机更换ID，那么相当于这个用户的数据“分裂”在多个不同ID下。那么如何把这些ID合并成同一个用户呢？<br>　　除了上述做法之外，集奥聚合开发了相似用户合并技术。基于用户的上网时间偏好、网址访问偏好、点击行为偏好、浏览行为偏好、APP偏好和社交账号偏好等，为每个用户提取了上千个特征之后，进行相似用户的聚类。<br>　　聚类中选择类中心附近的用户，再加上一些辅助准则判定，就可以把用户合并起来。<br>　　经实际测试，可以把用户ID总量减少80%，同时保持用户合并的准确率在91%以上。使用的历史数据时间窗越长就越精准。仅此一项就能让用户的标签密度提升 500%。最早出现于安卓<br>深入浅出理解 Cookie Mapping<br>Posted on 2014 年 11 月 9 日 by Abbo<br>在RTB（实时竞价广告，Real-Time-Bidding）广告领域（当然实际上不仅仅是这个领域），有一个常见的词汇叫 Cookie Mapping（Cookie 匹配），一会又是DSP（需求方供应平台）与DSP的Cookie Mapping，一会又是DSP与Ad Exchange的Cookie Mapping，一会还有DMP（数据管理平台）与DSP的Cookie Mapping，已经完全把大家搞浑了。许多互联网广告从业者都不清楚到底什么是 Cookie Mapping，到底又是为什么要 Cookie Mapping。今天就以小小的笔记，分享大家疑问的解答。<br>用户唯一标识体系<br>在互联网中，我们有着许多标识唯一用户的技术手段，其中，最为常见的就是 Cookie 了（什么是Cookie请参看网站分析中的Cookie）。简单的多，Cookie具备几个特征：<br>•    唯一性，一个Cookie是唯一存在于一个域名下的；<br>•    归属权，一个Cookie必须属于某一个域名，且相互不能访问使用；<br>•    持久性，一个Cookie可以持久的存在于一个浏览器中。<br>正因为Cookie具备上述几个特征，也就衍生出Cookie在使用上的一些特点了，我们以DSP.COM（广告购买平台），ADX.COM（广告交易平台），DMP.COM（数据管理平台）为例，存在以下结论：<br>•    DSP.COM，ADX.COM，DMP.COM都存在各自的用户标识体系（各自定义的唯一ID标识）；<br>•    用户Abbo在上述三个产品的ID分别是dsp-1，adx-a，dmp-①，且相互不能访问使用。<br>就这样，DSP.COM，ADX.COM，DMP.COM都可以唯一的标识出用户Abbo，但他们并不能互相读取标识信息。<br>共享用户特征<br>由于客户需求，广告主在DSP.COM，ADX.COM，DMP.COM均有业务存在：<br>•    广告主使用DSP.COM进行广告投放，并且用户Abbo点击了游戏广告；<br>•    用户Abbo主动使用了DMP.COM提供的浏览器购物比价插件服务；<br>•    用户Abbo点击过位于交易平台ADX.COM上的职业学习、求职类广告；<br>刚好，DSP.COM识别出了Abbo喜欢玩游戏特征，DMP.COM识别出了Abbo是男性用户，ADX.COM识别出了Abbo是个年轻人。此时问题来了，由于三方的数据并不共享，因此对于广告主而言，仅知道dsp-1喜欢玩游戏，adx-a是年轻人，dmp-①是男性用户。广告主并不能直接知道Abbo是个喜爱玩游戏的年轻男性。<br>最终目标，我们需要不同产品体系中的用户的特征，合并绑定到一个用户上来，这也就是本文主题的关键——Cookie Mapping。<br>常见 Mapping 方式<br>我们刚刚看到，不同厂商、产品对用户都使用了不同的标识体系，诸如dsp-a，adx-a，dmp-①此类。因此，我们在Cookie Mapping中的最为基础的信息表——ID映射关系，俗称Cookie Mapping表。它负责使dsp-1，adx-a，dmp-①关联起来。<br>要使同一个用户在不同体系中关联起来，只有一个做法，那就是当用户发生行为的时候，同时能够联通多家厂商、产品。也就是出现了以下最常见的几种Mapping方式生成ID映射关系表：<br>•    用户加载网页代码时候，同时加载DSP.COM，ADX.COM，DMP.COM的代码，互相调用Mapping接口传输ID信息；（客户端Mapping）<br>•    用户加载网页代码时候，由服务端转发携带ID的请求，由ADX.COM服务器告诉DSP.COM相关ID信息。（服务端Mapping）<br>这样一来，经过大量的Mapping匹配后，不同厂商、产品之间也就自然形成了一套对应ID映射关系表格了。<br>移动端的 Mapping<br>移动终端的发展趋势，Cookie的效果已经远不如PC端了——PC端的用户上网行为，往往发生在一两款Web浏览软件（浏览器）中，而移动端App较为分散，用户行为、特征体现在更多的应用程序（App）上。况且，移动终端的唯一性，存在着更多的ID体系标识唯一用户，诸如MAC地址、iOS IDFA、Android ID等等。这些ID往往是具备一定唯一性，并且能够在不同App中共享的标识信息。因此，移动终端有时候也不需要 Mapping，如果约定俗成的使用某一类ID也是可以进行唯一用户标识的。<br>斗胆小结<br>斗胆小结本文，观点并不一定全部正确，如有不足，还请点出：<br>•    唯一标识需求将长期存在；<br>•    Cookie标识在PC端短期内（10年）不会消失；<br>•    多终端的发展，将出现更多标识体系；<br>•    Mapping ID的需求将长期存在。<br>Open-ID是一个很好的想法，也是一个很好的应用，特别是第三方开源Open-ID产品，个人觉得还是值得一</p>
-<p>一点做用户画像的人生经验（一）：ID强打通</p>
-<ol>
-<li>背景<br>在构建精准用户画像时，面临着这样一个问题：日志采集不能成功地收集用户的所有ID，且每条业务线有各自定义的UID用来标识用户，从而造成了用户ID的零碎化。因此，为了做用户标签的整合，用户ID之间的强打通（亦称为ID-Mapping）成了迫切的需求。大概三年前，在知乎上有这样一个与之相类似的问题：如何用MR实现并查集以对海量数据pair做聚合；目前为止还无人解答。本文将提供一个可能的解决方案——如何用MR计算框架来实现大数据下的ID强打通。<br>首先，简要地介绍下Android设备常见的ID：<br>•    IMEI（International Mobile Equipment Identity），即通常所说的手机序列号、手机“串号”，用于在移动电话网络中识别每一部独立的手机等行动通讯装置；序列号共有15位数字，前6位（TAC）是型号核准号码，代表手机类型。接着2位（FAC）是最后装配号，代表产地。后6位（SNR）是串号，代表生产顺序号。最后1位（SP）一般为0，是检验码，备用。<br>•    MAC(Media Access Control)一般代指MAC位址，为网卡的标识，用来定义网络设备的位置。<br>•    IMSI（International Mobile SubscriberIdentification Number），储存在SIM卡中，可用于区别移动用户的有效信息；其总长度不超过15位，同样使用0～9的数字。其中MCC是移动用户所属国家代号，占3位数字，中国的MCC规定为460；MNC是移动网号码，最多由两位数字组成，用于识别移动用户所归属的移动通信网;MSIN是移动用户识别码，用以识别某一移动通信网中的移动用户。<br>•    Android ID是系统随机生成的设备ID 为一串64位的编码（十六进制的字符串），通过它可以知道设备的寿命（在设备恢复出厂设置或刷机后，该值可能会改变）。</li>
-<li>设计<br>从图论的角度出发，ID强打通更像是将小连通图合并成一个大连通图；比如，在日志中出现如下三条记录，分别表示三个ID集合（小连通图）：<br>A   B   C<pre><code>C   D
-    D   E
-</code></pre>通过将三个小连通图合并，便可得到一个大连通图——完整的ID集合列表A B C D E。淘宝明风介绍了如何用Spark GraphX通过outerJoinVertices等运算符来做大数据下的多图合并；针对ID强打通的场景，也可采用类似的思路：日志数据构建大的稀疏图，然后采用自join的方式做打通。但是，我并没有选用GraphX，理由如下：<br>•    GraphX只支持有向图，而不支持无向图，而ID之间的关联关系是一个无向连通图；<br>•    GraphX的join操作不完全可控，“不完全可控”是指在做图合并时我们需要做过滤山寨设备、一对多的ID等操作，而在GraphX封装好的join算子上实现过滤操作则成本过高。<br>因而，基于MR计算模型（Spark框架）我设计新的ID打通算法；算法流程如下：打通的map阶段将ID集合id_set中每一个Id做key然后进行打散（id_set.map(id -&gt; id_set))），Reduce阶段按key做id_set的合并。通过观察发现：仅需要两步MR便可完成上述打通的操作。以上面的例子做说明，第一步MR完成后，打通ID集合为：A B C D、 C D E，第二步MR完成后便得到完整的ID集合列表A B C D E。但是，在两步MR过程中，所有的key都会对应一个聚合结果，而其中一些聚合结果只是中间结果。故而引入了key_set用于保存聚合时的key值，加入了第三步MR，通过比较key_set与id_set来对中间聚合结果进行过滤。算法的伪代码如下：<br>MR step1:<br> Map: <pre><code>input: id_set
-process: flatMap id_set;
-output: id -&gt; (id_set, 1)
-</code></pre> Rduce:<pre><code>process: reduceByKey
-output: id -&gt; (id_set, empty key_set, int_value)
-</code></pre></li>
-</ol>
-<p>MR step2:<br>    Map:<br>        input: id -&gt; (id_set, empty key_set, int_value)<br>        process: flatMap id_set, if have id_aggregation, then add key to key_set<br>        output: id -&gt; (id_set, key_set, int_value)<br>    Reduce:<br>        process: reduceByKey<br>        output: id -&gt; (id_set, key_set, int_value)</p>
-<p>MR step3:<br>    Map:<br>        input: id -&gt; (id_set, empty key_set, int_value)<br>        process: flatMap id_set, if have id_aggregation, then add key to key_set<br>        output: id -&gt; (id_set, key_set, int_value)<br>    Reduce:<br>        process: reduceByKey<br>        output: id -&gt; (id_set, key_set, int_value)</p>
-<p>Filters:<br>    process: if have id_aggregation, then add key to key_set<br>    filter: if no id_aggregation or key_set == id_set<br>    distinct</p>
-<ol start="3">
-<li>实现<br>针对上述ID强打通算法，Spark实现代码如下：<br>case class DvcId(id: String, value: String)<br>val log: RDD[mutable.Set[DvcId]]// MR1val rdd1: RDD[(DvcId, (mutable.Set[DvcId], mutable.Set[DvcId], Int))] = log<br>.flatMap { set =&gt;<br> set.map(t =&gt; (t, (set, 1)))<br>}.reduceByKey { (t1, t2) =&gt;<br> t1._1 ++= t2._1<br> val added = t1._2 + t2._2<br> (t1._1, added)<br>}.map { t =&gt;<br> (t._1, (t._2._1, mutable.Set.empty[DvcId], t._2._2))<br>}// MR2val rdd2: RDD[(DvcId, (mutable.Set[DvcId], mutable.Set[DvcId], Int))] = rdd1<br>.flatMap(flatIdSet).reduceByKey(tuple3Add)// MR3val rdd3: RDD[(DvcId, (mutable.Set[DvcId], mutable.Set[DvcId], Int))] = rdd2<br>.flatMap(flatIdSet).reduceByKey(tuple3Add)// filterval rdd4 = rdd3.filter { t =&gt;<br>t._2._2 += t._1<br>t._2._3 == 1 || (t._2._1 – t._2.<em>2).isEmpty<br>}.map(</em>._2._1).distinct()<br>// flat id_setdef flatIdSet(row: (DvcId, (mutable.Set[DvcId], mutable.Set[DvcId], Int))) = {<br>row._2._3 match {<br> case 1 =&gt;<br>   Array((row._1, (row._2._1, row._2._2, row._2._3)))<br> case _ =&gt;<br>   row._2._2 += row._1 // add key to keySet<br>   row._2._1.map(d =&gt; (d, (row._2._1, row._2._2, row._2._3))).toArray<br>}<br>}<br>def tuple3Add(t1: (mutable.Set[DvcId], mutable.Set[DvcId], Int),<pre><code>t2: (mutable.Set[DvcId], mutable.Set[DvcId], Int)) = {
-</code></pre>t1._1 ++= t2._1<br>t1._2 ++= t2._2<br>val added = t1._3 + t2._3<br>(t1._1, t1._2, added)<br>}<br>其中，引入常量1是为了标记该条记录是否发生了ID聚合的情况。<br>ID强打通算法实现起来比较简单，但是在实际的应用时，日志数据往往是带噪声的：<br>•    有山寨设备；<br>•    ID之间存在着一对多的情况，比如，各业务线的UID的靠谱程度不一，有的UID会对应到多个设备。<br>另外，ID强打通后是HDFS的离线数据，为了提供线上服务、保证ID之间的一一对应关系，应选择何种分布式数据库、表应如何设计、如何做到数据更新时而不影响线上服务等等，则是另一个需要思考的问题。</li>
-</ol>
+        <h1 id="storm"><a href="#storm" class="headerlink" title="storm"></a>storm</h1><p><img src="http://m.qpic.cn/psb?/V11BXxlE33Kp9F/t7Rbr8aYgIO4*9TbdsjJMgxTPY8JHwAmijtuJfP2rbo!/b/dEMBAAAAAAAA&amp;bo=wAY4BAAAAAADN.g!&amp;rf=viewer_4" alt=""></p>
+<h3 id="Storm架构"><a href="#Storm架构" class="headerlink" title="Storm架构"></a>Storm架构</h3><pre><code>类似于Hadoop的架构，主从(Master/Slave)
+Nimbus: 主
+    集群的主节点，负责任务(task)的指派和分发、资源的分配
+Supervisor: 从
+    可以启动多个Worker，具体几个呢？可以通过配置来指定
+    一个Topo可以运行在多个Worker之上，也可以通过配置来指定
+    集群的从节点，(负责干活的)，负责执行任务的具体部分
+    启动和停止自己管理的Worker进程
+无状态，在他们上面的信息(元数据)会存储在ZK中
+Worker: 运行具体组件逻辑(Spout/Bolt)的进程
+=====================分割线===================
+task： 
+    Spout和Bolt
+    Worker中每一个Spout和Bolt的线程称为一个Task
+executor： spout和bolt可能会共享一个线程
+</code></pre><h5 id="提交代码到集群："><a href="#提交代码到集群：" class="headerlink" title="提交代码到集群："></a>提交代码到集群：</h5><pre><code>storm jar /home/hadoop/lib/storm-1.0.jar com.bigdata.ClusterSumStormTopology
+</code></pre><h5 id="storm-其他命令的使用"><a href="#storm-其他命令的使用" class="headerlink" title="storm 其他命令的使用"></a>storm 其他命令的使用</h5><pre><code>list
+    Syntax: storm list
+    List the running topologies and their statuses.
+如何停止作业
+    kill
+        Syntax: storm kill topology-name [-w wait-time-secs]
+</code></pre><p>并行度</p>
+<pre><code>一个worker进程执行的是一个topo的子集
+一个worker进程会启动1..n个executor线程来执行一个topo的component
+一个运行的topo就是由集群中多台物理机上的多个worker进程组成
 
+executor是一个被worker进程启动的单独线程，每个executor只会运行1个topo的一个component
+task是最终运行spout或者bolt代码的最小执行单元
+
+默认：
+    一个supervisor节点最多启动4个worker进程  
+    每一个topo默认占用一个worker进程         
+    每个worker进程会启动一个executor        
+    每个executor启动一个task   
+
+Total slots:4  
+Executors: 3   但是stormUI上是 spout + bolt = 2  why 3?
+隐藏的acker 导致的
+</code></pre><h5 id="通过代码对并行度的理解："><a href="#通过代码对并行度的理解：" class="headerlink" title="通过代码对并行度的理解："></a>通过代码对并行度的理解：</h5><pre><code>Config conf = new Config();
+conf.setNumWorkers(2); // use two worker processes
+topologyBuilder.setSpout(&quot;blue-spout&quot;, new BlueSpout(), 2); // set parallelism hint to 2
+topologyBuilder.setBolt(&quot;green-bolt&quot;, new GreenBolt(), 2)
+           .setNumTasks(4)
+           .shuffleGrouping(&quot;blue-spout&quot;);topologyBuilder.setBolt(&quot;yellow-bolt&quot;, new YellowBolt(), 6)
+           .shuffleGrouping(&quot;green-bolt&quot;);StormSubmitter.submitTopology(
+    &quot;mytopology&quot;,
+    conf,
+    topologyBuilder.createTopology()
+);
+
+##解释：
+conf.setNumWorkers(2) ---&gt;两个worker
+setSpout(&quot;blue-spout&quot;, new BlueSpout(), 2)---&gt; 2个spout executor 对应默认的2个task
+setBolt(&quot;green-bolt&quot;, new GreenBolt(), 2).setNumTasks(4) ---&gt; 2个executor 4个task(因为它指定了setNumTasks个数)
+
+结果：
+1个topology
+2个workers  
+2+2+2[2个worker 就有2个acker] = 6个executors  
+2+4+2[2个worker 就有2个acker默认2个task] = 8个task
+</code></pre><h5 id="修改正在运行的topology的并行度："><a href="#修改正在运行的topology的并行度：" class="headerlink" title="修改正在运行的topology的并行度："></a>修改正在运行的topology的并行度：</h5><pre><code>#Reconfigure the topology &quot;mytopology&quot; to use 5 worker processes,
+#the spout &quot;blue-spout&quot; to use 3 executors 
+#the bolt &quot;yellow-bolt&quot; to use 10 executors.
+
+1.可以使用StormUI来rebalance the topology.
+2.也可以使用命令行来修改：$ storm rebalance mytopology -n 5 -e blue-spout=3 -e yellow-bolt=10
+</code></pre><p>stream grouping分组策略内置[build-in]有8种：</p>
+<pre><code>常用的有两种：
+1.shuffle grouping 随机分配也就是轮询RoundRobin 这样不会造成数据倾斜
+2.fileds grouping 比如按照字段hash取模分组 
+如果想自定义分组策略：--&gt; 自定义分组策略需要实现CustomStreamGroup接口
+</code></pre>
       
     </div>
     
@@ -743,6 +795,105 @@ ObjectMapper om = new ObjectMapper(); beanJson = om.writeValueAsString(bean);
 
 
   
+    <article id="post-电商分析指标" class="article article-type-post" itemscope itemprop="blogPost">
+  
+    <div class="article-meta">
+      <a href="/2018/04/05/电商分析指标/" class="article-date">
+  	<time datetime="2018-04-05T13:29:30.000Z" itemprop="datePublished">2018-04-05</time>
+</a>
+    </div>
+  
+  <div class="article-inner">
+    
+      <input type="hidden" class="isFancy" />
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2018/04/05/电商分析指标/">
+        电商常见分析指标
+        
+      </a>
+    </h1>
+  
+
+      </header>
+      
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <p>电商常见分析指标<br>信息流、物流和资金流三大平台是电子商务的三个最为重要的平台。而电子商务信息系统最核心的能力是大数据能力，包括大数据处理、数据分析和数据挖掘能力。无论是电商平台（如淘宝）还是在电商平台上销售产品的卖家，都需要掌握大数据分析的能力。越成熟的电商平台，越需要以通过大数据能力驱动电子商务运营的精细化，更好的提升运营效果，提升业绩。构建系统的电子商务数据分析指标体系是数据电商精细化运营的重要前提，本文将重点介绍电商数据分析指标体系。<br>电商数据分析指标体系分为八大类指标，包括总体运营指标、网站流量累指标、销售转化指标、客户价值指标、商品及供应链指标、营销活动指标、风险控制指标和市场竞争指标。不同类别指标对应电商运营的不同环节，如网站流量指标对应的是网站运营环节，销售转化、客户价值和营销活动指标对应的是电商销售环节。<br>1.电商总体运营指标<br><img src="https://s1.ax1x.com/2018/05/03/CYaO3t.png" alt="CYaO3t.png"></p>
+<p>电商总体运营整体指标主要面向的人群电商运营的高层，通过总体运营指标评估电商运营的整体效果。电商总体运营整体指标包括四方面的指标：</p>
+<p>（1）流量类指标</p>
+<p>独立访客数（UV），指访问电商网站的不重复用户数。对于PC网站，统计系统会在每个访问网站的用户浏览器上“种”一个cookie来标记这个用户，这样每当被标记cookie的用户访问网站时，统计系统都会识别到此用户。在一定统计周期内如（一天）统计系统会利用消重技术，对同一cookie在一天内多次访问网站的用户仅记录为一个用户。而在移动终端区分独立用户的方式则是按独立设备计算独立用户。</p>
+<p>页面访问数（PV），即页面浏览量，用户每一次对电商网站或着移动电商应用中的每个网页访问均被记录一次，用户对同一页面的多次访问，访问量累计。<br>人均页面访问数，即页面访问数（PV）／独立访客数，该指标反映的是网站访问粘性。</p>
+<p>（2）订单产生效率指标</p>
+<p>总订单数量，即访客完成网上下单的订单数之和。<br>访问到下单的转化率，即电商网站下单的次数与访问该网站的次数之比。</p>
+<p>（3）总体销售业绩指标</p>
+<p>网站成交额（GMV），电商成交金额，即只要网民下单，生成订单号，便可以计算在GMV里面。<br>销售金额。销售金额是货品出售的金额总额。</p>
+<p>注：无论这个订单最终是否成交，有些订单下单未付款或取消，都算GMV，销售金额一般只指实际成交金额，所以，GMV的数字一般比销售金额大。</p>
+<p>客单价，即订单金额与订单数量的比值。</p>
+<p>（4）整体指标</p>
+<p>销售毛利，是销售收入与成本的差值。销售毛利中只扣除了商品原始成本，不扣除没有计入成本的期间费用（管理费用、财务费用、营业费用）。<br>毛利率，是衡量电商企业盈利能力的指标，是销售毛利与销售收入的比值。如京东的2014年毛利率连续四个季度稳步上升，从第一季度的10.0％上升至第四季度的12.7％，体现出京东盈利能力的提升。</p>
+<p>2.网站流量指标<br><img src="https://s1.ax1x.com/2018/05/03/CYa6AJ.png" alt="CYa6AJ.png"></p>
+<p>（1）流量规模类指标<br>常用的流量规模类指标包括独立访客数和页面访问数，相应的指标定义在前文（电商总体运营指标）已经描述，在此不在赘述</p>
+<p>（2）流量成本累指标<br>单位访客获取成本。该指标指在流量推广中，广告活动产生的投放费用与广告活动带来的独立访客数的比值。单位访客成本最好与平均每个访客带来的收入以及这些访客带来的转化率进行关联分析。若单位访客成本上升，但访客转化率和单位访客收入不变或下降，则很可能流量推广出现问题，尤其要关注渠道推广的作弊问题。</p>
+<p>（3）流量质量类指标<br>跳出率（Bounce Rate）也被称为蹦失率，为浏览单页即退出的次数/该页访问次数，跳出率只能衡量该页做为着陆页面（LandingPage）的访问。如果花钱做推广，着落页的跳出率高，很可能是因为推广渠道选择出现失误，推广渠道目标人群和和被推广网站到目标人群不够匹配，导致大部分访客来了访问一次就离开。</p>
+<p>页面访问时长。页访问时长是指单个页面被访问的时间。并不是页面访问时长越长越好，要视情况而定。对于电商网站，页面访问时间要结合转化率来看，如果页面访问时间长，但转化率低，则页面体验出现问题的可能性很大。</p>
+<p>人均页面浏览量。人均页面浏览量是指在统计周期内，平均每个访客所浏览的页面量。人均页面浏览量反应的是网站的粘性。</p>
+<p>（4）会员类指标</p>
+<p>注册会员数。指一定统计周期内的注册会员数量。<br>活跃会员数。活跃会员数，指在一定时期内有消费或登录行为的会员总数。<br>活跃会员率。即活跃会员占注册会员总数的比重。<br>会员复购率。指在统计周期内产生二次及二次以上购买的会员占购买会员的总数。<br>会员平均购买次数。指在统计周期内每个会员平均购买的次数，即订单总数/购买用户总数。会员复购率高的电商网站平均购买次数也高。<br>会员回购率。指上一期末活跃会员在下一期时间内有购买行为的会员比率。<br>会员留存率。会员在某段时间内开始访问你的网站，经过一段时间后，仍然会继续访问你的网站就被认作是留存，这部分会员占当时新增会员的比例就是新会员留存率，这种留存的计算方法是按照活跃来计算，另外一种计算留存的方法是按消费来计算，即某段的新增消费用户在往后一段时间时间周期（时间周期可以是日、周、月、季度和半年度）还继续消费的会员比率。留存率一般看新会员留存率，当然也可以看活跃会员留存。留存率反应的是电商留住会员的能力。</p>
+<p>3.网站销售（转化率）类指标<br><img src="https://s1.ax1x.com/2018/05/03/CYaghR.png" alt="CYaghR.png"></p>
+<p>（1）购物车类指标<br>基础类指标，包括一定统计周期内加入购物车次数、加入购物车买家数、加入购物车买家数以及加入购物车商品数。<br>转化类指标，主要是购物车支付转化率，即一定周期内加入购物车商品支付买家数与加入购物车购买家数的比值。</p>
+<p>（2）下单类指标<br>基础类指标，包括一定统计周期内的下单笔数、下单金额以及下单买家数。<br>转化类指标，主要是浏览下单转化率，即下单买家数与网站访客数（UV）的比值。</p>
+<p>（3）支付类指标<br>基础统计类指标，包括一定统计周期内支付金额、支付买家数和支付商品数。<br>转化类指标。包括浏览-支付买家转化率（支付买家数/网站访客数）、下单-支付金额转化率（支付金额/下单金额）、下单-支付买家数转化率（支付买家数/下单买家数）和下单-支付时长（下单时间到支付时间的差值）。</p>
+<p>4.客户价值类指标<br><img src="https://s1.ax1x.com/2018/05/03/CYaW1x.png" alt="CYaW1x.png"></p>
+<p>客户指标。常见客户指标包括一定统计周期内的累计购买客户数和客单价。客单价是指每一个客户平均购买商品的金额，也即是平均交易金额，即成交金额与成交用户数的比值。</p>
+<p>新客户指标。常见新客户指标包括一定统计周期内的新客户数量、新客户获取成本和新客户客单价。其中，新客户客单价是指第一次在店铺中产生消费行为的客户所产生交易额与新客户数量的比值。影响新客户客单价的因素除了与推广渠道的质量有关系，还与电商店铺活动以及关联销售有关。</p>
+<p>老客户指标。常见老客户指标包括消费频率、最近一次购买时间、消费金额和重复购买率。消费频率是指客户在一定期间内所购买的次数；最近一次购买时间表示客户最近一次购买的时间离现在有多远；客户消费金额指客户在最近一段时间内购买的金额。消费频率越高，最近一次购买时间离现在越近，消费金额越高的客户越有价值。重复购买率则指消费者对该品牌产品或者服务的重复购买次数，重复购买率越多，则反应出消费者对品牌的忠诚度就越高，反之则越低。重复购买率可以按两种口径来统计：第一种，从客户数角度，重复购买率指在一定周期内下单次数在两次及两次以上的人数与总下单人数之比，如在一个月内，有100个客户成交，其中有20个是购买两次及以上，则重复购买率为20%；第二种，按交易计算，即重复购买交易次数与总交易次数的比值，如某月内，一共产生了100笔交易，其中有20个人有了二次购买，这20人中的10个人又有了三次购买，则重复购买次数为30次，重复购买率为30%。</p>
+<p>5.商品类指标<br><img src="https://s1.ax1x.com/2018/05/03/CYafc6.png" alt="CYafc6.png"></p>
+<p>产品总数指标。包括SKU、SPU和在线SPU。SKU是物理上不可分割的最小存货单位。SPU即Standard Product Unit （标准化产品单元），SPU是商品信息聚合的最小单位，是一组可复用、易检索的标准化信息的集合，该集合描述了一个产品的特性。通俗点讲，属性值、特性相同的商品就可以称为一个SPU。如iphone5S是一个SPU，而iPhone 5S配置为16G版、4G手机、颜色为金色、网络类型为TD-LTE/TD-SCDMA/WCDMA/GSM则是一个SKU。在线SPU则是在线商品的SPU数。</p>
+<p>产品优势性指标。主要是独家产品的收入占比，即独家销售的产品收入占总销售收入的比例。</p>
+<p>品牌存量指标。包括品牌数和在线品牌数指标。品牌数指商品的品牌总数量。在线品牌数则指在线商品的品牌总数量。</p>
+<p>上架。包括上架商品SKU数、上架商品SPU数、上架在线SPU数、上架商品数和上架在线商品数。</p>
+<p>首发。包括首次上架商品数和首次上架在线商品数。</p>
+<p>6.市场营销活动指标<br><img src="https://s1.ax1x.com/2018/05/03/CYaIBD.png" alt="CYaIBD.png"></p>
+<p>市场营销活动指标。包括新增访问人数、新增注册人数、总访问次数、订单数量、下单转化率以及ROI。其中，下单转化率是指活动期间，某活动所带来的下单的次数与访问该活动的次数之比。投资回报率（ROI）是指，某一活动期间，产生的交易金额与活动投放成本金额的比值。</p>
+<p>广告投放指标。包括新增访问人数、新增注册人数、总访问次数、订单数量、UV订单转化率、广告投资回报率。其中，下单转化率是指某广告所带来的下单的次数与访问该活动的次数之比。投资回报率（ROI）是指，某广告产生的交易金额与广告投放成本金额的比值。</p>
+<p>7.风控类指标<br><img src="https://s1.ax1x.com/2018/05/03/CYa7AH.png" alt="CYa7AH.png"></p>
+<p>买家评价指标。包括买家评价数，买家评价卖家数、买家评价上传图片数、买家评价率、买家好评率以及卖家差评率。其中，买家评价率是指某段时间参与评价的卖家与该时间段买家数量的比值，是反映用户对评价的参与度，电商网站目前都在积极引导用户评价，以作为其他买家购物时候的参考。买家好评率指某段时间内好评的买家数量与该时间段买家数量的比值。同样，买家差评率指某段时间内差评的买家数量与该时间段买家数量的比值。尤其是买家差评率，是非常值得关注的指标，需要监控起来，一旦发现买家差评率在加速上升，一定要提高警惕，分析引起差评率上升的原因，及时改进。</p>
+<p>买家投诉类指标。包括发起投诉（或申诉），撤销投诉（或申诉），投诉率（买家投诉人数占买家数量的比例）等。投诉量和投诉率都需要及时监控，以发现问题，及时优化。</p>
+<p>8.市场竞争类指标<br><img src="https://s1.ax1x.com/2018/05/03/CYaHNd.png" alt="CYaHNd.png"></p>
+<p>市场份额相关指标，包括市场占有率、市场扩大率和用户份额。市场占有率指电商网站交易额占同期所有同类型电商网站整体交易额的比重；市场扩大率指购物网站占有率较上一个统计周期增长的百分比；用户份额指购物网站独立访问用户数占同期所有B2C购物网站合计独立访问用户数的比例。</p>
+<p>网站排名，包括交易额排名和流量排名。交易额排名指电商网站交易额在所有同类电商网站中的排名；流量排名指电商网站独立访客数量在所有同类电商网站中的排名。</p>
+<p>总之，本文介绍了电商数据分析的基础指标体系，涵盖了流量、销售转化率、客户价值、商品类目、营销活动、风控和市场竞争指标，这些指标都需要系统化的进行统计和监控，才能更好的发现电商运营健康度的问题，以更好及时改进和优化，提升电商收入。如销售转化率，其本质上是一个漏斗模型，如从网站首页到最终购买各个阶段的转化率的监控和分析是网站运营健康度很重要的分析方向。</p>
+
+      
+    </div>
+    
+    <div class="article-info article-info-index">
+      
+      
+      
+
+      
+      <div class="clearfix"></div>
+    </div>
+      
+    
+  </div>
+  
+</article>
+
+
+
+
+
+
+
+  
     <article id="post-HBASE：出自Google论文的发表" class="article article-type-post" itemscope itemprop="blogPost">
   
     <div class="article-meta">
@@ -916,105 +1067,6 @@ b).根据业务来对RowKey的设计：
 </code></pre><h5 id="补充文件类型-tsv-tab-csv-comma-："><a href="#补充文件类型-tsv-tab-csv-comma-：" class="headerlink" title="补充文件类型 .tsv[tab] .csv[comma]："></a>补充文件类型 .tsv[tab] .csv[comma]：</h5><pre><code>user.tsv tsv后缀格式的文件：每行数据以tab 制表符分割的 
 user.csv csv后缀格式的文件：每行数据以逗号分割的
 </code></pre>
-      
-    </div>
-    
-    <div class="article-info article-info-index">
-      
-      
-      
-
-      
-      <div class="clearfix"></div>
-    </div>
-      
-    
-  </div>
-  
-</article>
-
-
-
-
-
-
-
-  
-    <article id="post-电商分析指标" class="article article-type-post" itemscope itemprop="blogPost">
-  
-    <div class="article-meta">
-      <a href="/2018/04/05/电商分析指标/" class="article-date">
-  	<time datetime="2018-04-05T13:29:30.000Z" itemprop="datePublished">2018-04-05</time>
-</a>
-    </div>
-  
-  <div class="article-inner">
-    
-      <input type="hidden" class="isFancy" />
-    
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2018/04/05/电商分析指标/">
-        电商常见分析指标
-        
-      </a>
-    </h1>
-  
-
-      </header>
-      
-    
-    <div class="article-entry" itemprop="articleBody">
-      
-        <p>电商常见分析指标<br>信息流、物流和资金流三大平台是电子商务的三个最为重要的平台。而电子商务信息系统最核心的能力是大数据能力，包括大数据处理、数据分析和数据挖掘能力。无论是电商平台（如淘宝）还是在电商平台上销售产品的卖家，都需要掌握大数据分析的能力。越成熟的电商平台，越需要以通过大数据能力驱动电子商务运营的精细化，更好的提升运营效果，提升业绩。构建系统的电子商务数据分析指标体系是数据电商精细化运营的重要前提，本文将重点介绍电商数据分析指标体系。<br>电商数据分析指标体系分为八大类指标，包括总体运营指标、网站流量累指标、销售转化指标、客户价值指标、商品及供应链指标、营销活动指标、风险控制指标和市场竞争指标。不同类别指标对应电商运营的不同环节，如网站流量指标对应的是网站运营环节，销售转化、客户价值和营销活动指标对应的是电商销售环节。<br>1.电商总体运营指标<br><img src="https://s1.ax1x.com/2018/05/03/CYas74.png" alt="CYas74.png"></p>
-<p>电商总体运营整体指标主要面向的人群电商运营的高层，通过总体运营指标评估电商运营的整体效果。电商总体运营整体指标包括四方面的指标：</p>
-<p>（1）流量类指标</p>
-<p>独立访客数（UV），指访问电商网站的不重复用户数。对于PC网站，统计系统会在每个访问网站的用户浏览器上“种”一个cookie来标记这个用户，这样每当被标记cookie的用户访问网站时，统计系统都会识别到此用户。在一定统计周期内如（一天）统计系统会利用消重技术，对同一cookie在一天内多次访问网站的用户仅记录为一个用户。而在移动终端区分独立用户的方式则是按独立设备计算独立用户。</p>
-<p>页面访问数（PV），即页面浏览量，用户每一次对电商网站或着移动电商应用中的每个网页访问均被记录一次，用户对同一页面的多次访问，访问量累计。<br>人均页面访问数，即页面访问数（PV）／独立访客数，该指标反映的是网站访问粘性。</p>
-<p>（2）订单产生效率指标</p>
-<p>总订单数量，即访客完成网上下单的订单数之和。<br>访问到下单的转化率，即电商网站下单的次数与访问该网站的次数之比。</p>
-<p>（3）总体销售业绩指标</p>
-<p>网站成交额（GMV），电商成交金额，即只要网民下单，生成订单号，便可以计算在GMV里面。<br>销售金额。销售金额是货品出售的金额总额。</p>
-<p>注：无论这个订单最终是否成交，有些订单下单未付款或取消，都算GMV，销售金额一般只指实际成交金额，所以，GMV的数字一般比销售金额大。</p>
-<p>客单价，即订单金额与订单数量的比值。</p>
-<p>（4）整体指标</p>
-<p>销售毛利，是销售收入与成本的差值。销售毛利中只扣除了商品原始成本，不扣除没有计入成本的期间费用（管理费用、财务费用、营业费用）。<br>毛利率，是衡量电商企业盈利能力的指标，是销售毛利与销售收入的比值。如京东的2014年毛利率连续四个季度稳步上升，从第一季度的10.0％上升至第四季度的12.7％，体现出京东盈利能力的提升。</p>
-<p>2.网站流量指标<br><img src="https://s1.ax1x.com/2018/05/03/CYa6AJ.png" alt="CYa6AJ.png"></p>
-<p>（1）流量规模类指标<br>常用的流量规模类指标包括独立访客数和页面访问数，相应的指标定义在前文（电商总体运营指标）已经描述，在此不在赘述</p>
-<p>（2）流量成本累指标<br>单位访客获取成本。该指标指在流量推广中，广告活动产生的投放费用与广告活动带来的独立访客数的比值。单位访客成本最好与平均每个访客带来的收入以及这些访客带来的转化率进行关联分析。若单位访客成本上升，但访客转化率和单位访客收入不变或下降，则很可能流量推广出现问题，尤其要关注渠道推广的作弊问题。</p>
-<p>（3）流量质量类指标<br>跳出率（Bounce Rate）也被称为蹦失率，为浏览单页即退出的次数/该页访问次数，跳出率只能衡量该页做为着陆页面（LandingPage）的访问。如果花钱做推广，着落页的跳出率高，很可能是因为推广渠道选择出现失误，推广渠道目标人群和和被推广网站到目标人群不够匹配，导致大部分访客来了访问一次就离开。</p>
-<p>页面访问时长。页访问时长是指单个页面被访问的时间。并不是页面访问时长越长越好，要视情况而定。对于电商网站，页面访问时间要结合转化率来看，如果页面访问时间长，但转化率低，则页面体验出现问题的可能性很大。</p>
-<p>人均页面浏览量。人均页面浏览量是指在统计周期内，平均每个访客所浏览的页面量。人均页面浏览量反应的是网站的粘性。</p>
-<p>（4）会员类指标</p>
-<p>注册会员数。指一定统计周期内的注册会员数量。<br>活跃会员数。活跃会员数，指在一定时期内有消费或登录行为的会员总数。<br>活跃会员率。即活跃会员占注册会员总数的比重。<br>会员复购率。指在统计周期内产生二次及二次以上购买的会员占购买会员的总数。<br>会员平均购买次数。指在统计周期内每个会员平均购买的次数，即订单总数/购买用户总数。会员复购率高的电商网站平均购买次数也高。<br>会员回购率。指上一期末活跃会员在下一期时间内有购买行为的会员比率。<br>会员留存率。会员在某段时间内开始访问你的网站，经过一段时间后，仍然会继续访问你的网站就被认作是留存，这部分会员占当时新增会员的比例就是新会员留存率，这种留存的计算方法是按照活跃来计算，另外一种计算留存的方法是按消费来计算，即某段的新增消费用户在往后一段时间时间周期（时间周期可以是日、周、月、季度和半年度）还继续消费的会员比率。留存率一般看新会员留存率，当然也可以看活跃会员留存。留存率反应的是电商留住会员的能力。</p>
-<p>3.网站销售（转化率）类指标<br><img src="https://s1.ax1x.com/2018/05/03/CYaghR.png" alt="CYaghR.png"></p>
-<p>（1）购物车类指标<br>基础类指标，包括一定统计周期内加入购物车次数、加入购物车买家数、加入购物车买家数以及加入购物车商品数。<br>转化类指标，主要是购物车支付转化率，即一定周期内加入购物车商品支付买家数与加入购物车购买家数的比值。</p>
-<p>（2）下单类指标<br>基础类指标，包括一定统计周期内的下单笔数、下单金额以及下单买家数。<br>转化类指标，主要是浏览下单转化率，即下单买家数与网站访客数（UV）的比值。</p>
-<p>（3）支付类指标<br>基础统计类指标，包括一定统计周期内支付金额、支付买家数和支付商品数。<br>转化类指标。包括浏览-支付买家转化率（支付买家数/网站访客数）、下单-支付金额转化率（支付金额/下单金额）、下单-支付买家数转化率（支付买家数/下单买家数）和下单-支付时长（下单时间到支付时间的差值）。</p>
-<p>4.客户价值类指标<br><img src="https://s1.ax1x.com/2018/05/03/CYaW1x.png" alt="CYaW1x.png"></p>
-<p>客户指标。常见客户指标包括一定统计周期内的累计购买客户数和客单价。客单价是指每一个客户平均购买商品的金额，也即是平均交易金额，即成交金额与成交用户数的比值。</p>
-<p>新客户指标。常见新客户指标包括一定统计周期内的新客户数量、新客户获取成本和新客户客单价。其中，新客户客单价是指第一次在店铺中产生消费行为的客户所产生交易额与新客户数量的比值。影响新客户客单价的因素除了与推广渠道的质量有关系，还与电商店铺活动以及关联销售有关。</p>
-<p>老客户指标。常见老客户指标包括消费频率、最近一次购买时间、消费金额和重复购买率。消费频率是指客户在一定期间内所购买的次数；最近一次购买时间表示客户最近一次购买的时间离现在有多远；客户消费金额指客户在最近一段时间内购买的金额。消费频率越高，最近一次购买时间离现在越近，消费金额越高的客户越有价值。重复购买率则指消费者对该品牌产品或者服务的重复购买次数，重复购买率越多，则反应出消费者对品牌的忠诚度就越高，反之则越低。重复购买率可以按两种口径来统计：第一种，从客户数角度，重复购买率指在一定周期内下单次数在两次及两次以上的人数与总下单人数之比，如在一个月内，有100个客户成交，其中有20个是购买两次及以上，则重复购买率为20%；第二种，按交易计算，即重复购买交易次数与总交易次数的比值，如某月内，一共产生了100笔交易，其中有20个人有了二次购买，这20人中的10个人又有了三次购买，则重复购买次数为30次，重复购买率为30%。</p>
-<p>5.商品类指标<br><img src="https://s1.ax1x.com/2018/05/03/CYafc6.png" alt="CYafc6.png"></p>
-<p>产品总数指标。包括SKU、SPU和在线SPU。SKU是物理上不可分割的最小存货单位。SPU即Standard Product Unit （标准化产品单元），SPU是商品信息聚合的最小单位，是一组可复用、易检索的标准化信息的集合，该集合描述了一个产品的特性。通俗点讲，属性值、特性相同的商品就可以称为一个SPU。如iphone5S是一个SPU，而iPhone 5S配置为16G版、4G手机、颜色为金色、网络类型为TD-LTE/TD-SCDMA/WCDMA/GSM则是一个SKU。在线SPU则是在线商品的SPU数。</p>
-<p>产品优势性指标。主要是独家产品的收入占比，即独家销售的产品收入占总销售收入的比例。</p>
-<p>品牌存量指标。包括品牌数和在线品牌数指标。品牌数指商品的品牌总数量。在线品牌数则指在线商品的品牌总数量。</p>
-<p>上架。包括上架商品SKU数、上架商品SPU数、上架在线SPU数、上架商品数和上架在线商品数。</p>
-<p>首发。包括首次上架商品数和首次上架在线商品数。</p>
-<p>6.市场营销活动指标<br><img src="https://s1.ax1x.com/2018/05/03/CYaIBD.png" alt="CYaIBD.png"></p>
-<p>市场营销活动指标。包括新增访问人数、新增注册人数、总访问次数、订单数量、下单转化率以及ROI。其中，下单转化率是指活动期间，某活动所带来的下单的次数与访问该活动的次数之比。投资回报率（ROI）是指，某一活动期间，产生的交易金额与活动投放成本金额的比值。</p>
-<p>广告投放指标。包括新增访问人数、新增注册人数、总访问次数、订单数量、UV订单转化率、广告投资回报率。其中，下单转化率是指某广告所带来的下单的次数与访问该活动的次数之比。投资回报率（ROI）是指，某广告产生的交易金额与广告投放成本金额的比值。</p>
-<p>7.风控类指标<br><img src="https://s1.ax1x.com/2018/05/03/CYa7AH.png" alt="CYa7AH.png"></p>
-<p>买家评价指标。包括买家评价数，买家评价卖家数、买家评价上传图片数、买家评价率、买家好评率以及卖家差评率。其中，买家评价率是指某段时间参与评价的卖家与该时间段买家数量的比值，是反映用户对评价的参与度，电商网站目前都在积极引导用户评价，以作为其他买家购物时候的参考。买家好评率指某段时间内好评的买家数量与该时间段买家数量的比值。同样，买家差评率指某段时间内差评的买家数量与该时间段买家数量的比值。尤其是买家差评率，是非常值得关注的指标，需要监控起来，一旦发现买家差评率在加速上升，一定要提高警惕，分析引起差评率上升的原因，及时改进。</p>
-<p>买家投诉类指标。包括发起投诉（或申诉），撤销投诉（或申诉），投诉率（买家投诉人数占买家数量的比例）等。投诉量和投诉率都需要及时监控，以发现问题，及时优化。</p>
-<p>8.市场竞争类指标<br><img src="https://s1.ax1x.com/2018/05/03/CYaHNd.png" alt="CYaHNd.png"></p>
-<p>市场份额相关指标，包括市场占有率、市场扩大率和用户份额。市场占有率指电商网站交易额占同期所有同类型电商网站整体交易额的比重；市场扩大率指购物网站占有率较上一个统计周期增长的百分比；用户份额指购物网站独立访问用户数占同期所有B2C购物网站合计独立访问用户数的比例。</p>
-<p>网站排名，包括交易额排名和流量排名。交易额排名指电商网站交易额在所有同类电商网站中的排名；流量排名指电商网站独立访客数量在所有同类电商网站中的排名。</p>
-<p>总之，本文介绍了电商数据分析的基础指标体系，涵盖了流量、销售转化率、客户价值、商品类目、营销活动、风控和市场竞争指标，这些指标都需要系统化的进行统计和监控，才能更好的发现电商运营健康度的问题，以更好及时改进和优化，提升电商收入。如销售转化率，其本质上是一个漏斗模型，如从网站首页到最终购买各个阶段的转化率的监控和分析是网站运营健康度很重要的分析方向。</p>
-
       
     </div>
     
