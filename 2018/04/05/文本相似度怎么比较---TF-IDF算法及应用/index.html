@@ -9,12 +9,12 @@
   
 
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-  <meta name="description" content="【算法】TF-IDF算法及应用 2018-04-02 数据科学与人工智能小编邀请您，先思考：1 如何计算TF-IDF？2 TF-IDF有什么应用？3 如何提取文本的关键词和摘要？ 有一篇很长的文章，我要用计算机提取它的关键词（Automatic Keyphrase extraction），完全不加以人工干预，请问怎样才能正确做到？ 这个问题涉及到数据挖掘、文本处理、信息检索等很多计算机前沿领域，但">
+  <meta name="description" content="【算法】TF-IDF算法及应用 **小编邀请您，先思考：  1 如何计算TF-IDF？2 TF-IDF有什么应用？3 如何提取文本的关键词和摘要？**  有一篇很长的文章，我要用计算机提取它的关键词（Automatic Keyphrase extraction），完全不加以人工干预，请问怎样才能正确做到？ 这个问题涉及到数据挖掘、文本处理、信息检索等很多计算机前沿领域，但是出乎意料的是，有一个非常">
 <meta property="og:type" content="article">
 <meta property="og:title" content="文本相似度比较-----TF-IDF算法及应用">
 <meta property="og:url" content="http://yoursite.com/2018/04/05/文本相似度怎么比较---TF-IDF算法及应用/index.html">
 <meta property="og:site_name" content="Hexo">
-<meta property="og:description" content="【算法】TF-IDF算法及应用 2018-04-02 数据科学与人工智能小编邀请您，先思考：1 如何计算TF-IDF？2 TF-IDF有什么应用？3 如何提取文本的关键词和摘要？ 有一篇很长的文章，我要用计算机提取它的关键词（Automatic Keyphrase extraction），完全不加以人工干预，请问怎样才能正确做到？ 这个问题涉及到数据挖掘、文本处理、信息检索等很多计算机前沿领域，但">
+<meta property="og:description" content="【算法】TF-IDF算法及应用 **小编邀请您，先思考：  1 如何计算TF-IDF？2 TF-IDF有什么应用？3 如何提取文本的关键词和摘要？**  有一篇很长的文章，我要用计算机提取它的关键词（Automatic Keyphrase extraction），完全不加以人工干预，请问怎样才能正确做到？ 这个问题涉及到数据挖掘、文本处理、信息检索等很多计算机前沿领域，但是出乎意料的是，有一个非常">
 <meta property="og:locale" content="zh-Hans">
 <meta property="og:image" content="https://s1.ax1x.com/2018/05/04/Ct7BC9.png">
 <meta property="og:image" content="https://s1.ax1x.com/2018/05/04/Ct7cDK.png">
@@ -32,10 +32,10 @@
 <meta property="og:image" content="https://s1.ax1x.com/2018/05/04/CtqCAU.png">
 <meta property="og:image" content="https://s1.ax1x.com/2018/05/04/CtqPNF.png">
 <meta property="og:image" content="https://s1.ax1x.com/2018/05/04/CtqA39.png">
-<meta property="og:updated_time" content="2018-05-04T07:54:24.938Z">
+<meta property="og:updated_time" content="2018-05-04T08:20:05.151Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="文本相似度比较-----TF-IDF算法及应用">
-<meta name="twitter:description" content="【算法】TF-IDF算法及应用 2018-04-02 数据科学与人工智能小编邀请您，先思考：1 如何计算TF-IDF？2 TF-IDF有什么应用？3 如何提取文本的关键词和摘要？ 有一篇很长的文章，我要用计算机提取它的关键词（Automatic Keyphrase extraction），完全不加以人工干预，请问怎样才能正确做到？ 这个问题涉及到数据挖掘、文本处理、信息检索等很多计算机前沿领域，但">
+<meta name="twitter:description" content="【算法】TF-IDF算法及应用 **小编邀请您，先思考：  1 如何计算TF-IDF？2 TF-IDF有什么应用？3 如何提取文本的关键词和摘要？**  有一篇很长的文章，我要用计算机提取它的关键词（Automatic Keyphrase extraction），完全不加以人工干预，请问怎样才能正确做到？ 这个问题涉及到数据挖掘、文本处理、信息检索等很多计算机前沿领域，但是出乎意料的是，有一个非常">
 <meta name="twitter:image" content="https://s1.ax1x.com/2018/05/04/Ct7BC9.png">
   
     <link rel="alternative" href="/atom.xml" title="Hexo" type="application/atom+xml">
@@ -218,7 +218,10 @@
     <div class="article-entry" itemprop="articleBody">
       
         <p>【算法】TF-IDF算法及应用</p>
-<p>2018-04-02 数据科学与人工智能<br><strong>小编邀请您，先思考：<br>1 如何计算TF-IDF？<br>2 TF-IDF有什么应用？<br>3 如何提取文本的关键词和摘要？</strong></p>
+<p>**小编邀请您，先思考：</p>
+<blockquote>
+<p>1 如何计算TF-IDF？<br>2 TF-IDF有什么应用？<br>3 如何提取文本的关键词和摘要？**</p>
+</blockquote>
 <p>有一篇很长的文章，我要用计算机提取它的关键词（Automatic Keyphrase extraction），完全不加以人工干预，请问怎样才能正确做到？</p>
 <p>这个问题涉及到数据挖掘、文本处理、信息检索等很多计算机前沿领域，但是出乎意料的是，有一个非常简单的经典算法，可以给出令人相当满意的结果。它简单到都不需要高等数学，普通人只用10分钟就可以理解，这就是我今天想要介绍的TF-IDF（<a href="https://en.wikipedia.org/wiki/Tf%E2%80%93idf" target="_blank" rel="noopener">https://en.wikipedia.org/wiki/Tf%E2%80%93idf</a> ）算法。</p>
 <p>让我们从一个实例开始讲起。假定现在有一篇长文《中国的蜜蜂养殖》，我们准备用计算机提取它的关键词。</p>
@@ -237,23 +240,35 @@
 <p>TF-IDF算法的优点是简单快速，结果比较符合实际情况。缺点是，单纯以”词频”衡量一个词的重要性，不够全面，有时重要的词可能出现次数并不多。而且，这种算法无法体现词的位置信息，出现位置靠前的词与出现位置靠后的词，都被视为重要性相同，这是不正确的。（一种解决方法是，对全文的第一段和每一段的第一句话，给予较大的权重。）</p>
 <p><strong>找出相似文章</strong><br>我们再来研究另一个相关的问题。有些时候，除了找到关键词，我们还希望找到与原文章相似的其他文章。比如，”Google新闻”在主新闻下方，还提供多条相似的新闻。<br><img src="https://s1.ax1x.com/2018/05/04/Ctbs0K.jpg" alt="Ctbs0K.jpg"></p>
 <p>为了找出相似的文章，需要用到”余弦相似性” （ <a href="https://en.wikipedia.org/wiki/Cosine_similarity" target="_blank" rel="noopener">https://en.wikipedia.org/wiki/Cosine_similarity</a> ）（cosine similiarity）。下面，我举一个例子来说明，什么是”余弦相似性”。</p>
-<p>为了简单起见，我们先从句子着手。<br>　　句子A：我喜欢看电视，不喜欢看电影。<br>　　句子B：我不喜欢看电视，也不喜欢看电影。<br>请问怎样才能计算上面两句话的相似程度？<br>基本思路是：如果这两句话的用词越相似，它们的内容就应该越相似。因此，可以从词频入手，计算它们的相似程度。</p>
-<p><strong>第一步，分词。</strong><br>　　句子A：我/喜欢/看/电视，不/喜欢/看/电影。<br>　　句子B：我/不/喜欢/看/电视，也/不/喜欢/看/电影。</p>
-<p><strong>第二步，列出所有的词。</strong><br>　　我，喜欢，看，电视，电影，不，也。</p>
-<p><strong>第三步，计算词频。</strong><br>　　句子A：我 1，喜欢 2，看 2，电视 1，电影 1，不 1，也 0。<br>　　句子B：我 1，喜欢 2，看 2，电视 1，电影 1，不 2，也 1。</p>
-<p><strong>第四步，写出词频向量。</strong><br>　　句子A：[1, 2, 2, 1, 1, 1, 0]<br>　　句子B：[1, 2, 2, 1, 1, 2, 1]<br>到这里，问题就变成了如何计算这两个向量的相似程度。<br>我们可以把它们想象成空间中的两条线段，都是从原点（[0, 0, …]）出发，指向不同的方向。两条线段之间形成一个夹角，如果夹角为0度，意味着方向相同、线段重合；如果夹角为90度，意味着形成直角，方向完全不相似；如果夹角为180度，意味着方向正好相反。<strong>因此，我们可以通过夹角的大小，来判断向量的相似程度。夹角越小，就代表越相似。</strong><br><img src="https://s1.ax1x.com/2018/05/04/CtbckD.png" alt="CtbckD.png"><br>以二维空间为例，上图的a和b是两个向量，我们要计算它们的夹角θ。余弦定理告诉我们，可以用下面的公式求得：<br><img src="https://s1.ax1x.com/2018/05/04/Ctb2fH.png" alt="Ctb2fH.png"><br><img src="https://s1.ax1x.com/2018/05/04/Ctbf1A.png" alt="Ctbf1A.png"><br>假定a向量是[x1, y1]，b向量是[x2, y2]，那么可以将余弦定理改写成下面的形式：<br><img src="https://s1.ax1x.com/2018/05/04/CtbInP.png" alt="CtbInP.png"><br><img src="https://s1.ax1x.com/2018/05/04/Ctbo0f.png" alt="Ctbo0f.png"><br>数学家已经证明，余弦的这种计算方法对n维向量也成立。假定A和B是两个n维向量，A是 [A1, A2, …, An] ，B是 [B1, B2, …, Bn] ，则A与B的夹角θ的余弦等于：<br><img src="https://s1.ax1x.com/2018/05/04/CtbvXq.png" alt="CtbvXq.png"><br>使用这个公式，我们就可以得到，句子A与句子B的夹角的余弦。<br><img src="https://s1.ax1x.com/2018/05/04/CtqCAU.png" alt="CtqCAU.png"><br><strong>余弦值越接近1，就表明夹角越接近0度，也就是两个向量越相似，这就叫”余弦相似性”。</strong>所以，上面的句子A和句子B是很相似的，事实上它们的夹角大约为20.3度。<br>由此，我们就得到了”找出相似文章”的一种算法：<br>　　（1）使用TF-IDF算法，找出两篇文章的关键词；<br>　　（2）每篇文章各取出若干个关键词（比如20个），合并成一个集合，计算每篇文章对于这个集合中的词的词频（为了避免文章长度的差异，可以使用相对词频）；<br>　　（3）生成两篇文章各自的词频向量；<br>　　（4）计算两个向量的余弦相似度，值越大就表示越相似。<br>“余弦相似度”是一种非常有用的算法，只要是计算两个向量的相似程度，都可以采用它。</p>
+<p>为了简单起见，我们先从句子着手。</p>
+<blockquote>
+<p>   句子A：我喜欢看电视，不喜欢看电影。<br>   句子B：我不喜欢看电视，也不喜欢看电影。</p>
+</blockquote>
+<p>请问怎样才能计算上面两句话的相似程度？<br>基本思路是：如果这两句话的用词越相似，它们的内容就应该越相似。因此，可以从词频入手，计算它们的相似程度。</p>
+<p><strong>第一步，分词。</strong></p>
+<blockquote>
+<p>   句子A：我/喜欢/看/电视，不/喜欢/看/电影。<br>   句子B：我/不/喜欢/看/电视，也/不/喜欢/看/电影。</p>
+</blockquote>
+<p><strong>第二步，列出所有的词。</strong></p>
+<blockquote>
+<p>   我，喜欢，看，电视，电影，不，也。</p>
+</blockquote>
+<p><strong>第三步，计算词频。</strong></p>
+<blockquote>
+<p>   句子A：我 1，喜欢 2，看 2，电视 1，电影 1，不 1，也 0。<br>   句子B：我 1，喜欢 2，看 2，电视 1，电影 1，不 2，也 1。</p>
+</blockquote>
+<p><strong>第四步，写出词频向量。</strong></p>
+<blockquote>
+<p>   句子A：[1, 2, 2, 1, 1, 1, 0]<br>   句子B：[1, 2, 2, 1, 1, 2, 1]</p>
+</blockquote>
+<p>到这里，问题就变成了如何计算这两个向量的相似程度。<br>我们可以把它们想象成空间中的两条线段，都是从原点（[0, 0, …]）出发，指向不同的方向。两条线段之间形成一个夹角，如果夹角为0度，意味着方向相同、线段重合；如果夹角为90度，意味着形成直角，方向完全不相似；如果夹角为180度，意味着方向正好相反。<strong>因此，我们可以通过夹角的大小，来判断向量的相似程度。夹角越小，就代表越相似。</strong><br><img src="https://s1.ax1x.com/2018/05/04/CtbckD.png" alt="CtbckD.png"><br>以二维空间为例，上图的a和b是两个向量，我们要计算它们的夹角θ。余弦定理告诉我们，可以用下面的公式求得：<br><img src="https://s1.ax1x.com/2018/05/04/Ctb2fH.png" alt="Ctb2fH.png"><br><img src="https://s1.ax1x.com/2018/05/04/Ctbf1A.png" alt="Ctbf1A.png"><br>假定a向量是[x1, y1]，b向量是[x2, y2]，那么可以将余弦定理改写成下面的形式：<br><img src="https://s1.ax1x.com/2018/05/04/CtbInP.png" alt="CtbInP.png"><br><img src="https://s1.ax1x.com/2018/05/04/Ctbo0f.png" alt="Ctbo0f.png"><br>数学家已经证明，余弦的这种计算方法对n维向量也成立。假定A和B是两个n维向量，A是 [A1, A2, …, An] ，B是 [B1, B2, …, Bn] ，则A与B的夹角θ的余弦等于：<br><img src="https://s1.ax1x.com/2018/05/04/CtbvXq.png" alt="CtbvXq.png"><br>使用这个公式，我们就可以得到，句子A与句子B的夹角的余弦。<br><img src="https://s1.ax1x.com/2018/05/04/CtqCAU.png" alt="CtqCAU.png"><br><strong>余弦值越接近1，就表明夹角越接近0度，也就是两个向量越相似，这就叫”余弦相似性”。</strong>所以，上面的句子A和句子B是很相似的，事实上它们的夹角大约为20.3度。<br>由此，我们就得到了”找出相似文章”的一种算法：<br>　　（1）使用TF-IDF算法，找出两篇文章的关键词；<br>　　（2）每篇文章各取出若干个关键词（比如20个），合并成一个集合，计算每篇文章对于这个集合中的词的词频（为了避免文章长度的差异，可以使用相对词频）；<br>　　（3）生成两篇文章各自的词频向量；<br>　　（4）计算两个向量的余弦相似度，值越大就表示越相似。<br>“余弦相似度”是一种非常有用的算法，只要是计算两个向量的相似程度，都可以采用它。</p>
 <p><strong>自动摘要</strong><br>有时候，很简单的数学方法，就可以完成很复杂的任务。<br>前两部分就是很好的例子。仅仅依靠统计词频，就能找出关键词和相似文章。虽然它们算不上效果最好的方法，但肯定是最简便易行的方法。<br>接下来讨论如何通过词频，对文章进行自动摘要（Automatic summarization）。</p>
 <p>如果能从3000字的文章，提炼出150字的摘要，就可以为读者节省大量阅读时间。由人完成的摘要叫”人工摘要”，由机器完成的就叫”自动摘要”。许多网站都需要它，比如论文网站、新闻网站、搜索引擎等等。2007年，美国学者的论文《A Survey on Automatic Text Summarization》（Dipanjan Das, Andre F.T. Martins, 2007）总结了目前的自动摘要算法。其中，很重要的一种就是词频统计。</p>
-<p>这种方法最早出自1958年的IBM公司科学家H.P. Luhn的论文《The Automatic Creation of Literature Abstracts》。<br>Luhn博士认为，文章的信息都包含在句子中，有些句子包含的信息多，有些句子包含的信息少。”自动摘要”就是要找出那些包含信息最多的句子。<br>句子的信息量用”关键词”来衡量。如果包含的关键词越多，就说明这个句子越重要。Luhn提出用”簇”（cluster）表示关键词的聚集。<br><img src="https://s1.ax1x.com/2018/05/04/CtqPNF.png" alt="CtqPNF.png"><br>上图就是Luhn原始论文的插图，被框起来的部分就是一个”簇”。只要关键词之间的距离小于”门槛值”，它们就被认为处于同一个簇之中。Luhn建议的门槛值是4或5。也就是说，如果两个关键词之间有5个以上的其他词，就可以把这两个关键词分在两个簇。</p>
+<p>这种方法最早出自1958年的IBM公司科学家H.P. Luhn的论文《The Automatic Creation of Literature Abstracts》。<br>Luhn博士认为，文章的信息都包含在句子中，有些句子包含的信息多，有些句子包含的信息少。”自动摘要”就是要找出那些包含信息最多的句子。<br>句子的信息量用”关键词”来衡量。如果包含的关键词越多，就说明这个句子越重要。Luhn提出用”簇”（cluster）表示关键词的聚集。所谓”簇”就是包含多个关键词的句子片段。<br><img src="https://s1.ax1x.com/2018/05/04/CtqPNF.png" alt="CtqPNF.png"><br>上图就是Luhn原始论文的插图，被框起来的部分就是一个”簇”。只要关键词之间的距离小于”门槛值”，它们就被认为处于同一个簇之中。Luhn建议的门槛值是4或5。也就是说，如果两个关键词之间有5个以上的其他词，就可以把这两个关键词分在两个簇。</p>
 <p>下一步，对于每个簇，都计算它的重要性分值。<br><img src="https://s1.ax1x.com/2018/05/04/CtqA39.png" alt="CtqA39.png"><br>以前图为例，其中的簇一共有7个词，其中4个是关键词。因此，它的重要性分值等于 ( 4 x 4 ) / 7 = 2.3。</p>
 <p>然后，找出包含分值最高的簇的句子（比如5句），把它们合在一起，就构成了这篇文章的自动摘要。具体实现可以参见《Mining the Social Web: Analyzing Data from Facebook, Twitter, LinkedIn, and Other Social Media Sites》（O’Reilly, 2011）一书的第8章，python代码见github。</p>
-<p>Luhn的这种算法后来被简化，不再区分”簇”，只考虑句子包含的关键词。下面就是一个例子（采用伪码表示），只考虑关键词首先出现的句子。<br>　　Summarizer(originalText, maxSummarySize):<br>　　　　// 计算原始文本的词频，生成一个数组，比如[(10,’the’), (3,’language’), (8,’code’)…]<br>　　　　wordFrequences = getWordCounts(originalText)<br>　　　　// 过滤掉停用词，数组变成[(3, ‘language’), (8, ‘code’)…]<br>　　　　contentWordFrequences = filtStopWords(wordFrequences)<br>　　　　// 按照词频进行排序，数组变成[‘code’, ‘language’…]<br>　　　　contentWordsSortbyFreq = sortByFreqThenDropFreq(contentWordFrequences)<br>　　　　// 将文章分成句子<br>　　　　sentences = getSentences(originalText)<br>　　　　// 选择关键词首先出现的句子<br>　　　　setSummarySentences = {}<br>　　　　foreach word in contentWordsSortbyFreq:<br>　　　　　　firstMatchingSentence = search(sentences, word)<br>　　　　　　setSummarySentences.add(firstMatchingSentence)<br>　　　　　　if setSummarySentences.size() = maxSummarySize:<br>　　　　　　　　break<br>　　　　// 将选中的句子按照出现顺序，组成摘要<br>　　　　summary = “”<br>　　　　foreach sentence in sentences:<br>　　　　　　if sentence in setSummarySentences:<br>　　　　　　　　summary = summary + “ “ + sentence<br>　　　　return summary<br>类似的算法已经被写成了工具，比如基于Java的Classifier4J库的SimpleSummariser模块、基于C语言的OTS库、以及基于classifier4J的C#实现和python实现。</p>
-<p>亲爱的读者朋友们，您们有什么想法，请点击【写留言】按钮，写下您的留言。</p>
-<p>数据人网（<a href="http://shujuren.org）诚邀各位数据人来平台分享和传播优质数据知识。" target="_blank" rel="noopener">http://shujuren.org）诚邀各位数据人来平台分享和传播优质数据知识。</a></p>
-<p>公众号推荐：<br>360区块链，专注于360度分享区块链内容。</p>
-<pre><code>脚印英语，专注于分享实用口语内容。
-</code></pre><p>阅读原文，更多精彩！<br>分享是收获，传播是价值！</p>
-<p>阅读原文阅读 10215 投诉<br>留言</p>
+<p>Luhn的这种算法后来被简化，不再区分”簇”，只考虑句子包含的关键词。下面就是一个例子（采用伪码表示），只考虑关键词首先出现的句子。<br><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line">　　Summarizer(originalText, maxSummarySize):</span><br><span class="line">　　　　// 计算原始文本的词频，生成一个数组，比如[(<span class="number">10</span>,<span class="string">'the'</span>), (<span class="number">3</span>,<span class="string">'language'</span>), (<span class="number">8</span>,<span class="string">'code'</span>)...]</span><br><span class="line">　　　　wordFrequences = getWordCounts(originalText)</span><br><span class="line">　　　　// 过滤掉停用词，数组变成[(<span class="number">3</span>, <span class="string">'language'</span>), (<span class="number">8</span>, <span class="string">'code'</span>)...]</span><br><span class="line">　　　　contentWordFrequences = filtStopWords(wordFrequences)</span><br><span class="line">　　　　// 按照词频进行排序，数组变成[<span class="string">'code'</span>, <span class="string">'language'</span>...]</span><br><span class="line">　　　　contentWordsSortbyFreq = sortByFreqThenDropFreq(contentWordFrequences)</span><br><span class="line">　　　　// 将文章分成句子</span><br><span class="line">　　　　sentences = getSentences(originalText)</span><br><span class="line">　　　　// 选择关键词首先出现的句子</span><br><span class="line">　　　　setSummarySentences = &#123;&#125;</span><br><span class="line">　　　　foreach word <span class="keyword">in</span> contentWordsSortbyFreq:</span><br><span class="line">　　　　　　firstMatchingSentence = search(sentences, word)</span><br><span class="line">　　　　　　setSummarySentences.add(firstMatchingSentence)</span><br><span class="line">　　　　　　<span class="keyword">if</span> setSummarySentences.size() = maxSummarySize:</span><br><span class="line">　　　　　　　　<span class="keyword">break</span></span><br><span class="line">　　　　// 将选中的句子按照出现顺序，组成摘要</span><br><span class="line">　　　　summary = <span class="string">""</span></span><br><span class="line">　　　　foreach sentence <span class="keyword">in</span> sentences:</span><br><span class="line">　　　　　　<span class="keyword">if</span> sentence <span class="keyword">in</span> setSummarySentences:</span><br><span class="line">　　　　　　　　summary = summary + <span class="string">" "</span> + sentence</span><br><span class="line">　　　　<span class="keyword">return</span> summary</span><br></pre></td></tr></table></figure></p>
+<p>类似的算法已经被写成了工具，比如基于Java的Classifier4J库的SimpleSummariser模块、基于C语言的OTS库、以及基于classifier4J的C#实现和python实现。</p>
 
       
     </div>
