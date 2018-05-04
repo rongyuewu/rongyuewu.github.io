@@ -9,12 +9,12 @@
   
 
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-  <meta name="description" content="【算法】TF-IDF算法及应用 **小编邀请您，先思考：  1 如何计算TF-IDF？2 TF-IDF有什么应用？3 如何提取文本的关键词和摘要？**  有一篇很长的文章，我要用计算机提取它的关键词（Automatic Keyphrase extraction），完全不加以人工干预，请问怎样才能正确做到？ 这个问题涉及到数据挖掘、文本处理、信息检索等很多计算机前沿领域，但是出乎意料的是，有一个非常">
+  <meta name="description" content="【算法】TF-IDF算法及应用 小编邀请您，先思考：  1 如何计算TF-IDF？2 TF-IDF有什么应用？3 如何提取文本的关键词和摘要？  有一篇很长的文章，我要用计算机提取它的关键词（Automatic Keyphrase extraction），完全不加以人工干预，请问怎样才能正确做到？ 这个问题涉及到数据挖掘、文本处理、信息检索等很多计算机前沿领域，但是出乎意料的是，有一个非常简单的经">
 <meta property="og:type" content="article">
 <meta property="og:title" content="文本相似度比较-----TF-IDF算法及应用">
 <meta property="og:url" content="http://yoursite.com/2018/04/05/文本相似度怎么比较---TF-IDF算法及应用/index.html">
 <meta property="og:site_name" content="Hexo">
-<meta property="og:description" content="【算法】TF-IDF算法及应用 **小编邀请您，先思考：  1 如何计算TF-IDF？2 TF-IDF有什么应用？3 如何提取文本的关键词和摘要？**  有一篇很长的文章，我要用计算机提取它的关键词（Automatic Keyphrase extraction），完全不加以人工干预，请问怎样才能正确做到？ 这个问题涉及到数据挖掘、文本处理、信息检索等很多计算机前沿领域，但是出乎意料的是，有一个非常">
+<meta property="og:description" content="【算法】TF-IDF算法及应用 小编邀请您，先思考：  1 如何计算TF-IDF？2 TF-IDF有什么应用？3 如何提取文本的关键词和摘要？  有一篇很长的文章，我要用计算机提取它的关键词（Automatic Keyphrase extraction），完全不加以人工干预，请问怎样才能正确做到？ 这个问题涉及到数据挖掘、文本处理、信息检索等很多计算机前沿领域，但是出乎意料的是，有一个非常简单的经">
 <meta property="og:locale" content="zh-Hans">
 <meta property="og:image" content="https://s1.ax1x.com/2018/05/04/Ct7BC9.png">
 <meta property="og:image" content="https://s1.ax1x.com/2018/05/04/Ct7cDK.png">
@@ -32,10 +32,10 @@
 <meta property="og:image" content="https://s1.ax1x.com/2018/05/04/CtqCAU.png">
 <meta property="og:image" content="https://s1.ax1x.com/2018/05/04/CtqPNF.png">
 <meta property="og:image" content="https://s1.ax1x.com/2018/05/04/CtqA39.png">
-<meta property="og:updated_time" content="2018-05-04T08:20:05.151Z">
+<meta property="og:updated_time" content="2018-05-04T08:21:51.156Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="文本相似度比较-----TF-IDF算法及应用">
-<meta name="twitter:description" content="【算法】TF-IDF算法及应用 **小编邀请您，先思考：  1 如何计算TF-IDF？2 TF-IDF有什么应用？3 如何提取文本的关键词和摘要？**  有一篇很长的文章，我要用计算机提取它的关键词（Automatic Keyphrase extraction），完全不加以人工干预，请问怎样才能正确做到？ 这个问题涉及到数据挖掘、文本处理、信息检索等很多计算机前沿领域，但是出乎意料的是，有一个非常">
+<meta name="twitter:description" content="【算法】TF-IDF算法及应用 小编邀请您，先思考：  1 如何计算TF-IDF？2 TF-IDF有什么应用？3 如何提取文本的关键词和摘要？  有一篇很长的文章，我要用计算机提取它的关键词（Automatic Keyphrase extraction），完全不加以人工干预，请问怎样才能正确做到？ 这个问题涉及到数据挖掘、文本处理、信息检索等很多计算机前沿领域，但是出乎意料的是，有一个非常简单的经">
 <meta name="twitter:image" content="https://s1.ax1x.com/2018/05/04/Ct7BC9.png">
   
     <link rel="alternative" href="/atom.xml" title="Hexo" type="application/atom+xml">
@@ -218,9 +218,9 @@
     <div class="article-entry" itemprop="articleBody">
       
         <p>【算法】TF-IDF算法及应用</p>
-<p>**小编邀请您，先思考：</p>
+<p>小编邀请您，先思考：</p>
 <blockquote>
-<p>1 如何计算TF-IDF？<br>2 TF-IDF有什么应用？<br>3 如何提取文本的关键词和摘要？**</p>
+<p>1 如何计算TF-IDF？<br>2 TF-IDF有什么应用？<br>3 如何提取文本的关键词和摘要？</p>
 </blockquote>
 <p>有一篇很长的文章，我要用计算机提取它的关键词（Automatic Keyphrase extraction），完全不加以人工干预，请问怎样才能正确做到？</p>
 <p>这个问题涉及到数据挖掘、文本处理、信息检索等很多计算机前沿领域，但是出乎意料的是，有一个非常简单的经典算法，可以给出令人相当满意的结果。它简单到都不需要高等数学，普通人只用10分钟就可以理解，这就是我今天想要介绍的TF-IDF（<a href="https://en.wikipedia.org/wiki/Tf%E2%80%93idf" target="_blank" rel="noopener">https://en.wikipedia.org/wiki/Tf%E2%80%93idf</a> ）算法。</p>
