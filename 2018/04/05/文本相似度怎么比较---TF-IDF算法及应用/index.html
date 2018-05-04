@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>文本相似度比较-----TF-IDF算法及应用 | Hexo</title>
+
+  <!-- keywords -->
+  
+
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="description" content="【算法】TF-IDF算法及应用 2018-04-02 数据科学与人工智能小编邀请您，先思考：1 如何计算TF-IDF？2 TF-IDF有什么应用？3 如何提取文本的关键词和摘要？ 有一篇很长的文章，我要用计算机提取它的关键词（Automatic Keyphrase extraction），完全不加以人工干预，请问怎样才能正确做到？ 这个问题涉及到数据挖掘、文本处理、信息检索等很多计算机前沿领域，但">
+<meta property="og:type" content="article">
+<meta property="og:title" content="文本相似度比较-----TF-IDF算法及应用">
+<meta property="og:url" content="http://yoursite.com/2018/04/05/文本相似度怎么比较---TF-IDF算法及应用/index.html">
+<meta property="og:site_name" content="Hexo">
+<meta property="og:description" content="【算法】TF-IDF算法及应用 2018-04-02 数据科学与人工智能小编邀请您，先思考：1 如何计算TF-IDF？2 TF-IDF有什么应用？3 如何提取文本的关键词和摘要？ 有一篇很长的文章，我要用计算机提取它的关键词（Automatic Keyphrase extraction），完全不加以人工干预，请问怎样才能正确做到？ 这个问题涉及到数据挖掘、文本处理、信息检索等很多计算机前沿领域，但">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="https://s1.ax1x.com/2018/05/04/Ct7BC9.png">
+<meta property="og:image" content="https://s1.ax1x.com/2018/05/04/Ct7cDK.png">
+<meta property="og:image" content="https://s1.ax1x.com/2018/05/04/Ct7RED.png">
+<meta property="og:image" content="https://s1.ax1x.com/2018/05/04/Ct74Cd.png">
+<meta property="og:image" content="https://s1.ax1x.com/2018/05/04/CtHqQ1.png">
+<meta property="og:image" content="https://s1.ax1x.com/2018/05/04/CtbUfJ.png">
+<meta property="og:image" content="https://s1.ax1x.com/2018/05/04/Ctbs0K.jpg">
+<meta property="og:image" content="https://s1.ax1x.com/2018/05/04/CtbckD.png">
+<meta property="og:image" content="https://s1.ax1x.com/2018/05/04/Ctb2fH.png">
+<meta property="og:image" content="https://s1.ax1x.com/2018/05/04/Ctbf1A.png">
+<meta property="og:image" content="https://s1.ax1x.com/2018/05/04/CtbInP.png">
+<meta property="og:image" content="https://s1.ax1x.com/2018/05/04/Ctbo0f.png">
+<meta property="og:image" content="https://s1.ax1x.com/2018/05/04/CtbvXq.png">
+<meta property="og:image" content="https://s1.ax1x.com/2018/05/04/CtqCAU.png">
+<meta property="og:image" content="https://s1.ax1x.com/2018/05/04/CtqPNF.png">
+<meta property="og:image" content="https://s1.ax1x.com/2018/05/04/CtqA39.png">
+<meta property="og:updated_time" content="2018-05-04T07:54:24.938Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="文本相似度比较-----TF-IDF算法及应用">
+<meta name="twitter:description" content="【算法】TF-IDF算法及应用 2018-04-02 数据科学与人工智能小编邀请您，先思考：1 如何计算TF-IDF？2 TF-IDF有什么应用？3 如何提取文本的关键词和摘要？ 有一篇很长的文章，我要用计算机提取它的关键词（Automatic Keyphrase extraction），完全不加以人工干预，请问怎样才能正确做到？ 这个问题涉及到数据挖掘、文本处理、信息检索等很多计算机前沿领域，但">
+<meta name="twitter:image" content="https://s1.ax1x.com/2018/05/04/Ct7BC9.png">
+  
+    <link rel="alternative" href="/atom.xml" title="Hexo" type="application/atom+xml">
+  
+  
+    <link rel="icon" href="http://7xkj1z.com1.z0.glb.clouddn.com/head.jpg">
+  
+  <link rel="stylesheet" href="/css/style.css">
+  
+  
+
+  <script src="//cdn.bootcss.com/require.js/2.3.2/require.min.js"></script>
+  <script src="//cdn.bootcss.com/jquery/3.1.1/jquery.min.js"></script>
+
+  
+</head>
+<body>
+  <div id="container">
+    <div id="particles-js"></div>
+    <div class="left-col">
+    <div class="overlay"></div>
+<div class="intrude-less">
+	<header id="header" class="inner">
+		<a href="/" class="profilepic">
+			
+			<img lazy-src="http://7xkj1z.com1.z0.glb.clouddn.com/head.jpg" class="js-avatar">
+			
+		</a>
+
+		<hgroup>
+		  <h1 class="header-author"><a href="/">rongyuewu</a></h1>
+		</hgroup>
+
+		
+
+		
+			<div class="switch-btn">
+				<div class="icon">
+					<div class="icon-ctn">
+						<div class="icon-wrap icon-house" data-idx="0">
+							<div class="birdhouse"></div>
+							<div class="birdhouse_holes"></div>
+						</div>
+						<div class="icon-wrap icon-ribbon hide" data-idx="1">
+							<div class="ribbon"></div>
+						</div>
+						
+						<div class="icon-wrap icon-link hide" data-idx="2">
+							<div class="loopback_l"></div>
+							<div class="loopback_r"></div>
+						</div>
+						
+						
+					</div>
+					
+				</div>
+				<div class="tips-box hide">
+					<div class="tips-arrow"></div>
+					<ul class="tips-inner">
+						<li>菜单</li>
+						<li>标签</li>
+						
+						<li>友情链接</li>
+						
+						
+					</ul>
+				</div>
+			</div>
+		
+
+		<div class="switch-area">
+			<div class="switch-wrap">
+				<section class="switch-part switch-part1">
+					<nav class="header-menu">
+						<ul>
+						
+							<li><a href="/">主页</a></li>
+				        
+							<li><a href="/archives">所有文章</a></li>
+				        
+						</ul>
+					</nav>
+					<nav class="header-nav">
+						<div class="social">
+							
+						</div>
+					</nav>
+				</section>
+				
+				
+				<section class="switch-part switch-part2">
+					<div class="widget tagcloud" id="js-tagcloud">
+						
+					</div>
+				</section>
+				
+				
+				
+				<section class="switch-part switch-part3">
+					<div id="js-friends">
+					
+			          <a target="_blank" class="main-nav-link switch-friends-link" href="https://github.com/smackgg/hexo-theme-smackdown">smackdown</a>
+			        
+			        </div>
+				</section>
+				
+
+				
+			</div>
+		</div>
+	</header>				
+</div>
+    </div>
+    <div class="mid-col">
+      <nav id="mobile-nav">
+  	<div class="overlay">
+  		<div class="slider-trigger"></div>
+  		<h1 class="header-author js-mobile-header hide">rongyuewu</h1>
+  	</div>
+	<div class="intrude-less">
+		<header id="header" class="inner">
+			<div class="profilepic">
+				<img lazy-src="http://7xkj1z.com1.z0.glb.clouddn.com/head.jpg" class="js-avatar">
+			</div>
+			<hgroup>
+			  <h1 class="header-author">rongyuewu</h1>
+			</hgroup>
+			
+			<nav class="header-menu">
+				<ul>
+				
+					<li><a href="/">主页</a></li>
+		        
+					<li><a href="/archives">所有文章</a></li>
+		        
+		        <div class="clearfix"></div>
+				</ul>
+			</nav>
+			<nav class="header-nav">
+				<div class="social">
+					
+				</div>
+			</nav>
+		</header>				
+	</div>
+</nav>
+      <div class="body-wrap"><article id="post-文本相似度怎么比较---TF-IDF算法及应用" class="article article-type-post" itemscope itemprop="blogPost">
+  
+    <div class="article-meta">
+      <a href="/2018/04/05/文本相似度怎么比较---TF-IDF算法及应用/" class="article-date">
+  	<time datetime="2018-04-05T11:29:30.000Z" itemprop="datePublished">2018-04-05</time>
+</a>
+    </div>
+  
+  <div class="article-inner">
+    
+      <input type="hidden" class="isFancy" />
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="article-title" itemprop="name">
+      文本相似度比较-----TF-IDF算法及应用
+      
+    </h1>
+  
+
+      </header>
+      
+      <div class="article-info article-info-post">
+        
+        
+
+        
+        <div class="clearfix"></div>
+      </div>
+      
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <p>【算法】TF-IDF算法及应用</p>
+<p>2018-04-02 数据科学与人工智能<br><strong>小编邀请您，先思考：<br>1 如何计算TF-IDF？<br>2 TF-IDF有什么应用？<br>3 如何提取文本的关键词和摘要？</strong></p>
+<p>有一篇很长的文章，我要用计算机提取它的关键词（Automatic Keyphrase extraction），完全不加以人工干预，请问怎样才能正确做到？</p>
+<p>这个问题涉及到数据挖掘、文本处理、信息检索等很多计算机前沿领域，但是出乎意料的是，有一个非常简单的经典算法，可以给出令人相当满意的结果。它简单到都不需要高等数学，普通人只用10分钟就可以理解，这就是我今天想要介绍的TF-IDF（<a href="https://en.wikipedia.org/wiki/Tf%E2%80%93idf" target="_blank" rel="noopener">https://en.wikipedia.org/wiki/Tf%E2%80%93idf</a> ）算法。</p>
+<p>让我们从一个实例开始讲起。假定现在有一篇长文《中国的蜜蜂养殖》，我们准备用计算机提取它的关键词。</p>
+<p>一个容易想到的思路，就是找到出现次数最多的词。如果某个词很重要，它应该在这篇文章中多次出现。于是，我们进行”词频”（Term Frequency，缩写为TF）统计。</p>
+<p>结果你肯定猜到了，出现次数最多的词是—-“的”、”是”、”在”—-这一类最常用的词。它们叫做”停用词”（ <a href="http://baike.baidu.com/view/3784680.htm" target="_blank" rel="noopener">http://baike.baidu.com/view/3784680.htm</a> ）（stop words），表示对找到结果毫无帮助、必须过滤掉的词。</p>
+<p>假设我们把它们都过滤掉了，只考虑剩下的有实际意义的词。这样又会遇到了另一个问题，我们可能发现”中国”、”蜜蜂”、”养殖”这三个词的出现次数一样多。这是不是意味着，作为关键词，它们的重要性是一样的？</p>
+<p>显然不是这样。因为”中国”是很常见的词，相对而言，”蜜蜂”和”养殖”不那么常见。如果这三个词在一篇文章的出现次数一样多，有理由认为，”蜜蜂”和”养殖”的重要程度要大于”中国”，也就是说，在关键词排序上面，”蜜蜂”和”养殖”应该排在”中国”的前面。</p>
+<p>所以，我们需要一个重要性调整系数，衡量一个词是不是常见词。<strong>如果某个词比较少见，但是它在这篇文章中多次出现，那么它很可能就反映了这篇文章的特性，正是我们所需要的关键词。</strong></p>
+<p>用统计学语言表达，就是在词频的基础上，要对每个词分配一个”重要性”权重。最常见的词（”的”、”是”、”在”）给予最小的权重，较常见的词（”中国”）给予较小的权重，较少见的词（”蜜蜂”、”养殖”）给予较大的权重。这个权重叫做”逆文档频率”（Inverse Document Frequency，缩写为IDF），它的大小与一个词的常见程度成反比。</p>
+<p><strong>知道了”词频”（TF）和”逆文档频率”（IDF）以后，将这两个值相乘，就得到了一个词的TF-IDF值。某个词对文章的重要性越高，它的TF-IDF值就越大。所以，排在最前面的几个词，就是这篇文章的关键词。</strong></p>
+<p>下面就是这个算法的细节。<br><strong>第一步，计算词频。</strong><br><img src="https://s1.ax1x.com/2018/05/04/Ct7BC9.png" alt="Ct7BC9.png"><br>考虑到文章有长短之分，为了便于不同文章的比较，进行”词频”标准化。<br><img src="https://s1.ax1x.com/2018/05/04/Ct7cDK.png" alt="Ct7cDK.png"><br>或者<br><img src="https://s1.ax1x.com/2018/05/04/Ct7RED.png" alt="Ct7RED.png"></p>
+<p><strong>第二步，计算逆文档频率。</strong><br>这时，需要一个语料库（corpus），用来模拟语言的使用环境。<br><img src="https://s1.ax1x.com/2018/05/04/Ct74Cd.png" alt="Ct74Cd.png"><br>如果一个词越常见，那么分母就越大，逆文档频率就越小越接近0。分母之所以要加1，是为了避免分母为0（即所有文档都不包含该词）。log表示对得到的值取对数。</p>
+<p><strong>第三步，计算TF-IDF。</strong><br><img src="https://s1.ax1x.com/2018/05/04/CtHqQ1.png" alt="CtHqQ1.png"><br><strong>可以看到，TF-IDF与一个词在文档中的出现次数成正比，与该词在整个语言中的出现次数成反比。</strong>所以，自动提取关键词的算法就很清楚了，就是计算出文档的每个词的TF-IDF值，然后按降序排列，取排在最前面的几个词。</p>
+<p>还是以《中国的蜜蜂养殖》为例，假定该文长度为1000个词，”中国”、”蜜蜂”、”养殖”各出现20次，则这三个词的”词频”（TF）都为0.02。然后，搜索Google发现，包含”的”字的网页共有250亿张，假定这就是中文网页总数。包含”中国”的网页共有62.3亿张，包含”蜜蜂”的网页为0.484亿张，包含”养殖”的网页为0.973亿张。则它们的逆文档频率（IDF）和TF-IDF如下：<br><img src="https://s1.ax1x.com/2018/05/04/CtbUfJ.png" alt="CtbUfJ.png"><br>从上表可见，”蜜蜂”的TF-IDF值最高，”养殖”其次，”中国”最低。（如果还计算”的”字的TF-IDF，那将是一个极其接近0的值。）所以，如果只选择一个词，”蜜蜂”就是这篇文章的关键词。</p>
+<p>除了自动提取关键词，TF-IDF算法还可以用于许多别的地方。比如，信息检索时，对于每个文档，都可以分别计算一组搜索词（”中国”、”蜜蜂”、”养殖”）的TF-IDF，将它们相加，就可以得到整个文档的TF-IDF。这个值最高的文档就是与搜索词最相关的文档。</p>
+<p>TF-IDF算法的优点是简单快速，结果比较符合实际情况。缺点是，单纯以”词频”衡量一个词的重要性，不够全面，有时重要的词可能出现次数并不多。而且，这种算法无法体现词的位置信息，出现位置靠前的词与出现位置靠后的词，都被视为重要性相同，这是不正确的。（一种解决方法是，对全文的第一段和每一段的第一句话，给予较大的权重。）</p>
+<p><strong>找出相似文章</strong><br>我们再来研究另一个相关的问题。有些时候，除了找到关键词，我们还希望找到与原文章相似的其他文章。比如，”Google新闻”在主新闻下方，还提供多条相似的新闻。<br><img src="https://s1.ax1x.com/2018/05/04/Ctbs0K.jpg" alt="Ctbs0K.jpg"></p>
+<p>为了找出相似的文章，需要用到”余弦相似性” （ <a href="https://en.wikipedia.org/wiki/Cosine_similarity" target="_blank" rel="noopener">https://en.wikipedia.org/wiki/Cosine_similarity</a> ）（cosine similiarity）。下面，我举一个例子来说明，什么是”余弦相似性”。</p>
+<p>为了简单起见，我们先从句子着手。<br>　　句子A：我喜欢看电视，不喜欢看电影。<br>　　句子B：我不喜欢看电视，也不喜欢看电影。<br>请问怎样才能计算上面两句话的相似程度？<br>基本思路是：如果这两句话的用词越相似，它们的内容就应该越相似。因此，可以从词频入手，计算它们的相似程度。</p>
+<p><strong>第一步，分词。</strong><br>　　句子A：我/喜欢/看/电视，不/喜欢/看/电影。<br>　　句子B：我/不/喜欢/看/电视，也/不/喜欢/看/电影。</p>
+<p><strong>第二步，列出所有的词。</strong><br>　　我，喜欢，看，电视，电影，不，也。</p>
+<p><strong>第三步，计算词频。</strong><br>　　句子A：我 1，喜欢 2，看 2，电视 1，电影 1，不 1，也 0。<br>　　句子B：我 1，喜欢 2，看 2，电视 1，电影 1，不 2，也 1。</p>
+<p><strong>第四步，写出词频向量。</strong><br>　　句子A：[1, 2, 2, 1, 1, 1, 0]<br>　　句子B：[1, 2, 2, 1, 1, 2, 1]<br>到这里，问题就变成了如何计算这两个向量的相似程度。<br>我们可以把它们想象成空间中的两条线段，都是从原点（[0, 0, …]）出发，指向不同的方向。两条线段之间形成一个夹角，如果夹角为0度，意味着方向相同、线段重合；如果夹角为90度，意味着形成直角，方向完全不相似；如果夹角为180度，意味着方向正好相反。<strong>因此，我们可以通过夹角的大小，来判断向量的相似程度。夹角越小，就代表越相似。</strong><br><img src="https://s1.ax1x.com/2018/05/04/CtbckD.png" alt="CtbckD.png"><br>以二维空间为例，上图的a和b是两个向量，我们要计算它们的夹角θ。余弦定理告诉我们，可以用下面的公式求得：<br><img src="https://s1.ax1x.com/2018/05/04/Ctb2fH.png" alt="Ctb2fH.png"><br><img src="https://s1.ax1x.com/2018/05/04/Ctbf1A.png" alt="Ctbf1A.png"><br>假定a向量是[x1, y1]，b向量是[x2, y2]，那么可以将余弦定理改写成下面的形式：<br><img src="https://s1.ax1x.com/2018/05/04/CtbInP.png" alt="CtbInP.png"><br><img src="https://s1.ax1x.com/2018/05/04/Ctbo0f.png" alt="Ctbo0f.png"><br>数学家已经证明，余弦的这种计算方法对n维向量也成立。假定A和B是两个n维向量，A是 [A1, A2, …, An] ，B是 [B1, B2, …, Bn] ，则A与B的夹角θ的余弦等于：<br><img src="https://s1.ax1x.com/2018/05/04/CtbvXq.png" alt="CtbvXq.png"><br>使用这个公式，我们就可以得到，句子A与句子B的夹角的余弦。<br><img src="https://s1.ax1x.com/2018/05/04/CtqCAU.png" alt="CtqCAU.png"><br><strong>余弦值越接近1，就表明夹角越接近0度，也就是两个向量越相似，这就叫”余弦相似性”。</strong>所以，上面的句子A和句子B是很相似的，事实上它们的夹角大约为20.3度。<br>由此，我们就得到了”找出相似文章”的一种算法：<br>　　（1）使用TF-IDF算法，找出两篇文章的关键词；<br>　　（2）每篇文章各取出若干个关键词（比如20个），合并成一个集合，计算每篇文章对于这个集合中的词的词频（为了避免文章长度的差异，可以使用相对词频）；<br>　　（3）生成两篇文章各自的词频向量；<br>　　（4）计算两个向量的余弦相似度，值越大就表示越相似。<br>“余弦相似度”是一种非常有用的算法，只要是计算两个向量的相似程度，都可以采用它。</p>
+<p><strong>自动摘要</strong><br>有时候，很简单的数学方法，就可以完成很复杂的任务。<br>前两部分就是很好的例子。仅仅依靠统计词频，就能找出关键词和相似文章。虽然它们算不上效果最好的方法，但肯定是最简便易行的方法。<br>接下来讨论如何通过词频，对文章进行自动摘要（Automatic summarization）。</p>
+<p>如果能从3000字的文章，提炼出150字的摘要，就可以为读者节省大量阅读时间。由人完成的摘要叫”人工摘要”，由机器完成的就叫”自动摘要”。许多网站都需要它，比如论文网站、新闻网站、搜索引擎等等。2007年，美国学者的论文《A Survey on Automatic Text Summarization》（Dipanjan Das, Andre F.T. Martins, 2007）总结了目前的自动摘要算法。其中，很重要的一种就是词频统计。</p>
+<p>这种方法最早出自1958年的IBM公司科学家H.P. Luhn的论文《The Automatic Creation of Literature Abstracts》。<br>Luhn博士认为，文章的信息都包含在句子中，有些句子包含的信息多，有些句子包含的信息少。”自动摘要”就是要找出那些包含信息最多的句子。<br>句子的信息量用”关键词”来衡量。如果包含的关键词越多，就说明这个句子越重要。Luhn提出用”簇”（cluster）表示关键词的聚集。<br><img src="https://s1.ax1x.com/2018/05/04/CtqPNF.png" alt="CtqPNF.png"><br>上图就是Luhn原始论文的插图，被框起来的部分就是一个”簇”。只要关键词之间的距离小于”门槛值”，它们就被认为处于同一个簇之中。Luhn建议的门槛值是4或5。也就是说，如果两个关键词之间有5个以上的其他词，就可以把这两个关键词分在两个簇。</p>
+<p>下一步，对于每个簇，都计算它的重要性分值。<br><img src="https://s1.ax1x.com/2018/05/04/CtqA39.png" alt="CtqA39.png"><br>以前图为例，其中的簇一共有7个词，其中4个是关键词。因此，它的重要性分值等于 ( 4 x 4 ) / 7 = 2.3。</p>
+<p>然后，找出包含分值最高的簇的句子（比如5句），把它们合在一起，就构成了这篇文章的自动摘要。具体实现可以参见《Mining the Social Web: Analyzing Data from Facebook, Twitter, LinkedIn, and Other Social Media Sites》（O’Reilly, 2011）一书的第8章，python代码见github。</p>
+<p>Luhn的这种算法后来被简化，不再区分”簇”，只考虑句子包含的关键词。下面就是一个例子（采用伪码表示），只考虑关键词首先出现的句子。<br>　　Summarizer(originalText, maxSummarySize):<br>　　　　// 计算原始文本的词频，生成一个数组，比如[(10,’the’), (3,’language’), (8,’code’)…]<br>　　　　wordFrequences = getWordCounts(originalText)<br>　　　　// 过滤掉停用词，数组变成[(3, ‘language’), (8, ‘code’)…]<br>　　　　contentWordFrequences = filtStopWords(wordFrequences)<br>　　　　// 按照词频进行排序，数组变成[‘code’, ‘language’…]<br>　　　　contentWordsSortbyFreq = sortByFreqThenDropFreq(contentWordFrequences)<br>　　　　// 将文章分成句子<br>　　　　sentences = getSentences(originalText)<br>　　　　// 选择关键词首先出现的句子<br>　　　　setSummarySentences = {}<br>　　　　foreach word in contentWordsSortbyFreq:<br>　　　　　　firstMatchingSentence = search(sentences, word)<br>　　　　　　setSummarySentences.add(firstMatchingSentence)<br>　　　　　　if setSummarySentences.size() = maxSummarySize:<br>　　　　　　　　break<br>　　　　// 将选中的句子按照出现顺序，组成摘要<br>　　　　summary = “”<br>　　　　foreach sentence in sentences:<br>　　　　　　if sentence in setSummarySentences:<br>　　　　　　　　summary = summary + “ “ + sentence<br>　　　　return summary<br>类似的算法已经被写成了工具，比如基于Java的Classifier4J库的SimpleSummariser模块、基于C语言的OTS库、以及基于classifier4J的C#实现和python实现。</p>
+<p>亲爱的读者朋友们，您们有什么想法，请点击【写留言】按钮，写下您的留言。</p>
+<p>数据人网（<a href="http://shujuren.org）诚邀各位数据人来平台分享和传播优质数据知识。" target="_blank" rel="noopener">http://shujuren.org）诚邀各位数据人来平台分享和传播优质数据知识。</a></p>
+<p>公众号推荐：<br>360区块链，专注于360度分享区块链内容。</p>
+<pre><code>脚印英语，专注于分享实用口语内容。
+</code></pre><p>阅读原文，更多精彩！<br>分享是收获，传播是价值！</p>
+<p>阅读原文阅读 10215 投诉<br>留言</p>
+
+      
+    </div>
+    
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2018/04/05/DMP/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">&lt;</strong>
+      <div class="article-nav-title">
+        
+          dmp介绍
+        
+      </div>
+    </a>
+  
+  
+</nav>
+
+  
+</article>
+
+
+<div class="ds-share share" data-thread-key="文本相似度怎么比较---TF-IDF算法及应用" data-title="文本相似度比较-----TF-IDF算法及应用" data-url="http://yoursite.com/2018/04/05/文本相似度怎么比较---TF-IDF算法及应用/"  data-images="http://7xkj1z.com1.z0.glb.clouddn.com/head.jpg" data-content="文本相似度比较-----TF-IDF算法及应用">
+    <div class="ds-share-inline">
+      <ul  class="ds-share-icons-16">
+      	<li data-toggle="ds-share-icons-more"><a class="ds-more" href="javascript:void(0);">分享到：</a></li>
+        <li><a class="ds-weibo" href="javascript:void(0);" data-service="weibo">微博</a></li>
+        <li><a class="ds-qzone" href="javascript:void(0);" data-service="qzone">QQ空间</a></li>
+        <li><a class="ds-qqt" href="javascript:void(0);" data-service="qqt">腾讯微博</a></li>
+        <li><a class="ds-wechat" href="javascript:void(0);" data-service="wechat">微信</a></li>
+      </ul>
+      <div class="ds-share-icons-more">
+      </div>
+    </div>
+ </div>
+ 
+
+
+
+
+
+</div>
+      <footer id="footer">
+  <div class="outer">
+    <div id="footer-info">
+      <div class="footer-left">
+        &copy; 2018 rongyuewu
+      </div>
+        <div class="footer-right">
+          <a href="http://hexo.io/" target="_blank">Hexo</a>  Theme <a href="https://github.com/smackgg/hexo-theme-smackdown" target="_blank">Smackdown</a>
+        </div>
+    </div>
+  </div>
+</footer>
+    </div>
+    
+  <link rel="stylesheet" href="/fancybox/jquery.fancybox.css">
+
+
+<script>
+	var yiliaConfig = {
+		fancybox: true,
+		mathjax: true,
+		animate: true,
+		isHome: false,
+		isPost: true,
+		isArchive: false,
+		isTag: false,
+		isCategory: false,
+		open_in_new: false
+	}
+</script>
+<script src="/js/main.js"></script>
+
+
+
+<script type="text/x-mathjax-config">
+MathJax.Hub.Config({
+    tex2jax: {
+        inlineMath: [ ['$','$'], ["\\(","\\)"]  ],
+        processEscapes: true,
+        skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+    }
+});
+
+MathJax.Hub.Queue(function() {
+    var all = MathJax.Hub.getAllJax(), i;
+    for(i=0; i < all.length; i += 1) {
+        all[i].SourceElement().parentNode.className += ' has-jax';                 
+    }       
+});
+</script>
+
+<script src="//cdn.bootcss.com/mathjax/2.7.0/MathJax.js"></script>
+
+
+  </div>
+</body>
+</html>
