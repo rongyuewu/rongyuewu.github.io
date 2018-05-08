@@ -26,9 +26,10 @@
 <meta property="og:image" content="https://s1.ax1x.com/2018/05/08/CdD4G8.png">
 <meta property="og:image" content="https://s1.ax1x.com/2018/05/08/CdD5RS.png">
 <meta property="og:image" content="https://s1.ax1x.com/2018/05/08/CdDHqs.png">
+<meta property="og:image" content="https://s1.ax1x.com/2018/05/08/CdyrxU.png">
 <meta property="og:image" content="https://s1.ax1x.com/2018/05/08/CdrCL9.png">
 <meta property="og:image" content="https://s1.ax1x.com/2018/05/08/CdrEi6.png">
-<meta property="og:updated_time" content="2018-05-08T13:25:13.865Z">
+<meta property="og:updated_time" content="2018-05-08T13:32:38.636Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="决策树算法及模型">
 <meta name="twitter:description" content="决策树 决策树（Decision Tree）是一种简单但是广泛使用的分类器。通过训练数据构建决策树，可以高效的对未知的数据进行分类。决策数有两大优点：1）决策树模型可以读性好，具有描述性，有助于人工分析；2）效率高，决策树只需要一次构建，反复使用，每一次预测的最大计算次数不超过决策树的深度。 如何预测 先看看下面的数据表格： 上表根据历史数据，记录已有的用户是否可以偿还债务，以及相关的信息。通过该">
@@ -252,9 +253,8 @@
 <p>1） 将acc标准化，即<br><img src="https://s1.ax1x.com/2018/05/08/CdDRat.png" alt="CdDRat.png"></p>
 <p>2） 选择置信水平α= 95%，或其他值，这取决于你需要对这个区间有多自信。一般来说，α越大，区间越大。</p>
 <p>3） 求出 α/2和1-α/2对应的标准正太分布的统计量<br><img src="https://s1.ax1x.com/2018/05/08/CdD4G8.png" alt="CdD4G8.png"><br><img src="https://s1.ax1x.com/2018/05/08/CdD5RS.png" alt="CdD5RS.png"><br>（均为常量）。然后解下面关于p的不等式。acc可以有样本估计得出。即可以得到关于p的执行区间<br><img src="https://s1.ax1x.com/2018/05/08/CdDHqs.png" alt="CdDHqs.png"></p>
-<p>another example:</p>
-<h2 id="有一天，小明无聊，对宿舍玩CS的舍友进行统计，结果刚记下四行，被舍友认为影响发挥，给踢到床下去了，让我们看看可怜的小明的记录："><a href="#有一天，小明无聊，对宿舍玩CS的舍友进行统计，结果刚记下四行，被舍友认为影响发挥，给踢到床下去了，让我们看看可怜的小明的记录：" class="headerlink" title="有一天，小明无聊，对宿舍玩CS的舍友进行统计，结果刚记下四行，被舍友认为影响发挥，给踢到床下去了，让我们看看可怜的小明的记录："></a>有一天，小明无聊，对宿舍玩CS的舍友进行统计，结果刚记下四行，被舍友认为影响发挥，给踢到床下去了，让我们看看可怜的小明的记录：</h2><h2 id="武器-子弹数量-血-行为"><a href="#武器-子弹数量-血-行为" class="headerlink" title="武器 | 子弹数量 | 血 | 行为"></a>武器 | 子弹数量 | 血 | 行为</h2><p>机枪 |    多    | 少 | 战斗<br>机枪 |    少    | 多 | 逃跑<br>小刀 |    少    | 多 | 战斗</p>
-<h2 id="小刀-少-少-逃跑"><a href="#小刀-少-少-逃跑" class="headerlink" title="小刀 |    少    | 少 | 逃跑"></a>小刀 |    少    | 少 | 逃跑</h2><p>为了对得起小明记录的这四条记录，我们对其进行决策树分析，从数据中看：</p>
+<p>another example:<br>有一天，小明无聊，对宿舍玩CS的舍友进行统计，结果刚记下四行，被舍友认为影响发挥，给踢到床下去了，让我们看看可怜的小明的记录：<br><img src="https://s1.ax1x.com/2018/05/08/CdyrxU.png" alt="CdyrxU.png"></p>
+<p>为了对得起小明记录的这四条记录，我们对其进行决策树分析，从数据中看：</p>
 <blockquote>
 <ol>
 <li>如果一个玩家子弹很多，那么即使血少他也会战斗，如果子弹少的话，即使血多，他也会逃跑隐蔽起来；</li>
@@ -312,11 +312,11 @@
     
 <nav id="article-nav">
   
-    <a href="/2018/05/01/sparkstreaming&kafka/" id="article-nav-newer" class="article-nav-link-wrap">
+    <a href="/2018/05/01/JVM GC /" id="article-nav-newer" class="article-nav-link-wrap">
       <strong class="article-nav-caption">&lt;</strong>
       <div class="article-nav-title">
         
-          将offsets存储在HBase中
+          JVM总结相关笔记
         
       </div>
     </a>
