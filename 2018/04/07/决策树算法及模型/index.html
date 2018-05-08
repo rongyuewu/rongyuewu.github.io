@@ -22,14 +22,14 @@
 <meta property="og:image" content="https://s1.ax1x.com/2018/05/08/CdDD2D.png">
 <meta property="og:image" content="https://s1.ax1x.com/2018/05/08/CdDrxe.png">
 <meta property="og:image" content="https://s1.ax1x.com/2018/05/08/CdD6rd.png">
-<meta property="og:image" content="https://s1.ax1x.com/2018/05/08/CdDRat.png">
+<meta property="og:image" content="https://s1.ax1x.com/2018/05/08/Cd6lw9.png">
 <meta property="og:image" content="https://s1.ax1x.com/2018/05/08/CdD4G8.png">
 <meta property="og:image" content="https://s1.ax1x.com/2018/05/08/CdD5RS.png">
 <meta property="og:image" content="https://s1.ax1x.com/2018/05/08/CdDHqs.png">
 <meta property="og:image" content="https://s1.ax1x.com/2018/05/08/CdyrxU.png">
 <meta property="og:image" content="https://s1.ax1x.com/2018/05/08/CdrCL9.png">
 <meta property="og:image" content="https://s1.ax1x.com/2018/05/08/CdrEi6.png">
-<meta property="og:updated_time" content="2018-05-08T13:32:38.636Z">
+<meta property="og:updated_time" content="2018-05-08T13:37:17.965Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="决策树算法及模型">
 <meta name="twitter:description" content="决策树 决策树（Decision Tree）是一种简单但是广泛使用的分类器。通过训练数据构建决策树，可以高效的对未知的数据进行分类。决策数有两大优点：1）决策树模型可以读性好，具有描述性，有助于人工分析；2）效率高，决策树只需要一次构建，反复使用，每一次预测的最大计算次数不超过决策树的深度。 如何预测 先看看下面的数据表格： 上表根据历史数据，记录已有的用户是否可以偿还债务，以及相关的信息。通过该">
@@ -250,7 +250,7 @@
 <p>决策树T构建好后，需要估计预测准确率。直观说明，比如N条测试数据，X预测正确的记录数，那么可以估计acc = X/N为T的准确率。但是，这样不是很科学。因为我们是通过样本估计的准确率，很有可能存在偏差。所以，比较科学的方法是估计一个准确率的区间，这里就要用到统计学中的置信区间（Confidence Interval）。</p>
 <p>设T的准确率p是一个客观存在的值，X的概率分布为X ~ B(N,p)，即X遵循概率为p，次数为N的二项分布（Binomial Distribution），期望E(X) = N<em>p，方差Var(X) = N</em>p<em>(1-p)。由于当N很大时，二项分布可以近似有正太分布（Normal Distribution）计算，一般N会很大，所以X ~ N(np,n</em>p<em>(1-p))。可以算出，acc = X/N的期望E(acc) = E(X/N) = E(X)/N = p，方差Var(acc) = Var(X/N) = Var(X) / N2 = p</em>(1-p) / N，所以acc ~ N(p,p*(1-p)/N)。这样，就可以通过正太分布的置信区间的计算方式计算执行区间了。</p>
 <p>正太分布的置信区间求解如下：</p>
-<p>1） 将acc标准化，即<br><img src="https://s1.ax1x.com/2018/05/08/CdDRat.png" alt="CdDRat.png"></p>
+<p>1） 将acc标准化，即<br><img src="https://s1.ax1x.com/2018/05/08/Cd6lw9.png" alt="Cd6lw9.png"></p>
 <p>2） 选择置信水平α= 95%，或其他值，这取决于你需要对这个区间有多自信。一般来说，α越大，区间越大。</p>
 <p>3） 求出 α/2和1-α/2对应的标准正太分布的统计量<br><img src="https://s1.ax1x.com/2018/05/08/CdD4G8.png" alt="CdD4G8.png"><br><img src="https://s1.ax1x.com/2018/05/08/CdD5RS.png" alt="CdD5RS.png"><br>（均为常量）。然后解下面关于p的不等式。acc可以有样本估计得出。即可以得到关于p的执行区间<br><img src="https://s1.ax1x.com/2018/05/08/CdDHqs.png" alt="CdDHqs.png"></p>
 <p>another example:<br>有一天，小明无聊，对宿舍玩CS的舍友进行统计，结果刚记下四行，被舍友认为影响发挥，给踢到床下去了，让我们看看可怜的小明的记录：<br><img src="https://s1.ax1x.com/2018/05/08/CdyrxU.png" alt="CdyrxU.png"></p>
@@ -312,11 +312,11 @@
     
 <nav id="article-nav">
   
-    <a href="/2018/05/01/JVM GC /" id="article-nav-newer" class="article-nav-link-wrap">
+    <a href="/2018/05/01/ID-Mapping/" id="article-nav-newer" class="article-nav-link-wrap">
       <strong class="article-nav-caption">&lt;</strong>
       <div class="article-nav-title">
         
-          JVM总结相关笔记
+          解密大数据ID-Mapping
         
       </div>
     </a>
