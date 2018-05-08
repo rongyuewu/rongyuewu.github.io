@@ -163,10 +163,10 @@
 </nav>
       <div class="body-wrap">
   
-    <article id="post-JVM GC " class="article article-type-post" itemscope itemprop="blogPost">
+    <article id="post-点击流日志分析流程" class="article article-type-post" itemscope itemprop="blogPost">
   
     <div class="article-meta">
-      <a href="/2018/05/01/JVM GC /" class="article-date">
+      <a href="/2018/05/01/点击流日志分析流程/" class="article-date">
   	<time datetime="2018-05-01T13:29:30.000Z" itemprop="datePublished">2018-05-01</time>
 </a>
     </div>
@@ -180,8 +180,8 @@
         
   
     <h1 itemprop="name">
-      <a class="article-title" href="/2018/05/01/JVM GC /">
-        JVM总结相关笔记
+      <a class="article-title" href="/2018/05/01/点击流日志分析流程/">
+        点击流日志分析流程
         
       </a>
     </h1>
@@ -192,49 +192,458 @@
     
     <div class="article-entry" itemprop="articleBody">
       
-        <h2 id="JVM"><a href="#JVM" class="headerlink" title="JVM"></a>JVM</h2><h4 id="JVM的参数设置"><a href="#JVM的参数设置" class="headerlink" title="JVM的参数设置"></a>JVM的参数设置</h4><pre><code>1. -Xms 初始堆大小  -Xmx 最大堆大小  [一般这两个值设置的是一样的，防止GC后出现内存抖动]
-2. -Xmn 年轻代大小
-    a) 整个堆的大小 = 年轻代大小 + 老年代大小 + 持久代大小
-    b) 持久代一般固定大小为64M
-    c) 所以，增大年轻代后，将会较小老年代的大小。这个值对系统性能影响较大，
-       Sun官方推荐配置为整个堆的3/8
-3. -XX:NewSize 初始年轻代大小     -XX:MaxNewSize 最大年轻代大小
-4. -XX:NewRatio 老年代和年轻代的比值
-5. -XX：SurvivorRatio 设置年轻代中Eden区与Survivor区的大小比值 
-   [默认是8:1:1,比如设置为6，那么就是 6:2:2]
-6. -XX:MaxTenuringThreshold 设置年轻代的对象被回收多少次后才进入老年代，默认15次
-    [控制对象在经过多少次minor GC后进入老年代，此参数只在Serial串行GC时有效]
-7. -XX:PermSize 初始持久代大小  -XX:MaxPermSize 持久代最大值 
-    [这个跟 -Xms 和 -Xmx 堆大小设置一样，都是相等，为了防止内存抖动]
-</code></pre><h4 id="调优"><a href="#调优" class="headerlink" title="调优"></a>调优</h4><pre><code>JVM调优主要针对内存管理方面，包括控制各个代的大小，GC策略。
-由于GC开始垃圾回收时会挂起应用线程，严重影响性能，调优的目的就是
-为了尽量降低GC所导致的应用线程暂停时间、减少Full GC的次数。
-</code></pre><p> 代调优：</p>
-<pre><code> 1) 避免新生代大小设置过小
-     当新生代设置过小时，会产生两种比较明显的现象:
-         一是minor GC次数频繁
-         二是可能导致minor GC对象直接进入老年代。当老年代内存不足时，会出发Full GC。
-2) 避免新生代设置过大
-    新生代设置过大，会带来两个问题：
-        一是老年代变小，可能导致Full GC频繁执行；
-        二是minor GC 执行回收的时间大幅度增加
-那怎么选择年轻代的大小呢？[分不同的应用场景]
-    a. 响应时间优先的应用：
-        尽可能设大，知道接近系统的最低响应时间限制(根据实际情况选择)。
-</code></pre><p><img src="/Users/Macx/Desktop/整理笔记/jvm-gc.png" alt=""><br>说明：新new的对象会首先会进入年轻代的Eden中（如果对象太大可能直接进入年老代），在GC之前对象是存在Eden和from中的，进行GC的时候Eden中的对象被拷贝到To这样一个survive空间（survive（幸存）空间：包括from和to，他们的空间大小是一样的，又叫s1和s2）中（有一个拷贝算法），From中的对象（算法会考虑经过GC幸存的次数）到一定次数 阈值（如果说每次GC之后这个对象依旧在Survive中存在，GC一次他的Age就会加1，默认15就会放到OldGeneration。但是实际情况比较复杂，有可能没有到阈值就从Survive区域直接到Old Generation区域。)</p>
-<h4 id="1-哪些需要回收-—-gt-java堆内存、方法区内存"><a href="#1-哪些需要回收-—-gt-java堆内存、方法区内存" class="headerlink" title="1.哪些需要回收? —-&gt; java堆内存、方法区内存"></a>1.哪些需要回收? —-&gt; java堆内存、方法区内存</h4><h4 id="2-什么时候回收？-—–-gt"><a href="#2-什么时候回收？-—–-gt" class="headerlink" title="2.什么时候回收？ —–&gt;"></a>2.什么时候回收？ —–&gt;</h4><pre><code>2.1：引用计数法【引用count+1，引用失效时count-1，为0时不被引用】
-【如果两个对象相互引用而且都没有被使用了，那么会造成内存泄漏】。
+        <h1 id="点击流日志分析流程"><a href="#点击流日志分析流程" class="headerlink" title="点击流日志分析流程"></a>点击流日志分析流程</h1><p>流程图如下：<br>    <img src="http://m.qpic.cn/psb?/V11BXxlE33Kp9F/UbKrmZeyW3FpirSZBEMFrDGawneMp6lIpLWKfxekmLw!/b/dJUAAAAAAAAA&amp;bo=QgauAgAAAAARB9g!&amp;rf=viewer_4" alt=""><br>    <img src="http://m.qpic.cn/psb?/V11BXxlE33Kp9F/FimQ39x6PIwqFTl56xYF*n.qFv3LMDsUx5Bk7YsN*vs!/b/dGoBAAAAAAAA&amp;bo=kgU4BAAAAAARB5s!&amp;rf=viewer_4" alt=""></p>
+<h6 id="原始数据："><a href="#原始数据：" class="headerlink" title="原始数据："></a>原始数据：</h6><pre><code>194.237.142.21 - - [18/Sep/2013:06:49:18 +0000] &quot;GET /wp-content/uploads/2013/07/rstudio-git3.png HTTP/1.1&quot; 304 0 &quot;-&quot; &quot;Mozilla/4.0 (compatible;)&quot;
+字段解析:
+1、访客 ip 地址: 58.215.204.118
+2、访客用户信息: - -
+3、请求时间:[18/Sep/2013:06:51:35 +0000]
+4、请求方式:GET
+5、请求的 url:/wp-includes/js/jquery/jquery.js?ver=1.10.2 6、请求所用协议:HTTP/1.1
+7、响应码:304
+8、返回的数据流量:0
+9、访客的来源 url:http://blog.fens.me/nodejs-socketio-chat/
+10 、 访 客 所 用 浏 览 器 : Mozilla/5.0 (Windows NT 5.1; rv:23.0) Firefox/23.0
+Gecko/20100101
+</code></pre><p>1.根据原始数据生成点击流模型 PageViews 和 Visits</p>
+<pre><code>PageViews:
+    根据IP判断是否是同一用户，根据前后两条日志时间相差是否在30分钟内，
+    判断访问日志是否是属于同一个session[会话]，按照时间顺序标上步骤，
+    这样就构成了一条访问轨迹线;
+Visits：
+    侧重于体现用户在一次session中的进入离开时间、进入离开页面，
+    还有统计出在本次session中用户总共访问了几个页面
+</code></pre><p>2.漏斗模型</p>
+<pre><code>逐层递减
+</code></pre><p>3.常见指标：</p>
+<pre><code>骨灰级指标：
+    IP：1天内访问网站的不重复IP总数
+    PV[PageView]:用户每打开1次网页，记录1个PV
+    UV[Unique Pageview]:1天以内，访问网站不重复的用户数据(以cookie为依据)，1天内同1访客多次访问网站只被计算1次
+基础级指标：
+    访问次数：
+        访客从进入网站到离开网站一系列活动极为一次访问，也就是session
+    网站停留时间：
+        访问者在网站上花费的时间
+    页面停留时间：
+        访问者在某个特定页面或某组网页上所花费的时间
+复合级指标:
+    人均浏览页面：
+        浏览次数/独立访客数  --体现网站对访客的吸引程度
+    二跳率：
+        二跳率的概念是当网站页面展开后，用户在页面上产生的首次点击被称为“二跳”，二跳的次数即为“二跳量”。二跳量与到达量（进入网站的人）的比值称为页面的二跳率。
+    跳出率：
+        跳出率是指在只访问了入口页面（例如网站首页）就离开的访问量与所产生总访问量的百分比。跳出率计算公式：跳出率=访问一个页面后离开网站的次数/总访问次数。
+    二跳率越高越好，跳出率越低越好。
+4.基础分析(PV,IP,UV)
+5.来源分析
+6.受访分析
+7.访客分析
+    终端详情[PC,移动端]新老访客、忠诚度、活跃度
+8.转化路径分析
+</code></pre><blockquote>
+<blockquote>
+<blockquote>
+<p>数据处理流程：</p>
+</blockquote>
+</blockquote>
+</blockquote>
+<pre><code>&gt; 数据采集
+    Flume采集需要在配置文件里配置source、channel、sink：
+        source:
+            1.spoolDir的作用是：监控文件夹，如果有新的文件产生，采集开始
+            2.exec tail -f access.log 只能监听文件追加的内容
+    以上1和2都没办法满足我们的log日志采集，因为既要监控文件也要监控文件夹，
+    **好在Flume1.7的稳定版本提供了TAILDIR类型的source，
+    可以监控一个目录，并且使用正则表达式匹配目录中的文件名进行实时收集，具体配置详情如下：
+        a1.sources.r1.type = TAILDIR
+        a1.sources.r1.positionFile = /var/log/flume/taildir_position.json
+        a1.sources.r1.filegroups = f1 f2
+        a1.sources.r1.filegroups.f1 = /var/log/test1/example.log 
+        a1.sources.r1.filegroups.f2 = /var/log/test2/.*log.*
+    解释：
+        filegroups:指定 filegroups，可以有多个[每个还可以使用正则表达式来匹配]，
+        以空格分隔;(TailSource 可以同时监控 tail 多个目录中的文件)
+      **positionFile:解决了机器重启后无法**断点续传**的问题[检查点文件会以 json 格式保存已经 tail 文件的位置]
 
-2.2：可达性分析【从根节点搜索，如果没有搜索到就是没有被使用，所以互相引用且搜索不到的也会被清除】
-</code></pre><h4 id="怎么回收？—-gt-垃圾回收算法-3种"><a href="#怎么回收？—-gt-垃圾回收算法-3种" class="headerlink" title="怎么回收？—-&gt; 垃圾回收算法[3种]"></a>怎么回收？—-&gt; 垃圾回收算法[3种]</h4><h4 id="1-标记清除算法-Mark-Sweep"><a href="#1-标记清除算法-Mark-Sweep" class="headerlink" title="1.标记清除算法 [Mark-Sweep]"></a>1.标记清除算法 [Mark-Sweep]</h4><pre><code>遍历所有的GC Root，分别标记处可达的对象和不可达的对象，然后将不可达的对象回收。
-**缺点**是：效率低、回收得到的空间不连续 【当比较大的对象被创建时由于被回收的是不连续的，
-所以被回收的空间就存不下，造成了浪费】
-</code></pre><h4 id="2-标记整理算法"><a href="#2-标记整理算法" class="headerlink" title="2.标记整理算法"></a>2.标记整理算法</h4><pre><code>将所有可用的对象往前移动[标记谁是活跃对象，整理，会把内存对象整理成一棵树一个连续的空间]，这样会很耗资源
-</code></pre><h4 id="3-复制算法"><a href="#3-复制算法" class="headerlink" title="3.复制算法"></a>3.复制算法</h4><pre><code>将内存分为两块，每次只使用一块。当这一块内存满了，就将还存活的对象复制到另一块上，并且严格按照内存地址排列，然后把已使用的那块内存统一回收。
-**优点**是：能够得到连续的内存空间 
-**缺点**是：浪费了一半内存
-年轻代使用的是复制整理算法
-</code></pre><h5 id="有一点需要注意："><a href="#有一点需要注意：" class="headerlink" title="有一点需要注意："></a>有一点需要注意：</h5>
+&gt; 数据预处理
+    通过MapReduce程序对采集到的原始日志数据进行预处理，
+    比如清洗，格式整理，滤除脏数据等，并且梳理成点击流模型数据
+        1.一般来说，开发中针对不合法的数据，我们不是直接删除，而是打个标签 比如true或者false，
+        因为这些数据可能对这个场景是无用的，但是对其他场景是有用的
+        2.编写MapReduce程序，只有map没有reduce，因为输入一条数据，处理完后直接输出不需要聚合,setReduceNum = 0 ,输出的结果文件就是part-m
+        3.编写相对应的Javabean的时候要实现Writable接口，
+        重写toString方法的时候是按照Hive的默认分隔符&apos;\001&apos;进行分割的，
+        导入hive表的时候直接按照默认的分隔符就ok了,
+        注意：readFields 和 write 的方法写得时候要一致对应
+        4.业务要求状态码为400以上的设置valid为false，还有时间不合法[为null或者双引号]
+        5.过滤掉静态资源[图片/css/js],这个标准是根据业务来定的，一般会在mapper的set up 
+        初始化方法里定义hashSet来存这些准则，然后进行标记清除
+        6.PageViews数据生成： (session[UUID] + stayTime + step)
+        ---------------------------------------------------------------------------------------
+                    Session + IP + 地址 + 时间 + 访问页面 + URL + 停留时长 + 第几步
+        ---------------------------------------------------------------------------------------
+            a) 编写MapReduce程序，map端以Ip为key，Javabean为value，发送到reduce，
+            reduce端进行values的排序，这里需要遍历values，每一次都new
+            一个新的Javabean然后进行赋值[因为Javabean是引用类型，然后添加入新的ArrayList中，
+            如果不重新new 一个新的对象的话，那么到最后ArrayList里面的对象就是同一个，因为他们指向的都是同一块堆内存！！！]，
+            再把这个Javabean添加到新的ArrayList中
+            b) 按照时间排序,然后对新的ArrayList进行排序，Collections.sort(beansList,new Comparabtor(javabean){中间获取时间来进行升序排序})
+            c) 从有序的beans中分辨出歌词visit，并对一次visit中所访问的page按顺序标号step
+                核心思想：比较相邻两条记录中的时间差，如果时间差&lt;30分钟，则该两条记录属于同一个session[生成UUID]，否则属于不同的session
+                只有1条的和大于1条的，他们的默认时间都是60秒
+        7.Visits模型：数据来自PageViews模型
+        ---------------------------------------------------------------------------------------
+        Session + 起始时间 + 结束时间 + 进入页面URL + 离开页面URL + 访问页面数 + 停留时长 + IP + referer
+        ---------------------------------------------------------------------------------------
+             编写MapReduce程序：
+                 mapper端：k为session，value：javabean
+                 reduce端：
+                     以step进行排序
+
+
+&gt; 数据入库
+    将预处理之后的数据导入到Hive仓库中相应的库和表中
+&gt; 数据分析
+    项目的核心内容，即根据需求开发ETL分析语句，得出各种统计结果
+&gt; 工作流调度：
+    简单的任务调度:
+        可以使用Linux的crontab -e 来设置调度，但是其缺点是无法设置依赖
+    复杂的任务调度：
+        推荐使用 : azkaban [Java语言实现的，他有管理页面，配置起来比较简单]
+            azkaban是由LinkedIn公司推出的一个批量工作流任务调度器，
+            用于在一个工作流内以一个特定的顺序运行一组工作和流程。
+            使用job配置文件简历任务之间的依赖关系，并提供了一个已使用的web用户界面维护和跟踪工作流。
+            支持command、Java、Hive、pig、Hadoop，而且是基于java开发，代码结构清晰，抑郁二次开发
+                azkaban的组成：
+                    1.mysql服务器
+                        用于存储项目、日志或者执行计划[执行周期等]之类的信息
+                    2.web服务器：
+                        使用jetty[开源的serverlet容器]对外提供web服务，使用户可以通过wen页面方便管理
+                    3.executor服务器：
+                        负责具体的工作流的提交、执行
+           配置azkaban步骤：[cluster模式]
+                   1.生成keystore证书文件，mv到webserver下
+                   2.配置为年修改一下时区：Asia/Shanghai
+                   3.配置数据库mysql
+                   4.配置user admin的登录
+          使用azkaban的步骤：
+                  1.创建a.job文件并且已经配置b.job ，里面的type为command，中间可以配置的dependencies=b，然后command=xxxx
+                    期间要把这些job打成zip包，通过web提交上去配置立刻执行还是scheduler定期执行
+                      # a.job
+                    type=command
+                    dependencies=b
+                    command=echo hahaha
+                这样的话a的job任务就会等待b结束后再执行
+                2.hdfs操作任务
+                    command=/home/hadoop/apps/hadoop-2.6.1/bin/hadoop fs -mkdir /azaz
+                  3.MapReduce操作任务
+                      command=/home/hadoop/apps/hadoop-2.6.1/bin/hadoop jar hadoop-mapreduce- examples-2.6.1.jar wordcount /wordcount/input /wordcount/azout
+                  4.hive操作任务
+                      执行一个命令是 command=/xx/hive -e &apos;show tables&apos;
+                      执行一个文件，里面是hive sql语句， commmand=/xx/hive -f &apos;test.sql&apos;
+                      Hive 脚本: test.sql
+                        type=command
+                        command=/home/hadoop/apps/hadoop-2.6.1/bin/hadoop jar hadoop-mapreduce- examples-2.6.1.jar wordcount /wordcount/input /wordcount/azout
+                        use default;
+                        drop table aztest;
+                        create table aztest(id int,name string) row format delimited fields terminated by &apos;,&apos;;
+                        load data inpath &apos;/aztest/hiveinput&apos; into table aztest;
+                        create table azres as select * from aztest;
+                        insert overwrite directory &apos;/aztest/hiveoutput&apos; select count(1) from aztest;
+        不推荐使用: ooize[虽然是Apache旗下的，但是工作流的过程是编写大量的XML文件配置，而且代码复杂度比较高，不易于二次开发]
+&gt; 数据展现
+    将分析所得到的数据进行数据可视化，一般通过图表[百度的echarts]进行展示
+</code></pre><h2 id="模块开发-数据仓库的设计"><a href="#模块开发-数据仓库的设计" class="headerlink" title="模块开发-数据仓库的设计"></a>模块开发-数据仓库的设计</h2><pre><code>1.纬度建模
+    纬度表(demension)
+        通常指 按照类别、区域或者时间等等来分析，维度表数据比较固定，数据量小
+     事实表
+        事实表的设计是以能够正确记录历史信息为准则也就是一条一条的数据，就像是消费记录里面有product_id
+        维度表的设计是以能够以合适的角度来聚合主题内容为准则  这边有product_id对应的产品信息
+2.纬度建模三种模式：
+    2.1 星型模式 [像星星一样]
+            由一个事实表和一组维度表组成    
+                比如：
+                    事实表里有地域主键、时间键、部门键、产品键 对应有4个维度表相关联
+    2.2 雪花模式[不常用，因为不容易维护！！！]
+            在星型模式基础上，维度表还有维度表
+    2.3 星座模式 [开发常用！！！]
+        基于多张事实表，而且共享纬度信息
+</code></pre><p>本项目数据仓库的设计：</p>
+<pre><code>1.事实表的设计 ods_weblog_orgin =&gt; 对应mr清洗完之后的数据 【窄表】和【宽表或者明细表】
+    窄表：对应原始数据表，字段跟数据中一一对应，但是不利于分析
+---------------------------------------------------------------------------------------------------------------
+        valid  remote_addr remote_user time_local  request status  body_bytes_sent http_referer  http_user_agent
+        是否有效 访客IP         访客用户信息  请求时间     请求url  响应码    相应字节数       来源url         访客终端信息
+---------------------------------------------------------------------------------------------------------------
+    宽表：把某些融合各种信息的字段 提取出不同的信息作为新的字段
+        相对于之前的窄表 字段增加了，所以叫宽表，
+        比如时间戳，如果是之前的话 &apos;2018-09-09 18:09:09&apos;这种时间不利于分析，
+        如果分成年，月，日，那么分析时直接group by day 或者 year 或者day 就ok了
+        还有referer_url也是如此，可以拆分为host或者参数之类的
+
+2.维度表的设计如：
+    时间维度 t_dim_time: date_key year month day hour 
+    访客地域纬度t_dim_area: area_ID 北京 上海 广州 深圳
+    终端类型维度 t_dim_termination: uc firefox chrome safari ios android
+    网站栏目纬度 t_dim_section: 进口食品、生鲜日配、时令果蔬、奶制品、
+                                休闲保健、酒饮冲调茶叶、粮油副食、母婴玩具、个护清洁、家具家电
+    维度表的数据一般要结合业务情况自己写脚本按照规则生成，也可以用工具来生成，方便后续关联分析
+    比如事先生成时间维度表中的数据，跨度从业务需求的日期到当前的日期即可，具体根据分析粒度，
+    库生成年，季，月，周，天，时等相关信息，用于分析
+</code></pre><p>数据仓库三层架构：</p>
+<pre><code>ods层：数据就是通过mr清洗过的数据，带有标签valid或者标识的数据
+    1.创建ODS层数据表
+        1.1. 原始日志数据表 :创建按照时间来分区的hive 分区表
+            drop table if exists ods_weblog_origin;
+            create table ods_weblog_origin
+            (
+            valid string,remote_addr string,remote_user string, time_local string,request string,status string, body_bytes_sent string, http_referer string, http_user_agent string
+            )
+            partitioned by (datestr string)
+            row format delimited 
+            fields terminated by &apos;\001&apos;;
+        1.2. 点击流模型 PageViews表
+            drop table if exists ods_click_pageviews;
+            create table ods_click_pageviews
+            (
+            session string,remote_addr string,remote_user string, time_local string,request string,visit_step string, page_staylong string, http_referer string, http_user_agent string, body_bytes_sent string, status string
+            )
+            partitioned by (datestr string)
+            row format delimited 
+            fields terminated by &apos;\001&apos;;
+        1.3. 点击流模型 Visits
+            drop table if exists ods_click_visits;
+            create table ods_click_visits
+            (
+            )
+            partitioned by (datestr string)
+            row format delimited 
+            fields terminated by &apos;\001&apos;;
+        1.4. 维度表创建(这里举例：时间，年、月、日、时)
+            drop table if exists t_dim_time;
+            create table t_dim_time 
+            (
+            date_key int,...
+            )
+            row format delimited 
+            fields terminated by &apos;,&apos;;
+        1.5 创建明细宽表 ods_weblog_detail 时间可以明细为 年月日时分秒，
+            referer_url 可以明细为 host、path、query、queryid
+            从预清洗后的表中得到这些数据，如果是referer_url 需要使用Hive里定义的函数：
+                lateral view parse_url_tuple(正则表达式)这个方法，自动把url转换为host、path等
+            如果是时间拓宽明细表的话 就是 substring
+dw层：ods通过ETL处理之后得到dw层
+        多维度统计PV总量：
+            b) 与时间维度表关联查询
+                insert into table dw_pvs_everyday select count(*) as pvs,a.month as month,a.day as day 
+                from 
+                (select distinct month, day from t_dim_time) a 
+                join 
+                ods_weblog_detail b 
+                on a.month=b.month and a.day=b.day group by a.month,a.day;
+            c) 按照referer维度进行统计每小时各来访 url 产生的 PV 量
+                insert into table dw_pvs_referer_everyhour partition(datestr=&apos;20130918&apos;)
+                select http_referer,ref_host,month,day,hour,count(1) as pv_referer_cnt
+                from 
+                ods_weblog_detail
+                group by http_referer,ref_host,month,day,hour
+                having ref_host is not null
+                order by hour asc,day asc,month asc,pv_referer_cnt desc;
+            d) 人均浏览量
+                统计今日所有来访者平均请求的页面数。
+                    insert into table dw_avgpv_user_everyday
+                    select 
+                    &apos;20130918&apos;,sum(b.pvs)/count(b.remote_addr) 
+                    from
+                    (select remote_addr,count(1) as pvs from ods_weblog_detail where datestr=&apos;20130918&apos; group by remote_addr) b; 
+            e)特别重要：分组求TopN ************非常重要**********
+                row_number()函数
+                    row_number() over (partition by xxx order by xxx) rank
+                insert into table dw_pvs_refhost_topn_everyhour partition(datestr=&apos;20130918&apos;) 
+                select t.hour,t.od,t.ref_host,t.ref_host_cnts 
+                from(
+                select ref_host,ref_host_cnts,concat(month,day,hour) as hour,row_number() over (partition by concat(month,day,hour) order by ref_host_cnts desc
+                ) as od 
+                from 
+                dw_pvs_refererhost_everyhour) t 
+                where od&lt;=3;
+            f) 受访分析(从页面的角度分析)
+                热门页面统计
+                    统计每日最热门的页面 top10
+                        insert into table dw_hotpages_everydayselect &apos;20130918&apos;,a.request,a.request_counts 
+                        from
+                        (select request as request,count(request) as request_counts 
+                        from 
+                        ods_weblog_detail 
+                        where datestr=&apos;20130918&apos; 
+                        group by request having request is not null
+                        ) a 
+                        order by a.request_counts desc 
+                        limit 10;
+            g) 每小时独立访客及其产生的 pv
+                insert into table dw_user_dstc_ip_h 
+                select remote_addr,count(1) as pvs,concat(month,day,hour) as hour 
+                from 
+                ods_weblog_detail Where datestr=&apos;20130918&apos; 
+                group by concat(month,day,hour),remote_addr;
+                    在以上的结果基础上，统计每小时独立访客总数
+                        select count(1) as dstc_ip_cnts,hour from dw_user_dstc_ip_h group by hour;
+                    统计每日独立访客总数
+                        select remote_addr,count(1) as counts,concat(month,day) as day 
+                        from 
+                        ods_weblog_detail Where datestr=&apos;20130918&apos; 
+                        group by concat(month,day),remote_addr;
+                    统计每月独立访客总数
+                        select 
+                        remote_addr,count(1) as counts,month 
+                        from 
+                        ods_weblog_detail 
+                        group by month,remote_addr;
+            h) 每日新访访客 today left join old ***************非常重要*************
+                insert into table dw_user_new_d partition(datestr=&apos;20130918&apos;) 
+                select tmp.day as day,tmp.today_addr as new_ip 
+                from 
+                ( select today.day as day,today.remote_addr as today_addr,old.ip as old_addr from (select distinct remote_addr as remote_addr,&quot;20130918&quot; as day from ods_weblog_detail where datestr=&quot;20130918&quot;) today left outer join dw_user_dsct_history old on today.remote_addr=old.ip ) tmp 
+                where tmp.old_addr is null;
+            注意：每日新用户追加到累计表
+            i) 访客 Visit 分析(点击流模型)
+                查询今日所有回头访客及其访问次数。
+                    insert overwrite table dw_user_returning partition(datestr=&apos;20130918&apos;) 
+                    select tmp.day,tmp.remote_addr,tmp.acc_cnt 
+                    from 
+                    (select &apos;20130918&apos; as day,remote_addr,count(session) as acc_cnt from ods_click_stream_visit group by remote_addr) tmp 
+                    where tmp.acc_cnt&gt;1;
+            j) 人均访问频次
+                统计出每天所有用户访问网站的平均次数(visit)
+                    select sum(pagevisits)/count(distinct remote_addr) from ods_click_stream_visit where datestr=&apos;20130918&apos;;
+            k) 关键路径转化率分析(漏斗模型) -- 基于PageViews模型
+                定义好业务流程中的页面标识，下例中的步骤为[模型设计]: Step1、 /item
+                                                          Step2、 /category
+                                                         Step3、 /index
+                                                        Step4、 /order
+                --查询每一步人数存入 dw_oute_numbs
+                create table dw_oute_numbs as
+                select &apos;step1&apos; as step,count(distinct remote_addr) and request like &apos;/item%&apos;
+                union
+                select &apos;step2&apos; as step,count(distinct remote_addr) and request like &apos;/category%&apos;
+                union
+                select &apos;step3&apos; as step,count(distinct remote_addr) and request like &apos;/order%&apos;
+                union
+                select &apos;step4&apos; as step,count(distinct remote_addr) and request like &apos;/index%&apos;;
+                as numbs from ods_click_pageviews where datestr=&apos;20130920&apos;
+                as numbs from ods_click_pageviews where datestr=&apos;20130920&apos;
+                as numbs from ods_click_pageviews where datestr=&apos;20130920&apos;
+                as numbs from ods_click_pageviews where datestr=&apos;20130920&apos;
+                注:UNION 将多个 SELECT 语句的结果集合并为一个独立的结果集。
+                ***利用级联求和自己和自己join ******************非常重要********************
+                inner join
+                select abs.step,abs.numbs,abs.rate as abs_ratio,rel.rate as leakage_rate
+                from
+                (
+                select tmp.rnstep as step,tmp.rnnumbs as numbs,tmp.rnnumbs/tmp.rrnumbs as rate
+                from
+                (
+                select rn.step as rnstep,rn.numbs as rnnumbs,rr.step as rrstep,rr.numbs as rrnumbs inner join
+                dw_oute_numbs rr) tmp
+                where tmp.rrstep=&apos;step1&apos;
+                ) abs
+                left outer join
+                (
+                select tmp.rrstep as step,tmp.rrnumbs/tmp.rnnumbs as rate
+                from
+                (
+                select rn.step as rnstep,rn.numbs as rnnumbs,rr.step as rrstep,rr.numbs as rrnumbs inner join
+                dw_oute_numbs rr) tmp
+                where cast(substr(tmp.rnstep,5,1) as int)=cast(substr(tmp.rrstep,5,1) as int)-1
+                ) rel
+                on abs.step=rel.step;
+                from dw_oute_numbs rn
+                其中 cast(substr(tmp.rnstep,5,1) as int) 是 把字符串截取字符 然后强制转化为int
+            ) 还可以按照栏目纬度和UA（user agent）纬度来分析PV,
+                为了说明PV是可以从各个纬度去分析的
+
+app层：应用层来拿数据展示
+</code></pre><p>Sqoop：是Hadoop和关系数据库服务器之间传送数据的一种工具-sql到Hadoop和Hadoop到sql</p>
+<pre><code>sqoop工作机制是将导入或导出命令翻译成MapReduce程序来实现，
+在翻译出的MapReduce中主要是对inputformat和outputformat进行定制
+1.从关系型数据库(mysql)导入到hadoop 是 DBIputformat，import命令
+    bin/sqoop import \
+    --connect jdbc:mysql://node-21:3306/sqoopdb \ --username root \
+    --password hadoop \
+    --target-dir /sqoopresult \ //--target-dir 可以用来指定导出数据存放至 HDFS 的目录;
+    --table emp --m 1   //m 1 表示一个map来跑
+2.导入 mysql 表数据到 HIVE
+    2.1 将关系型数据的表结构复制到 hive 中
+    bin/sqoop create-hive-table \
+    --connect jdbc:mysql://node-21:3306/sqoopdb \ --table emp_add \
+    --username root \
+    --password hadoop \
+    --hive-table test.emp_add_sp
+    2.2 以上只是复制表的结构，并没有将数据导进去，将数据导入Hive表中
+        bin/sqoop import \
+        --connect jdbc:mysql://node-21:3306/sqoopdb \ --username root \
+        --password hadoop \
+        --table emp_add \
+        --hive-table test.emp_add_sp \
+        --hive-import \   ****
+        --m 1
+    2.3 复杂查询条件:如果不指定分隔符是默认逗号
+        bin/sqoop import \
+        --connect jdbc:mysql://node-21:3306/sqoopdb \ --username root \
+        --password hadoop \
+        --target-dir /wherequery12 \
+        --query &apos;select id,name,deg from emp WHERE --split-by id \
+        --fields-terminated-by &apos;\t&apos; \
+        --m 1
+    2.4 下面的命令用于在 EMP 表执行增量导入:
+        bin/sqoop import \
+        --connect jdbc:mysql://node-21:3306/sqoopdb \ --username root \
+        --password hadoop \
+        --table emp --m 1 \
+        --incremental append \  ****
+        --check-column id \  ****
+        --last-value 1205    ****
+    3. Sqoop 导出
+        将数据从 HDFS 导出到 RDBMS 数据库导出前，目标表必须存在于目标数据库中。
+        bin/sqoop export \
+        --connect jdbc:mysql://node-21:3306/sqoopdb \ --username root \
+        --password hadoop \
+        --table employee \
+        --export-dir /emp/emp_data
+        还可以用下面命令指定输入文件的分隔符
+        --input-fields-terminated-by &apos;\t&apos;
+</code></pre><h4 id="工作流调度："><a href="#工作流调度：" class="headerlink" title="工作流调度："></a>工作流调度：</h4><pre><code>整个项目的数据按照处理过程，从数据采集到数据分析，再到结果数据的到处，
+一系列的任务可以分割成若干个azkaban的job单元，然后由工作流调度器调度执行。
+调度脚本的编写难点在于shell脚本
+shell脚本大体框架如下：
+    #!/bin/bash
+    #set java env
+    #set hadoop env
+    #设置一些主类、目录等常量
+    #获取时间信息
+    #shell 主程序、结合流程控制(if....else)去分别执行 shell 命令。 更多工作流及 hql 脚本定义见参考资料。
+    hive -e执行sql语句
+</code></pre><h4 id="数据可视化"><a href="#数据可视化" class="headerlink" title="数据可视化"></a>数据可视化</h4><pre><code>Echarts：
+    百度前端技术部开发的，基于JavaScript的数据可视化图标库，
+    可以构建折线图(区域图)、柱状 图(条状图)、散点图(气泡图)、饼图(环形图)、
+    K 线图、地图、力导向布局图以及和弦图， 同时支持任意维度的堆积和多图表混合展现。
+javaEE中web.xml 的&lt;url-pattern&gt;/&lt;/url-pattern&gt; 是拦截所有，jsp除外
+
+1.Mybatis example 排序问题 example.setOrderByClause(&quot;`dateStr` ASC&quot;);
+查询结果便可以根据 dataStr 字段正序排列(从小到大)
+如何区分不同数据仓库层的表：
+2.Echarts 前端数据格式问题
+注意，当异步加载数据的时候，前端一般需要的是数据格式是数组。一定要对应上。在 这里我们可以使用 Java Bean 封装数据，然后转换成 json 扔到前端，对应    上相应的字段即 可。
+ObjectMapper om = new ObjectMapper(); beanJson = om.writeValueAsString(bean);
+3.Controller 返回的 json @RequestMapping(value=&quot;/xxxx&quot;,produces=&quot;application/json;charset=UTF-8&quot;)
+@ResponseBody    
+
+一般使用第一种[业内默认的]
+1.表之前加前缀 ods_T_access.log
+                dw_T_access.log
+2.针对不同的数据仓库层 建立对应的数据库 database
+</code></pre>
       
     </div>
     
@@ -259,10 +668,10 @@
 
 
   
-    <article id="post-sparkstreaming&amp;kafka" class="article article-type-post" itemscope itemprop="blogPost">
+    <article id="post-storm的架构" class="article article-type-post" itemscope itemprop="blogPost">
   
     <div class="article-meta">
-      <a href="/2018/05/01/sparkstreaming&kafka/" class="article-date">
+      <a href="/2018/05/01/storm的架构/" class="article-date">
   	<time datetime="2018-05-01T13:29:30.000Z" itemprop="datePublished">2018-05-01</time>
 </a>
     </div>
@@ -276,8 +685,8 @@
         
   
     <h1 itemprop="name">
-      <a class="article-title" href="/2018/05/01/sparkstreaming&kafka/">
-        将offsets存储在HBase中
+      <a class="article-title" href="/2018/05/01/storm的架构/">
+        storm
         
       </a>
     </h1>
@@ -288,18 +697,80 @@
     
     <div class="article-entry" itemprop="articleBody">
       
-        <p>将offsets存储在HBase中</p>
-<p>HBase可以作为一个可靠的外部数据库来持久化offsets。通过将offsets存储在外部系统中，Spark Streaming应用功能能够重读或者回放任何仍然存储在Kafka中的数据。</p>
-<p>根据HBase的设计模式，允许应用能够以rowkey和column的结构将多个Spark Streaming应用和多个Kafka topic存放在一张表格中。在这个例子中，表格以topic名称、消费者group id和Spark Streaming 的batchTime.milliSeconds作为rowkey以做唯一标识。尽管batchTime.milliSeconds不是必须的，但是它能够更好地展示历史的每批次的offsets。表格将存储30天的累积数据，如果超出30天则会被移除。下面是创建表格的DDL和结构</p>
-<p>对每一个批次的消息，使用saveOffsets()将从指定topic中读取的offsets保存到HBase中</p>
-<p>在执行streaming任务之前，首先会使用getLastCommittedOffsets()来从HBase中读取上一次任务结束时所保存的offsets。该方法将采用常用方案来返回kafka topic分区offsets。</p>
-<p>情形1：Streaming任务第一次启动，从zookeeper中获取给定topic的分区数，然后将每个分区的offset都设置为0，并返回。</p>
-<p>情形2：一个运行了很长时间的streaming任务停止并且给定的topic增加了新的分区，处理方式是从zookeeper中获取给定topic的分区数，对于所有老的分区，offset依然使用HBase中所保存，对于新的分区则将offset设置为0。</p>
-<p>情形3：Streaming任务长时间运行后停止并且topic分区没有任何变化，在这个情形下，直接使用HBase中所保存的offset即可。</p>
-<p>在Spark Streaming应用启动之后如果topic增加了新的分区，那么应用只能读取到老的分区中的数据，新的是读取不到的。所以如果想读取新的分区中的数据，那么就得重新启动Spark Streaming应用。</p>
-<p>当我们获取到offsets之后我们就可以创建一个Kafka Direct DStream</p>
-<p>在完成本批次的数据处理之后调用saveOffsets()保存offsets.<br> 你可以到HBase中去查看不同topic和消费者组的offset数据</p>
+        <h1 id="storm"><a href="#storm" class="headerlink" title="storm"></a>storm</h1><p><img src="http://m.qpic.cn/psb?/V11BXxlE33Kp9F/t7Rbr8aYgIO4*9TbdsjJMgxTPY8JHwAmijtuJfP2rbo!/b/dEMBAAAAAAAA&amp;bo=wAY4BAAAAAADN.g!&amp;rf=viewer_4" alt=""></p>
+<h3 id="Storm架构"><a href="#Storm架构" class="headerlink" title="Storm架构"></a>Storm架构</h3><pre><code>类似于Hadoop的架构，主从(Master/Slave)
+Nimbus: 主
+    集群的主节点，负责任务(task)的指派和分发、资源的分配
+Supervisor: 从
+    可以启动多个Worker，具体几个呢？可以通过配置来指定
+    一个Topo可以运行在多个Worker之上，也可以通过配置来指定
+    集群的从节点，(负责干活的)，负责执行任务的具体部分
+    启动和停止自己管理的Worker进程
+无状态，在他们上面的信息(元数据)会存储在ZK中
+Worker: 运行具体组件逻辑(Spout/Bolt)的进程
+=====================分割线===================
+task： 
+    Spout和Bolt
+    Worker中每一个Spout和Bolt的线程称为一个Task
+executor： spout和bolt可能会共享一个线程
+</code></pre><h5 id="提交代码到集群："><a href="#提交代码到集群：" class="headerlink" title="提交代码到集群："></a>提交代码到集群：</h5><pre><code>storm jar /home/hadoop/lib/storm-1.0.jar com.bigdata.ClusterSumStormTopology
+</code></pre><h5 id="storm-其他命令的使用"><a href="#storm-其他命令的使用" class="headerlink" title="storm 其他命令的使用"></a>storm 其他命令的使用</h5><pre><code>list
+    Syntax: storm list
+    List the running topologies and their statuses.
+如何停止作业
+    kill
+        Syntax: storm kill topology-name [-w wait-time-secs]
+</code></pre><p>并行度</p>
+<pre><code>一个worker进程执行的是一个topo的子集
+一个worker进程会启动1..n个executor线程来执行一个topo的component
+一个运行的topo就是由集群中多台物理机上的多个worker进程组成
 
+executor是一个被worker进程启动的单独线程，每个executor只会运行1个topo的一个component
+task是最终运行spout或者bolt代码的最小执行单元
+
+默认：
+    一个supervisor节点最多启动4个worker进程  
+    每一个topo默认占用一个worker进程         
+    每个worker进程会启动一个executor        
+    每个executor启动一个task   
+
+Total slots:4  
+Executors: 3   但是stormUI上是 spout + bolt = 2  why 3?
+隐藏的acker 导致的
+</code></pre><h5 id="通过代码对并行度的理解："><a href="#通过代码对并行度的理解：" class="headerlink" title="通过代码对并行度的理解："></a>通过代码对并行度的理解：</h5><pre><code>Config conf = new Config();
+conf.setNumWorkers(2); // use two worker processes
+topologyBuilder.setSpout(&quot;blue-spout&quot;, new BlueSpout(), 2); // set parallelism hint to 2
+topologyBuilder.setBolt(&quot;green-bolt&quot;, new GreenBolt(), 2)
+           .setNumTasks(4)
+           .shuffleGrouping(&quot;blue-spout&quot;);topologyBuilder.setBolt(&quot;yellow-bolt&quot;, new YellowBolt(), 6)
+           .shuffleGrouping(&quot;green-bolt&quot;);StormSubmitter.submitTopology(
+    &quot;mytopology&quot;,
+    conf,
+    topologyBuilder.createTopology()
+);
+
+##解释：
+conf.setNumWorkers(2) ---&gt;两个worker
+setSpout(&quot;blue-spout&quot;, new BlueSpout(), 2)---&gt; 2个spout executor 对应默认的2个task
+setBolt(&quot;green-bolt&quot;, new GreenBolt(), 2).setNumTasks(4) ---&gt; 2个executor 4个task(因为它指定了setNumTasks个数)
+
+结果：
+1个topology
+2个workers  
+2+2+2[2个worker 就有2个acker] = 6个executors  
+2+4+2[2个worker 就有2个acker默认2个task] = 8个task
+</code></pre><h5 id="修改正在运行的topology的并行度："><a href="#修改正在运行的topology的并行度：" class="headerlink" title="修改正在运行的topology的并行度："></a>修改正在运行的topology的并行度：</h5><pre><code>#Reconfigure the topology &quot;mytopology&quot; to use 5 worker processes,
+#the spout &quot;blue-spout&quot; to use 3 executors 
+#the bolt &quot;yellow-bolt&quot; to use 10 executors.
+
+1.可以使用StormUI来rebalance the topology.
+2.也可以使用命令行来修改：$ storm rebalance mytopology -n 5 -e blue-spout=3 -e yellow-bolt=10
+</code></pre><p>stream grouping分组策略内置[build-in]有8种：</p>
+<pre><code>常用的有两种：
+1.shuffle grouping 随机分配也就是轮询RoundRobin 这样不会造成数据倾斜
+2.fileds grouping 比如按照字段hash取模分组 
+如果想自定义分组策略：--&gt; 自定义分组策略需要实现CustomStreamGroup接口
+</code></pre>
       
     </div>
     
@@ -324,11 +795,11 @@
 
 
   
-    <article id="post-电商分析指标" class="article article-type-post" itemscope itemprop="blogPost">
+    <article id="post-决策树算法及模型" class="article article-type-post" itemscope itemprop="blogPost">
   
     <div class="article-meta">
-      <a href="/2018/04/05/电商分析指标/" class="article-date">
-  	<time datetime="2018-04-05T13:29:30.000Z" itemprop="datePublished">2018-04-05</time>
+      <a href="/2018/04/07/决策树算法及模型/" class="article-date">
+  	<time datetime="2018-04-07T04:29:30.000Z" itemprop="datePublished">2018-04-07</time>
 </a>
     </div>
   
@@ -341,8 +812,8 @@
         
   
     <h1 itemprop="name">
-      <a class="article-title" href="/2018/04/05/电商分析指标/">
-        电商常见分析指标
+      <a class="article-title" href="/2018/04/07/决策树算法及模型/">
+        决策树算法及模型
         
       </a>
     </h1>
@@ -353,51 +824,116 @@
     
     <div class="article-entry" itemprop="articleBody">
       
-        <p>电商常见分析指标<br>信息流、物流和资金流三大平台是电子商务的三个最为重要的平台。而电子商务信息系统最核心的能力是大数据能力，包括大数据处理、数据分析和数据挖掘能力。无论是电商平台（如淘宝）还是在电商平台上销售产品的卖家，都需要掌握大数据分析的能力。越成熟的电商平台，越需要以通过大数据能力驱动电子商务运营的精细化，更好的提升运营效果，提升业绩。构建系统的电子商务数据分析指标体系是数据电商精细化运营的重要前提，本文将重点介绍电商数据分析指标体系。<br>电商数据分析指标体系分为八大类指标，包括总体运营指标、网站流量累指标、销售转化指标、客户价值指标、商品及供应链指标、营销活动指标、风险控制指标和市场竞争指标。不同类别指标对应电商运营的不同环节，如网站流量指标对应的是网站运营环节，销售转化、客户价值和营销活动指标对应的是电商销售环节。<br>1.电商总体运营指标<br><img src="https://s1.ax1x.com/2018/05/03/CYaO3t.png" alt="CYaO3t.png"></p>
-<p>电商总体运营整体指标主要面向的人群电商运营的高层，通过总体运营指标评估电商运营的整体效果。电商总体运营整体指标包括四方面的指标：</p>
-<p>（1）流量类指标</p>
-<p>独立访客数（UV），指访问电商网站的不重复用户数。对于PC网站，统计系统会在每个访问网站的用户浏览器上“种”一个cookie来标记这个用户，这样每当被标记cookie的用户访问网站时，统计系统都会识别到此用户。在一定统计周期内如（一天）统计系统会利用消重技术，对同一cookie在一天内多次访问网站的用户仅记录为一个用户。而在移动终端区分独立用户的方式则是按独立设备计算独立用户。</p>
-<p>页面访问数（PV），即页面浏览量，用户每一次对电商网站或着移动电商应用中的每个网页访问均被记录一次，用户对同一页面的多次访问，访问量累计。<br>人均页面访问数，即页面访问数（PV）／独立访客数，该指标反映的是网站访问粘性。</p>
-<p>（2）订单产生效率指标</p>
-<p>总订单数量，即访客完成网上下单的订单数之和。<br>访问到下单的转化率，即电商网站下单的次数与访问该网站的次数之比。</p>
-<p>（3）总体销售业绩指标</p>
-<p>网站成交额（GMV），电商成交金额，即只要网民下单，生成订单号，便可以计算在GMV里面。<br>销售金额。销售金额是货品出售的金额总额。</p>
-<p>注：无论这个订单最终是否成交，有些订单下单未付款或取消，都算GMV，销售金额一般只指实际成交金额，所以，GMV的数字一般比销售金额大。</p>
-<p>客单价，即订单金额与订单数量的比值。</p>
-<p>（4）整体指标</p>
-<p>销售毛利，是销售收入与成本的差值。销售毛利中只扣除了商品原始成本，不扣除没有计入成本的期间费用（管理费用、财务费用、营业费用）。<br>毛利率，是衡量电商企业盈利能力的指标，是销售毛利与销售收入的比值。如京东的2014年毛利率连续四个季度稳步上升，从第一季度的10.0％上升至第四季度的12.7％，体现出京东盈利能力的提升。</p>
-<p>2.网站流量指标<br><img src="https://s1.ax1x.com/2018/05/03/CYa6AJ.png" alt="CYa6AJ.png"></p>
-<p>（1）流量规模类指标<br>常用的流量规模类指标包括独立访客数和页面访问数，相应的指标定义在前文（电商总体运营指标）已经描述，在此不在赘述</p>
-<p>（2）流量成本累指标<br>单位访客获取成本。该指标指在流量推广中，广告活动产生的投放费用与广告活动带来的独立访客数的比值。单位访客成本最好与平均每个访客带来的收入以及这些访客带来的转化率进行关联分析。若单位访客成本上升，但访客转化率和单位访客收入不变或下降，则很可能流量推广出现问题，尤其要关注渠道推广的作弊问题。</p>
-<p>（3）流量质量类指标<br>跳出率（Bounce Rate）也被称为蹦失率，为浏览单页即退出的次数/该页访问次数，跳出率只能衡量该页做为着陆页面（LandingPage）的访问。如果花钱做推广，着落页的跳出率高，很可能是因为推广渠道选择出现失误，推广渠道目标人群和和被推广网站到目标人群不够匹配，导致大部分访客来了访问一次就离开。</p>
-<p>页面访问时长。页访问时长是指单个页面被访问的时间。并不是页面访问时长越长越好，要视情况而定。对于电商网站，页面访问时间要结合转化率来看，如果页面访问时间长，但转化率低，则页面体验出现问题的可能性很大。</p>
-<p>人均页面浏览量。人均页面浏览量是指在统计周期内，平均每个访客所浏览的页面量。人均页面浏览量反应的是网站的粘性。</p>
-<p>（4）会员类指标</p>
-<p>注册会员数。指一定统计周期内的注册会员数量。<br>活跃会员数。活跃会员数，指在一定时期内有消费或登录行为的会员总数。<br>活跃会员率。即活跃会员占注册会员总数的比重。<br>会员复购率。指在统计周期内产生二次及二次以上购买的会员占购买会员的总数。<br>会员平均购买次数。指在统计周期内每个会员平均购买的次数，即订单总数/购买用户总数。会员复购率高的电商网站平均购买次数也高。<br>会员回购率。指上一期末活跃会员在下一期时间内有购买行为的会员比率。<br>会员留存率。会员在某段时间内开始访问你的网站，经过一段时间后，仍然会继续访问你的网站就被认作是留存，这部分会员占当时新增会员的比例就是新会员留存率，这种留存的计算方法是按照活跃来计算，另外一种计算留存的方法是按消费来计算，即某段的新增消费用户在往后一段时间时间周期（时间周期可以是日、周、月、季度和半年度）还继续消费的会员比率。留存率一般看新会员留存率，当然也可以看活跃会员留存。留存率反应的是电商留住会员的能力。</p>
-<p>3.网站销售（转化率）类指标<br><img src="https://s1.ax1x.com/2018/05/03/CYaghR.png" alt="CYaghR.png"></p>
-<p>（1）购物车类指标<br>基础类指标，包括一定统计周期内加入购物车次数、加入购物车买家数、加入购物车买家数以及加入购物车商品数。<br>转化类指标，主要是购物车支付转化率，即一定周期内加入购物车商品支付买家数与加入购物车购买家数的比值。</p>
-<p>（2）下单类指标<br>基础类指标，包括一定统计周期内的下单笔数、下单金额以及下单买家数。<br>转化类指标，主要是浏览下单转化率，即下单买家数与网站访客数（UV）的比值。</p>
-<p>（3）支付类指标<br>基础统计类指标，包括一定统计周期内支付金额、支付买家数和支付商品数。<br>转化类指标。包括浏览-支付买家转化率（支付买家数/网站访客数）、下单-支付金额转化率（支付金额/下单金额）、下单-支付买家数转化率（支付买家数/下单买家数）和下单-支付时长（下单时间到支付时间的差值）。</p>
-<p>4.客户价值类指标<br><img src="https://s1.ax1x.com/2018/05/03/CYaW1x.png" alt="CYaW1x.png"></p>
-<p>客户指标。常见客户指标包括一定统计周期内的累计购买客户数和客单价。客单价是指每一个客户平均购买商品的金额，也即是平均交易金额，即成交金额与成交用户数的比值。</p>
-<p>新客户指标。常见新客户指标包括一定统计周期内的新客户数量、新客户获取成本和新客户客单价。其中，新客户客单价是指第一次在店铺中产生消费行为的客户所产生交易额与新客户数量的比值。影响新客户客单价的因素除了与推广渠道的质量有关系，还与电商店铺活动以及关联销售有关。</p>
-<p>老客户指标。常见老客户指标包括消费频率、最近一次购买时间、消费金额和重复购买率。消费频率是指客户在一定期间内所购买的次数；最近一次购买时间表示客户最近一次购买的时间离现在有多远；客户消费金额指客户在最近一段时间内购买的金额。消费频率越高，最近一次购买时间离现在越近，消费金额越高的客户越有价值。重复购买率则指消费者对该品牌产品或者服务的重复购买次数，重复购买率越多，则反应出消费者对品牌的忠诚度就越高，反之则越低。重复购买率可以按两种口径来统计：第一种，从客户数角度，重复购买率指在一定周期内下单次数在两次及两次以上的人数与总下单人数之比，如在一个月内，有100个客户成交，其中有20个是购买两次及以上，则重复购买率为20%；第二种，按交易计算，即重复购买交易次数与总交易次数的比值，如某月内，一共产生了100笔交易，其中有20个人有了二次购买，这20人中的10个人又有了三次购买，则重复购买次数为30次，重复购买率为30%。</p>
-<p>5.商品类指标<br><img src="https://s1.ax1x.com/2018/05/03/CYafc6.png" alt="CYafc6.png"></p>
-<p>产品总数指标。包括SKU、SPU和在线SPU。SKU是物理上不可分割的最小存货单位。SPU即Standard Product Unit （标准化产品单元），SPU是商品信息聚合的最小单位，是一组可复用、易检索的标准化信息的集合，该集合描述了一个产品的特性。通俗点讲，属性值、特性相同的商品就可以称为一个SPU。如iphone5S是一个SPU，而iPhone 5S配置为16G版、4G手机、颜色为金色、网络类型为TD-LTE/TD-SCDMA/WCDMA/GSM则是一个SKU。在线SPU则是在线商品的SPU数。</p>
-<p>产品优势性指标。主要是独家产品的收入占比，即独家销售的产品收入占总销售收入的比例。</p>
-<p>品牌存量指标。包括品牌数和在线品牌数指标。品牌数指商品的品牌总数量。在线品牌数则指在线商品的品牌总数量。</p>
-<p>上架。包括上架商品SKU数、上架商品SPU数、上架在线SPU数、上架商品数和上架在线商品数。</p>
-<p>首发。包括首次上架商品数和首次上架在线商品数。</p>
-<p>6.市场营销活动指标<br><img src="https://s1.ax1x.com/2018/05/03/CYaIBD.png" alt="CYaIBD.png"></p>
-<p>市场营销活动指标。包括新增访问人数、新增注册人数、总访问次数、订单数量、下单转化率以及ROI。其中，下单转化率是指活动期间，某活动所带来的下单的次数与访问该活动的次数之比。投资回报率（ROI）是指，某一活动期间，产生的交易金额与活动投放成本金额的比值。</p>
-<p>广告投放指标。包括新增访问人数、新增注册人数、总访问次数、订单数量、UV订单转化率、广告投资回报率。其中，下单转化率是指某广告所带来的下单的次数与访问该活动的次数之比。投资回报率（ROI）是指，某广告产生的交易金额与广告投放成本金额的比值。</p>
-<p>7.风控类指标<br><img src="https://s1.ax1x.com/2018/05/03/CYa7AH.png" alt="CYa7AH.png"></p>
-<p>买家评价指标。包括买家评价数，买家评价卖家数、买家评价上传图片数、买家评价率、买家好评率以及卖家差评率。其中，买家评价率是指某段时间参与评价的卖家与该时间段买家数量的比值，是反映用户对评价的参与度，电商网站目前都在积极引导用户评价，以作为其他买家购物时候的参考。买家好评率指某段时间内好评的买家数量与该时间段买家数量的比值。同样，买家差评率指某段时间内差评的买家数量与该时间段买家数量的比值。尤其是买家差评率，是非常值得关注的指标，需要监控起来，一旦发现买家差评率在加速上升，一定要提高警惕，分析引起差评率上升的原因，及时改进。</p>
-<p>买家投诉类指标。包括发起投诉（或申诉），撤销投诉（或申诉），投诉率（买家投诉人数占买家数量的比例）等。投诉量和投诉率都需要及时监控，以发现问题，及时优化。</p>
-<p>8.市场竞争类指标<br><img src="https://s1.ax1x.com/2018/05/03/CYaHNd.png" alt="CYaHNd.png"></p>
-<p>市场份额相关指标，包括市场占有率、市场扩大率和用户份额。市场占有率指电商网站交易额占同期所有同类型电商网站整体交易额的比重；市场扩大率指购物网站占有率较上一个统计周期增长的百分比；用户份额指购物网站独立访问用户数占同期所有B2C购物网站合计独立访问用户数的比例。</p>
-<p>网站排名，包括交易额排名和流量排名。交易额排名指电商网站交易额在所有同类电商网站中的排名；流量排名指电商网站独立访客数量在所有同类电商网站中的排名。</p>
-<p>总之，本文介绍了电商数据分析的基础指标体系，涵盖了流量、销售转化率、客户价值、商品类目、营销活动、风控和市场竞争指标，这些指标都需要系统化的进行统计和监控，才能更好的发现电商运营健康度的问题，以更好及时改进和优化，提升电商收入。如销售转化率，其本质上是一个漏斗模型，如从网站首页到最终购买各个阶段的转化率的监控和分析是网站运营健康度很重要的分析方向。</p>
+        <p><strong>决策树</strong></p>
+<p>决策树（Decision Tree）是一种简单但是广泛使用的分类器。通过训练数据构建决策树，可以高效的对未知的数据进行分类。决策数有两大优点：1）决策树模型可以读性好，具有描述性，有助于人工分析；2）效率高，决策树只需要一次构建，反复使用，每一次预测的最大计算次数不超过决策树的深度。</p>
+<p><strong>如何预测</strong></p>
+<p>先看看下面的数据表格：<br><img src="https://s1.ax1x.com/2018/05/08/CdDKU0.png" alt="CdDKU0.png"></p>
+<p>上表根据历史数据，记录已有的用户是否可以偿还债务，以及相关的信息。通过该数据，构建的决策树如下：<br><img src="https://s1.ax1x.com/2018/05/08/CdD32F.png" alt="CdD32F.png"></p>
+<p>比如新来一个用户：无房产，单身，年收入55K，那么根据上面的决策树，可以预测他无法偿还债务（蓝色虚线路径）。从上面的决策树，还可以知道是否拥有房产可以很大的决定用户是否可以偿还债务，对借贷业务具有指导意义。</p>
+<p><strong>基本步骤</strong></p>
+<p>决策树构建的基本步骤如下：</p>
+<blockquote>
+<ol>
+<li>开始，所有记录看作一个节点</li>
+</ol>
+</blockquote>
+<blockquote>
+<ol start="2">
+<li>遍历每个变量的每一种分割方式，找到最好的分割点</li>
+</ol>
+</blockquote>
+<blockquote>
+<ol start="3">
+<li>分割成两个节点N1和N2</li>
+</ol>
+</blockquote>
+<blockquote>
+<ol start="4">
+<li>对N1和N2分别继续执行2-3步，直到每个节点足够“纯”为止</li>
+</ol>
+</blockquote>
+<p><strong>决策树的变量可以有两种：</strong></p>
+<p>1） 数字型（Numeric）：变量类型是整数或浮点数，如前面例子中的“年收入”。用“&gt;=”，“&gt;”,“&lt;”或“&lt;=”作为分割条件（排序后，利用已有的分割情况，可以优化分割算法的时间复杂度）。</p>
+<p>2） 名称型（Nominal）：类似编程语言中的枚举类型，变量只能重有限的选项中选取，比如前面例子中的“婚姻情况”，只能是“单身”，“已婚”或“离婚”。使用“=”来分割。</p>
+<p>如何评估分割点的好坏？如果一个分割点可以将当前的所有节点分为两类，使得每一类都很“纯”，也就是同一类的记录较多，那么就是一个好分割点。比如上面的例子，“拥有房产”，可以将记录分成了两类，“是”的节点全部都可以偿还债务，非常“纯”；“否”的节点，可以偿还贷款和无法偿还贷款的人都有，不是很“纯”，但是两个节点加起来的纯度之和与原始节点的纯度之差最大，所以按照这种方法分割。构建决策树采用贪心算法，只考虑当前纯度差最大的情况作为分割点。</p>
+<p><strong>量化纯度</strong></p>
+<p>前面讲到，决策树是根据“纯度”来构建的，如何量化纯度呢？这里介绍三种纯度计算方法。如果记录被分为n类，每一类的比例P(i)=第i类的数目/总数目。还是拿上面的例子，10个数据中可以偿还债务的记录比例为P(1) = 7/10 = 0.7，无法偿还的为P(2) = 3/10 = 0.3，N = 2。<br><img src="https://s1.ax1x.com/2018/05/08/CdD0PK.png" alt="CdD0PK.png"></p>
+<p><strong>纯度差</strong>，也称为信息增益（Information Gain），公式如下：<br><img src="https://s1.ax1x.com/2018/05/08/CdDD2D.png" alt="CdDD2D.png"></p>
+<p>其中，I代表不纯度（也就是上面三个公式的任意一种），K代表分割的节点数，一般K = 2。vj表示子节点中的记录数目。上面公式实际上就是当前节点的不纯度减去子节点不纯度的加权平均数，权重由子节点记录数与当前节点记录数的比例决定。</p>
+<p><strong>停止条件</strong></p>
+<p>决策树的构建过程是一个递归的过程，所以需要确定停止条件，否则过程将不会结束。一种最直观的方式是当每个子节点只有一种类型的记录时停止，但是这样往往会使得树的节点过多，导致过拟合问题（Overfitting）。另一种可行的方法是当前节点中的记录数低于一个最小的阀值，那么就停止分割，将max(P(i))对应的分类作为当前叶节点的分类。</p>
+<p><strong>过渡拟合</strong></p>
+<p>采用上面算法生成的决策树在事件中往往会导致过滤拟合。也就是该决策树对训练数据可以得到很低的错误率，但是运用到测试数据上却得到非常高的错误率。过渡拟合的原因有以下几点：</p>
+<p>噪音数据：训练数据中存在噪音数据，决策树的某些节点有噪音数据作为分割标准，导致决策树无法代表真实数据。<br>缺少代表性数据：训练数据没有包含所有具有代表性的数据，导致某一类数据无法很好的匹配，这一点可以通过观察混淆矩阵（Confusion Matrix）分析得出。<br>多重比较（Mulitple Comparition）：举个列子，股票分析师预测股票涨或跌。假设分析师都是靠随机猜测，也就是他们正确的概率是0.5。每一个人预测10次，那么预测正确的次数在8次或8次以上的概率为<br><img src="https://s1.ax1x.com/2018/05/08/CdDrxe.png" alt="CdDrxe.png"><br>，只有5%左右，比较低。但是如果50个分析师，每个人预测10次，选择至少一个人得到8次或以上的人作为代表，那么概率为<br><img src="https://s1.ax1x.com/2018/05/08/CdD6rd.png" alt="CdD6rd.png"><br>，概率十分大，随着分析师人数的增加，概率无限接近1。但是，选出来的分析师其实是打酱油的，他对未来的预测不能做任何保证。上面这个例子就是多重比较。这一情况和决策树选取分割点类似，需要在每个变量的每一个值中选取一个作为分割的代表，所以选出一个噪音分割标准的概率是很大的。</p>
+<p><strong>优化方案1：修剪枝叶</strong></p>
+<p>决策树过渡拟合往往是因为太过“茂盛”，也就是节点过多，所以需要裁剪（Prune Tree）枝叶。裁剪枝叶的策略对决策树正确率的影响很大。主要有两种裁剪策略。</p>
+<p>前置裁剪 在构建决策树的过程时，提前停止。那么，会将切分节点的条件设置的很苛刻，导致决策树很短小。结果就是决策树无法达到最优。实践证明这中策略无法得到较好的结果。</p>
+<p>后置裁剪 决策树构建好后，然后才开始裁剪。采用两种方法：1）用单一叶节点代替整个子树，叶节点的分类采用子树中最主要的分类；2）将一个字数完全替代另外一颗子树。后置裁剪有个问题就是计算效率，有些节点计算后就被裁剪了，导致有点浪费。</p>
+<p><strong>优化方案2：K-Fold Cross Validation</strong></p>
+<p>首先计算出整体的决策树T，叶节点个数记作N，设i属于[1,N]。对每个i，使用K-Fold Validataion方法计算决策树，并裁剪到i个节点，计算错误率，最后求出平均错误率。这样可以用具有最小错误率对应的i作为最终决策树的大小，对原始决策树进行裁剪，得到最优决策树。</p>
+<p><strong>优化方案3：Random Forest</strong></p>
+<p>Random Forest是用训练数据随机的计算出许多决策树，形成了一个森林。然后用这个森林对未知数据进行预测，选取投票最多的分类。实践证明，此算法的错误率得到了经一步的降低。这种方法背后的原理可以用“三个臭皮匠定一个诸葛亮”这句谚语来概括。一颗树预测正确的概率可能不高，但是集体预测正确的概率却很高。</p>
+<p><strong>准确率估计</strong></p>
+<p>决策树T构建好后，需要估计预测准确率。直观说明，比如N条测试数据，X预测正确的记录数，那么可以估计acc = X/N为T的准确率。但是，这样不是很科学。因为我们是通过样本估计的准确率，很有可能存在偏差。所以，比较科学的方法是估计一个准确率的区间，这里就要用到统计学中的置信区间（Confidence Interval）。</p>
+<p>设T的准确率p是一个客观存在的值，X的概率分布为X ~ B(N,p)，即X遵循概率为p，次数为N的二项分布（Binomial Distribution），期望E(X) = N<em>p，方差Var(X) = N</em>p<em>(1-p)。由于当N很大时，二项分布可以近似有正太分布（Normal Distribution）计算，一般N会很大，所以X ~ N(np,n</em>p<em>(1-p))。可以算出，acc = X/N的期望E(acc) = E(X/N) = E(X)/N = p，方差Var(acc) = Var(X/N) = Var(X) / N2 = p</em>(1-p) / N，所以acc ~ N(p,p*(1-p)/N)。这样，就可以通过正太分布的置信区间的计算方式计算执行区间了。</p>
+<p>正太分布的置信区间求解如下：</p>
+<p>1） 将acc标准化，即<br><img src="https://s1.ax1x.com/2018/05/08/CdDRat.png" alt="CdDRat.png"></p>
+<p>2） 选择置信水平α= 95%，或其他值，这取决于你需要对这个区间有多自信。一般来说，α越大，区间越大。</p>
+<p>3） 求出 α/2和1-α/2对应的标准正太分布的统计量<br><img src="https://s1.ax1x.com/2018/05/08/CdD4G8.png" alt="CdD4G8.png"><br><img src="https://s1.ax1x.com/2018/05/08/CdD5RS.png" alt="CdD5RS.png"><br>（均为常量）。然后解下面关于p的不等式。acc可以有样本估计得出。即可以得到关于p的执行区间<br><img src="https://s1.ax1x.com/2018/05/08/CdDHqs.png" alt="CdDHqs.png"></p>
+<p><strong>another example:</strong><br>有一天，小明无聊，对宿舍玩CS的舍友进行统计，结果刚记下四行，被舍友认为影响发挥，给踢到床下去了，让我们看看可怜的小明的记录：</p>
+<blockquote>
+<hr>
+<h2 id="武器-子弹数量-血-行为"><a href="#武器-子弹数量-血-行为" class="headerlink" title="武器 | 子弹数量 | 血 | 行为"></a>武器 | 子弹数量 | 血 | 行为</h2><p>机枪 |    多    | 少 | 战斗<br>机枪 |    少    | 多 | 逃跑<br>小刀 |    少    | 多 | 战斗</p>
+<h2 id="小刀-少-少-逃跑"><a href="#小刀-少-少-逃跑" class="headerlink" title="小刀 |    少    | 少 | 逃跑"></a>小刀 |    少    | 少 | 逃跑</h2></blockquote>
+<p>为了对得起小明记录的这四条记录，我们对其进行决策树分析，从数据中看：</p>
+<blockquote>
+<ol>
+<li>如果一个玩家子弹很多，那么即使血少他也会战斗，如果子弹少的话，即使血多，他也会逃跑隐蔽起来；</li>
+<li>那我们再看子弹少的情况下，武器靠刀子，当血多时候，他还是会打一打得，但是血少，就立即逃跑隐蔽了。</li>
+</ol>
+</blockquote>
+<p>这是我们大脑直觉上去分析，既然本文我是想聊一聊决策树，那么我们就用决策树来对小明的这些数据小试牛刀一下，顺便来慰藉一下小明（从小到大我们已经看过无数的小明了，这里再借用一下大度的小明）。</p>
+<p>我们现在将数据分为两块：</p>
+<blockquote>
+<p>X = {武器类型，子弹数量，血}<br>Y = {行为}<br>我们建立这颗决策树的目的就是，让计算机自动去寻找最合适的映射关系，即：Y = f(X)，所谓听上去大雅的“数据挖掘”学科，干得也差不多就是这回事，X我们称之为样本，Y我们称之为结果（行为/类）。</p>
+</blockquote>
+<p>样本是多维的，X = {x1,x2,…xn}，如本例：X = {x1=武器类型，x2=子弹数量，x3=血}，我们就是要通过这些不同维度的观测记录数据，和应对的不同结果，找到规律（映射关系），举个例子：</p>
+<blockquote>
+<p>X = {天气，温度，湿度，女友约会} -&gt; Y = {是否答应兄弟下午去打篮球}<br>X = {老妈说你是胖子，老婆说你是胖子，自己上秤评估自己体重} -&gt; Y = {去办健身卡减肥}</p>
+</blockquote>
+<p>这样来说，X的多维不同的数据，大个比方，更像是很多大臣，那么我们就是要根据这些大臣的意见，来决策，如本例：</p>
+<blockquote>
+<p>左大臣：武器类型<br>中大臣：子弹数量<br>右大臣：血</p>
+</blockquote>
+<p>这些大臣每个人都有想法，左右着皇帝继续战斗还是撤退，但是三个也不能全信，那么我们就要根据他们的陈年老帐（训练样本）来评判他们的话语的重要性，当然，优先级高的肯定话语是有重量的，我们先提前来预览一下这个例子训练出来的决策树的样子：<br><img src="https://s1.ax1x.com/2018/05/08/CdrCL9.png" alt="CdrCL9.png"></p>
+<p>这个根据小明的数据训练出来的决策树是不是和我们刚才拍脑门分析出来的结果差不多呢？看，子弹多就开打，子弹少，在看看用什么武器，如果又没子弹又用机枪，那铁定跑，如果用小刀，在掂量一下自己血厚不厚，厚则打，不厚则逃，看来决策树分析的结果还是可以的啊,接下来，我们来研究研究，计算机（这个只会重复人们给它设定的代码的家伙）是如何实现这样的分析的。</p>
+<p>既然是三个大臣提意见{左大臣：武器类型，中大臣：子弹数量，右大臣：血}，那么我们要分析一下历史数据（训练数据）他们哪个话更靠谱：</p>
+<p>我们先单纯的看看左大臣的历史战绩（统计训练样本）：</p>
+<blockquote>
+<p>机枪 -&gt; 战斗<br>机枪 -&gt; 逃跑<br>小刀 -&gt; 战斗<br>小刀 -&gt; 逃跑<br>用机枪，你战斗逃跑的概率都是50%，用刀子，你亦似打似逃！看来这个大臣立场不坚定啊！</p>
+</blockquote>
+<p>再看看中大臣的：</p>
+<blockquote>
+<p>子弹多 -&gt; 战斗<br>子弹少 -&gt; 逃跑<br>子弹少 -&gt; 战斗<br>子弹少 -&gt; 逃跑<br>用机枪，你战斗概率是100%，用刀子，你33.3%打，你66.6%撤！这位大臣似乎坚定了一些。</p>
+</blockquote>
+<p>再看看右大臣的：</p>
+<blockquote>
+<p>血少 -&gt; 战斗<br>血多 -&gt; 逃跑<br>血多 -&gt; 战斗<br>血少 -&gt; 逃跑<br>和左大臣一样，立场不坚定，50:50啊！</p>
+</blockquote>
+<p>这样，中大臣的话的重量就提升了，因此决策书的第一层就重用中大臣吧（中大臣变成一品大员）</p>
+<p>计算机是怎么来做到这一步的呢？且让我一步一步讲：</p>
+<p>决策树训练中，有一个很重要的尺子，来衡量大臣的可信度，这个尺子，就是信息论的熵(Entropy)，这个熵是何许人也，竟然朝廷大臣的可信度竟然用次来衡量，让我们对他做个自我介绍吧：<br>熵，洋名为（Entropy），乃测量信息的混乱程度为职，纵横科学界各门学术之中，为人低调，俭朴，就一个很短的公式：E = sum(-p(I)*log(p(I)))，I=1:N（N类结果，如本例两种，战斗或逃跑），当信息一致，所有样本都属于一个类别I，那么熵为0，如果样本完全随机，那么熵为1，表明这个臣子对这种状态的预测就是胡言乱语。</p>
+<p>OK，熵，告诉我你对这个数据的看法：</p>
+<blockquote>
+<p>E(机枪) = -(1/2)Log2(1/2) - (1/2)Log(1/2) = 0.5 + 0.5 = 1<br>E(小刀) = -(1/2)Log2(1/2) - (1/2)Log(1/2) = 0.5 + 0.5 = 1<br>E(子弹多) = -(1/1)Log2(1/1) - (0/1)Log(0/1) = 0 + 0 = 0<br>E(子弹少) = -(1/3)Log2(1/3) - (2/3)Log(2/3) = 0.5283 + 0.39 = 0.9183<br>E(血多) = -(1/2)Log2(1/2) - (1/2)Log(1/2) = 0.5 + 0.5 = 1<br>E(血少) = -(1/2)Log2(1/2) - (1/2)Log(1/2) = 0.5 + 0.5 = 1</p>
+</blockquote>
+<p>那么我们怎么用这个熵来衡量大臣（每维数据）的可信度呢，这里还要再引出一位仁兄，其是熵的上级，他熟知熵的能力，很会用熵，他就是信息增益(Information Gain)，我们来看看这位上级是如何用熵来衡量的：<br>Gain(Sample,Action) = E(sample) - sum(|Sample(v)|/Sample * E(Sample(v)))</p>
+<p>OK，Information Gain，说说你是怎么评估这个例子的三位大臣的！</p>
+<blockquote>
+<p>Gain(武器类型) = E(S) - (2/4)<em>E(机枪) - (2/4)</em>E(小刀) = 1 - (2/4)<em>1 - (2/4)</em>1 = 0<br>Gain(子弹数量) = E(S) - (1/4)<em>E(子弹多) - (3/4)</em>E(子弹少) = 1 - (1/4)<em>0 - (3/4)</em>0.9183 = 0.3113<br>Gain(血量) = E(S) - (2/4)<em>E(血多) - (2/4)</em>E(血少) = 1 - (2/4)<em>1 - (2/4)</em>1 = 0</p>
+</blockquote>
+<p>接着，计算机通过信息增益结果，选择最大的，作为一品大员<br><img src="https://s1.ax1x.com/2018/05/08/CdrEi6.png" alt="CdrEi6.png"></p>
+<p>且看一品大员对子弹多的情况下料事如神（暂且不说本例样本少），但是其在子弹少的情况下，决策还是不行的，那么，再用同样的方法，再去选择二品，三品，这就是决策树的训练。</p>
 
       
     </div>
@@ -596,6 +1132,105 @@ b).根据业务来对RowKey的设计：
 </code></pre><h5 id="补充文件类型-tsv-tab-csv-comma-："><a href="#补充文件类型-tsv-tab-csv-comma-：" class="headerlink" title="补充文件类型 .tsv[tab] .csv[comma]："></a>补充文件类型 .tsv[tab] .csv[comma]：</h5><pre><code>user.tsv tsv后缀格式的文件：每行数据以tab 制表符分割的 
 user.csv csv后缀格式的文件：每行数据以逗号分割的
 </code></pre>
+      
+    </div>
+    
+    <div class="article-info article-info-index">
+      
+      
+      
+
+      
+      <div class="clearfix"></div>
+    </div>
+      
+    
+  </div>
+  
+</article>
+
+
+
+
+
+
+
+  
+    <article id="post-电商分析指标" class="article article-type-post" itemscope itemprop="blogPost">
+  
+    <div class="article-meta">
+      <a href="/2018/04/05/电商分析指标/" class="article-date">
+  	<time datetime="2018-04-05T13:29:30.000Z" itemprop="datePublished">2018-04-05</time>
+</a>
+    </div>
+  
+  <div class="article-inner">
+    
+      <input type="hidden" class="isFancy" />
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2018/04/05/电商分析指标/">
+        电商常见分析指标
+        
+      </a>
+    </h1>
+  
+
+      </header>
+      
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <p>电商常见分析指标<br>信息流、物流和资金流三大平台是电子商务的三个最为重要的平台。而电子商务信息系统最核心的能力是大数据能力，包括大数据处理、数据分析和数据挖掘能力。无论是电商平台（如淘宝）还是在电商平台上销售产品的卖家，都需要掌握大数据分析的能力。越成熟的电商平台，越需要以通过大数据能力驱动电子商务运营的精细化，更好的提升运营效果，提升业绩。构建系统的电子商务数据分析指标体系是数据电商精细化运营的重要前提，本文将重点介绍电商数据分析指标体系。<br>电商数据分析指标体系分为八大类指标，包括总体运营指标、网站流量累指标、销售转化指标、客户价值指标、商品及供应链指标、营销活动指标、风险控制指标和市场竞争指标。不同类别指标对应电商运营的不同环节，如网站流量指标对应的是网站运营环节，销售转化、客户价值和营销活动指标对应的是电商销售环节。<br>1.电商总体运营指标<br><img src="https://s1.ax1x.com/2018/05/03/CYaO3t.png" alt="CYaO3t.png"></p>
+<p>电商总体运营整体指标主要面向的人群电商运营的高层，通过总体运营指标评估电商运营的整体效果。电商总体运营整体指标包括四方面的指标：</p>
+<p>（1）流量类指标</p>
+<p>独立访客数（UV），指访问电商网站的不重复用户数。对于PC网站，统计系统会在每个访问网站的用户浏览器上“种”一个cookie来标记这个用户，这样每当被标记cookie的用户访问网站时，统计系统都会识别到此用户。在一定统计周期内如（一天）统计系统会利用消重技术，对同一cookie在一天内多次访问网站的用户仅记录为一个用户。而在移动终端区分独立用户的方式则是按独立设备计算独立用户。</p>
+<p>页面访问数（PV），即页面浏览量，用户每一次对电商网站或着移动电商应用中的每个网页访问均被记录一次，用户对同一页面的多次访问，访问量累计。<br>人均页面访问数，即页面访问数（PV）／独立访客数，该指标反映的是网站访问粘性。</p>
+<p>（2）订单产生效率指标</p>
+<p>总订单数量，即访客完成网上下单的订单数之和。<br>访问到下单的转化率，即电商网站下单的次数与访问该网站的次数之比。</p>
+<p>（3）总体销售业绩指标</p>
+<p>网站成交额（GMV），电商成交金额，即只要网民下单，生成订单号，便可以计算在GMV里面。<br>销售金额。销售金额是货品出售的金额总额。</p>
+<p>注：无论这个订单最终是否成交，有些订单下单未付款或取消，都算GMV，销售金额一般只指实际成交金额，所以，GMV的数字一般比销售金额大。</p>
+<p>客单价，即订单金额与订单数量的比值。</p>
+<p>（4）整体指标</p>
+<p>销售毛利，是销售收入与成本的差值。销售毛利中只扣除了商品原始成本，不扣除没有计入成本的期间费用（管理费用、财务费用、营业费用）。<br>毛利率，是衡量电商企业盈利能力的指标，是销售毛利与销售收入的比值。如京东的2014年毛利率连续四个季度稳步上升，从第一季度的10.0％上升至第四季度的12.7％，体现出京东盈利能力的提升。</p>
+<p>2.网站流量指标<br><img src="https://s1.ax1x.com/2018/05/03/CYa6AJ.png" alt="CYa6AJ.png"></p>
+<p>（1）流量规模类指标<br>常用的流量规模类指标包括独立访客数和页面访问数，相应的指标定义在前文（电商总体运营指标）已经描述，在此不在赘述</p>
+<p>（2）流量成本累指标<br>单位访客获取成本。该指标指在流量推广中，广告活动产生的投放费用与广告活动带来的独立访客数的比值。单位访客成本最好与平均每个访客带来的收入以及这些访客带来的转化率进行关联分析。若单位访客成本上升，但访客转化率和单位访客收入不变或下降，则很可能流量推广出现问题，尤其要关注渠道推广的作弊问题。</p>
+<p>（3）流量质量类指标<br>跳出率（Bounce Rate）也被称为蹦失率，为浏览单页即退出的次数/该页访问次数，跳出率只能衡量该页做为着陆页面（LandingPage）的访问。如果花钱做推广，着落页的跳出率高，很可能是因为推广渠道选择出现失误，推广渠道目标人群和和被推广网站到目标人群不够匹配，导致大部分访客来了访问一次就离开。</p>
+<p>页面访问时长。页访问时长是指单个页面被访问的时间。并不是页面访问时长越长越好，要视情况而定。对于电商网站，页面访问时间要结合转化率来看，如果页面访问时间长，但转化率低，则页面体验出现问题的可能性很大。</p>
+<p>人均页面浏览量。人均页面浏览量是指在统计周期内，平均每个访客所浏览的页面量。人均页面浏览量反应的是网站的粘性。</p>
+<p>（4）会员类指标</p>
+<p>注册会员数。指一定统计周期内的注册会员数量。<br>活跃会员数。活跃会员数，指在一定时期内有消费或登录行为的会员总数。<br>活跃会员率。即活跃会员占注册会员总数的比重。<br>会员复购率。指在统计周期内产生二次及二次以上购买的会员占购买会员的总数。<br>会员平均购买次数。指在统计周期内每个会员平均购买的次数，即订单总数/购买用户总数。会员复购率高的电商网站平均购买次数也高。<br>会员回购率。指上一期末活跃会员在下一期时间内有购买行为的会员比率。<br>会员留存率。会员在某段时间内开始访问你的网站，经过一段时间后，仍然会继续访问你的网站就被认作是留存，这部分会员占当时新增会员的比例就是新会员留存率，这种留存的计算方法是按照活跃来计算，另外一种计算留存的方法是按消费来计算，即某段的新增消费用户在往后一段时间时间周期（时间周期可以是日、周、月、季度和半年度）还继续消费的会员比率。留存率一般看新会员留存率，当然也可以看活跃会员留存。留存率反应的是电商留住会员的能力。</p>
+<p>3.网站销售（转化率）类指标<br><img src="https://s1.ax1x.com/2018/05/03/CYaghR.png" alt="CYaghR.png"></p>
+<p>（1）购物车类指标<br>基础类指标，包括一定统计周期内加入购物车次数、加入购物车买家数、加入购物车买家数以及加入购物车商品数。<br>转化类指标，主要是购物车支付转化率，即一定周期内加入购物车商品支付买家数与加入购物车购买家数的比值。</p>
+<p>（2）下单类指标<br>基础类指标，包括一定统计周期内的下单笔数、下单金额以及下单买家数。<br>转化类指标，主要是浏览下单转化率，即下单买家数与网站访客数（UV）的比值。</p>
+<p>（3）支付类指标<br>基础统计类指标，包括一定统计周期内支付金额、支付买家数和支付商品数。<br>转化类指标。包括浏览-支付买家转化率（支付买家数/网站访客数）、下单-支付金额转化率（支付金额/下单金额）、下单-支付买家数转化率（支付买家数/下单买家数）和下单-支付时长（下单时间到支付时间的差值）。</p>
+<p>4.客户价值类指标<br><img src="https://s1.ax1x.com/2018/05/03/CYaW1x.png" alt="CYaW1x.png"></p>
+<p>客户指标。常见客户指标包括一定统计周期内的累计购买客户数和客单价。客单价是指每一个客户平均购买商品的金额，也即是平均交易金额，即成交金额与成交用户数的比值。</p>
+<p>新客户指标。常见新客户指标包括一定统计周期内的新客户数量、新客户获取成本和新客户客单价。其中，新客户客单价是指第一次在店铺中产生消费行为的客户所产生交易额与新客户数量的比值。影响新客户客单价的因素除了与推广渠道的质量有关系，还与电商店铺活动以及关联销售有关。</p>
+<p>老客户指标。常见老客户指标包括消费频率、最近一次购买时间、消费金额和重复购买率。消费频率是指客户在一定期间内所购买的次数；最近一次购买时间表示客户最近一次购买的时间离现在有多远；客户消费金额指客户在最近一段时间内购买的金额。消费频率越高，最近一次购买时间离现在越近，消费金额越高的客户越有价值。重复购买率则指消费者对该品牌产品或者服务的重复购买次数，重复购买率越多，则反应出消费者对品牌的忠诚度就越高，反之则越低。重复购买率可以按两种口径来统计：第一种，从客户数角度，重复购买率指在一定周期内下单次数在两次及两次以上的人数与总下单人数之比，如在一个月内，有100个客户成交，其中有20个是购买两次及以上，则重复购买率为20%；第二种，按交易计算，即重复购买交易次数与总交易次数的比值，如某月内，一共产生了100笔交易，其中有20个人有了二次购买，这20人中的10个人又有了三次购买，则重复购买次数为30次，重复购买率为30%。</p>
+<p>5.商品类指标<br><img src="https://s1.ax1x.com/2018/05/03/CYafc6.png" alt="CYafc6.png"></p>
+<p>产品总数指标。包括SKU、SPU和在线SPU。SKU是物理上不可分割的最小存货单位。SPU即Standard Product Unit （标准化产品单元），SPU是商品信息聚合的最小单位，是一组可复用、易检索的标准化信息的集合，该集合描述了一个产品的特性。通俗点讲，属性值、特性相同的商品就可以称为一个SPU。如iphone5S是一个SPU，而iPhone 5S配置为16G版、4G手机、颜色为金色、网络类型为TD-LTE/TD-SCDMA/WCDMA/GSM则是一个SKU。在线SPU则是在线商品的SPU数。</p>
+<p>产品优势性指标。主要是独家产品的收入占比，即独家销售的产品收入占总销售收入的比例。</p>
+<p>品牌存量指标。包括品牌数和在线品牌数指标。品牌数指商品的品牌总数量。在线品牌数则指在线商品的品牌总数量。</p>
+<p>上架。包括上架商品SKU数、上架商品SPU数、上架在线SPU数、上架商品数和上架在线商品数。</p>
+<p>首发。包括首次上架商品数和首次上架在线商品数。</p>
+<p>6.市场营销活动指标<br><img src="https://s1.ax1x.com/2018/05/03/CYaIBD.png" alt="CYaIBD.png"></p>
+<p>市场营销活动指标。包括新增访问人数、新增注册人数、总访问次数、订单数量、下单转化率以及ROI。其中，下单转化率是指活动期间，某活动所带来的下单的次数与访问该活动的次数之比。投资回报率（ROI）是指，某一活动期间，产生的交易金额与活动投放成本金额的比值。</p>
+<p>广告投放指标。包括新增访问人数、新增注册人数、总访问次数、订单数量、UV订单转化率、广告投资回报率。其中，下单转化率是指某广告所带来的下单的次数与访问该活动的次数之比。投资回报率（ROI）是指，某广告产生的交易金额与广告投放成本金额的比值。</p>
+<p>7.风控类指标<br><img src="https://s1.ax1x.com/2018/05/03/CYa7AH.png" alt="CYa7AH.png"></p>
+<p>买家评价指标。包括买家评价数，买家评价卖家数、买家评价上传图片数、买家评价率、买家好评率以及卖家差评率。其中，买家评价率是指某段时间参与评价的卖家与该时间段买家数量的比值，是反映用户对评价的参与度，电商网站目前都在积极引导用户评价，以作为其他买家购物时候的参考。买家好评率指某段时间内好评的买家数量与该时间段买家数量的比值。同样，买家差评率指某段时间内差评的买家数量与该时间段买家数量的比值。尤其是买家差评率，是非常值得关注的指标，需要监控起来，一旦发现买家差评率在加速上升，一定要提高警惕，分析引起差评率上升的原因，及时改进。</p>
+<p>买家投诉类指标。包括发起投诉（或申诉），撤销投诉（或申诉），投诉率（买家投诉人数占买家数量的比例）等。投诉量和投诉率都需要及时监控，以发现问题，及时优化。</p>
+<p>8.市场竞争类指标<br><img src="https://s1.ax1x.com/2018/05/03/CYaHNd.png" alt="CYaHNd.png"></p>
+<p>市场份额相关指标，包括市场占有率、市场扩大率和用户份额。市场占有率指电商网站交易额占同期所有同类型电商网站整体交易额的比重；市场扩大率指购物网站占有率较上一个统计周期增长的百分比；用户份额指购物网站独立访问用户数占同期所有B2C购物网站合计独立访问用户数的比例。</p>
+<p>网站排名，包括交易额排名和流量排名。交易额排名指电商网站交易额在所有同类电商网站中的排名；流量排名指电商网站独立访客数量在所有同类电商网站中的排名。</p>
+<p>总之，本文介绍了电商数据分析的基础指标体系，涵盖了流量、销售转化率、客户价值、商品类目、营销活动、风控和市场竞争指标，这些指标都需要系统化的进行统计和监控，才能更好的发现电商运营健康度的问题，以更好及时改进和优化，提升电商收入。如销售转化率，其本质上是一个漏斗模型，如从网站首页到最终购买各个阶段的转化率的监控和分析是网站运营健康度很重要的分析方向。</p>
+
       
     </div>
     
