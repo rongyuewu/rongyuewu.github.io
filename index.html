@@ -1249,6 +1249,431 @@ yarn-client 和 yarn-cluster的区别：
 
 
   
+    <article id="post-HDFS读写流程&amp;Yarn执行流程" class="article article-type-post" itemscope itemprop="blogPost">
+  
+    <div class="article-meta">
+      <a href="/2018/05/01/HDFS读写流程&Yarn执行流程/" class="article-date">
+  	<time datetime="2018-05-01T13:29:30.000Z" itemprop="datePublished">2018-05-01</time>
+</a>
+    </div>
+  
+  <div class="article-inner">
+    
+      <input type="hidden" class="isFancy" />
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2018/05/01/HDFS读写流程&Yarn执行流程/">
+        客户端向HDFS读写数据流程
+        
+      </a>
+    </h1>
+  
+
+      </header>
+      
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <h2 id="客户端向HDFS写数据流程"><a href="#客户端向HDFS写数据流程" class="headerlink" title="客户端向HDFS写数据流程"></a>客户端向HDFS写数据流程</h2><p><img src="http://m.qpic.cn/psb?/V11BXxlE33Kp9F/KYeqSTrKzIYBJCYrfZ6gqk7Ztvhkl3Ax*HFAUXpr1fM!/b/dGgBAAAAAAAA&amp;bo=SgVRAgAAAAADBz4!&amp;rf=viewer_4" alt=""></p>
+<pre><code>1. 客户端向Namenode请求上传文件 /aaa/xxx.log
+2. Namenode 检查自己的元数据，看看元数据下有没有这个目录，假设满足条件(没有这个目录可以上传)
+    响应客户端的请求[客户端可以上传]
+3. 客户端RPC请求上传1个Block(0-128M),请返回DataNode(返回几个DataNode是客户端配置的,默认3个)
+4. 返回(dn1,dn3,dn4)给客户端
+    为什么要给客户端返回这三台机器呢？
+        考虑因素： 空间/距离
+            1. 第1个副本(dn1),要看DataNode的空间(剩余存储空间)和距离(同一个机架上的距离一样，而不是谁的网线长短)
+            假如这几台机器的空间差不多，NameNode就随机返回一台；
+            2. 第2个副本(dn3),考虑跨机架挑选1个DataNode，增加副本的可靠性
+            3. 第3个副本就在第1个副本同机架另外挑选1台DataNode存放
+        怎么能让NameNode知道哪个datanode在1个机架，哪个datanode在另1个机架，这个要配个文件，
+        配机架感知。[就是在配置文件里写死了，哪个机架有哪几台DataNode（网咯拓扑）]
+5. 客户端会找最近的(将要上传副本到的那台机器)一台DataNode[假如找的是dn1]，请求建立Block传输通道channel[本地流，以供写入数据]
+    5.1 dn1接收到请求看到还有2台机器(dn3、dn4)，dn1就向dn3发送请求建立管道
+    5.2 dn3接收到请求看到还有一台dn4，就向dn4发送请求建立管道
+6.1 dn4建立管道成功后，给dn3发送响应，建立管道成功
+6.2 dn3再给dn1发送响应，建立管道成功
+    这样一来，管道 PipeLine就建立成功了
+7. 客户端读取本地的1块数据(默认128M)，向dn1传输数据(数据是以1个1个packet[默认64k]的形式上传的)
+    packet是以chunk(Byte)为单位校验
+    7.1 每个DataNode写入磁盘之前都会有1个缓冲区(ByteBuf)，先写入缓冲区，再写入本地磁盘
+         因为每个packet只有64k，所以dn写入之后，基本上后面的dn3和dn4也都复制上传完成了[几乎同步完成]
+         每个DataNode上传成功packet 都会向前面的DataNode反馈说上传成功，第一个DataNode才给客户端说上传成功
+    假如说是后面两台DataNode节点没有上传成功，但是只要是第1台上传成功了，客户端就认为上传成功了
+    [因为NameNode最后会帮客户端异步去复制，省得客户端一直阻塞，说没成功再来，没成功再来]；
+    假如第1台也失败了，客户端就会找NameNode，告诉他这台DataNode不行，再换，然后重新返回DataNode，重新上传；
+8. 上传完了第1个Block，客户端会再次向NameNode发送请求说要上传第2块Block，然后重新走刚刚的流程
+总结：
+    这样一来，NameNode的元数据就记录了，上传的文件的 路径、文件有几个Block、Block副本在哪些机器
+</code></pre><h2 id="客户端向HDFS读数据流程"><a href="#客户端向HDFS读数据流程" class="headerlink" title="客户端向HDFS读数据流程"></a>客户端向HDFS读数据流程</h2><p><img src="http://m.qpic.cn/psb?/V11BXxlE33Kp9F/*cdq.W37ZmIVEpun93YYQqysu6asV1HifPC7o7.VPys!/b/dDEBAAAAAAAA&amp;bo=ygTkAQAAAAADFxk!&amp;rf=viewer_4" alt=""></p>
+<pre><code>1. 客户端向NameNode请求下载/aa/xx.log
+2. NameNode的元数据上面查看/aa/xx.log，然后查询得到：3个Block(Block1,Block2,Block3)、{Block1:dn1,dn3,dn4 Block2:dn1,dn4,dn5...}
+    并返回给客户端目标文件的元数据信息
+3. 客户端要下载第1个Block，然后就去找副本所在节点距离它最近的(dn1)，建立管道，请求读取Block1
+4. dn1建立本地流，fileInpuStream，dn1建立 NIO socket - socketOutPutStream
+5. 客户端建立socketInputStream，还有fileOutPutStream 写入本地 如：c:/xxx.log
+6. dn1 传输通过通道传输数据
+Block1上传到客户端完成后，客户端会再去找第2块Block 跟找Block1是一样的，还有Block3
+</code></pre><h2 id="MR-Yarn的提交流程"><a href="#MR-Yarn的提交流程" class="headerlink" title="MR Yarn的提交流程"></a>MR Yarn的提交流程</h2><pre><code>Yarn：
+    只负责程序运行所需资源的分配回收等调度任务，与应用程序的内部运行工作机制完全无关，
+    所以Yarn已经成为一个通用的资源调度平台，许许多多的运算框架都可以借助他来实现资源管理，
+    比如：MR/SPARK/FLINK/TEZ...
+NodeManager分配container基于：
+Linux的资源隔离机制cgroup  比如：docker也是基于此
+</code></pre><p><img src="http://m.qpic.cn/psb?/V11BXxlE33Kp9F/9zhVGQyCCNef1I8asBSqn83n.wL1HN35NFV9J.n7CUM!/b/dJEAAAAAAAAA&amp;bo=QAXgAgAAAAADB4U!&amp;rf=viewer_4" alt=""></p>
+<pre><code>1. 客户端所在节点，运行jar包，main方法里，job.submit() 
+  YarnRunner(Proxy[实现了ClientProtocol])找Yarn集群的老大ResourceManager申请提交1个Application
+2. ResourceManager返回Application提交资源路径：hdfs://xxx/xx.staging 和 application_id
+3. YarnRunner提交job运行所需的资源文件，提交到hdfs://xxx/xx.staging/application_id
+                                                                                    /job.split
+                                                                                    /job.xml
+                                                                                    wc.jar
+4. 客户端通过RPC调用 告诉ResourceManager 资源提交完毕，申请运行mrAppMaster [后面的事情就和客户端没关系了]
+ResourceManager运行的时候不止是接收这1个程序，还可能接收其他的程序提交，所以ResourceManager也有不同的调度策略[三种策略]：
+    4.1 FIFO[先进先出]：任务在队列里，要先运行完第1个，再运行第2个
+        [这个时候是可以接收其他的任务提交的，只不过要等][这个在老版本里是默认的]
+    4.2 Fair：每个job提交后，都会分配一点点资源给他们
+    4.3 capacity：第1个job提交之后，把资源全部给他，当第2个job来的时候，第1个job的一些task可能就已经运行完了，
+        这样的话空余出来的资源就可以给后来提交的job了，如果后来的job需要的资源很少，可能直接就运行完了，运行完了，            还可以把这些资源给之前的应用继续使用
+        [新版本的默认就是capacity调度策略]
+5. 将用户的请求初始化成一个task
+6. 因为nodeManager和NamenodeManager一直保持着心跳，所以会去领取任务(task),假如nm1领取到任务
+7. nm1就会生成1个container容器[分配了cpu + ram]，到HDFS上下载资源并启动mrAppMatser
+8. mrAppMatser向NamenodeManager申请运行MapTask的容器
+9. 假如这时候nm2和nm3领取到task任务，然后分别在各自的节点生成1个容器[这个容器就是1个进程叫做YarnChild,可以通过jps查看]
+10. mrAppMatser发送程序启动脚本[java -cp...]给nm2和nm3来运行MapTask
+        mrAppMatser会监管这些MapTask的运行情况，如果哪个MapTask运行失败，
+        他还会去找NamenodeManager重新申请1个nodeManager来生成container来运行MapTask
+        如果他发现有一个MapTask运行的特别慢，他还会去重新申请1个新的nodeManager生成container，
+        两个同时处理一个切片，看哪个先执行完，就用哪个的结果文件作为reduce的输入 **[推测执行]**
+11. 当MapTask运行完成之后，mrAppMatser知道MapTask的输出文件[分区且排序，不如有3个分区]在哪[container里的工作目录]
+12. mrAppMatser向NamenodeManager申请3个容器，来运行reduceTask程序
+13. 这3个容器运行的reduce task会向相对应map task的nodeManager拉取相对应分区的数据过来
+14. reduce 对数据进行merge + 排序 ，调用reduce方法 ，输出结果
+15. 当mrAppMatser执行完了之后就会去找ResourceManager申请注销自己
+</code></pre><h4 id="总结hadoop1和hadoop2的比较："><a href="#总结hadoop1和hadoop2的比较：" class="headerlink" title="总结hadoop1和hadoop2的比较："></a>总结hadoop1和hadoop2的比较：</h4><pre><code>a) 1里面没有yarn，只有jobTracker，负责资源调度和应用运算流程管理，
+如果后面还有任务提交，还是他来管理和调度资源，这样的话都在1个节点上，
+很消耗性能，而且当jobTracker挂掉之后，任务都不能运行了。
+b) 2里面有yarn，只要把任务提交给yarn ，然后yarn进行资源管理就可以了，
+appMaster来负责应用运算流程管理，当一个appMaster挂了之后，也不会影响
+其他应用的作业                                                 
+</code></pre>
+      
+    </div>
+    
+    <div class="article-info article-info-index">
+      
+      
+      
+
+      
+      <div class="clearfix"></div>
+    </div>
+      
+    
+  </div>
+  
+</article>
+
+
+
+
+
+
+
+  
+    <article id="post-kafka - scala 语言写的 版本 1.0.0 scala 2.11 官方推荐" class="article article-type-post" itemscope itemprop="blogPost">
+  
+    <div class="article-meta">
+      <a href="/2018/05/01/kafka - scala 语言写的 版本 1.0.0 scala 2.11 官方推荐/" class="article-date">
+  	<time datetime="2018-05-01T13:29:30.000Z" itemprop="datePublished">2018-05-01</time>
+</a>
+    </div>
+  
+  <div class="article-inner">
+    
+      <input type="hidden" class="isFancy" />
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2018/05/01/kafka - scala 语言写的 版本 1.0.0 scala 2.11 官方推荐/">
+        kafka总结相关笔记
+        
+      </a>
+    </h1>
+  
+
+      </header>
+      
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <h1 id="kafka-scala-语言写的-版本-1-0-0-scala-2-11-官方推荐"><a href="#kafka-scala-语言写的-版本-1-0-0-scala-2-11-官方推荐" class="headerlink" title="kafka - scala 语言写的 版本 1.0.0 scala 2.11 官方推荐"></a>kafka - scala 语言写的 版本 1.0.0 scala 2.11 官方推荐</h1><p>kafka 是什么？</p>
+<pre><code>1.kafka是一个消息队列(生产者消费者模式)
+2.目标：构建企业中统一的、高通量、低延时的消息平台
+3.大多的是消息队列（消息中间件）都是基于JMS标准实现的，Kafka类似于JMS的实现
+</code></pre><p>kafka 有什么用？(消息队列有什么用？)</p>
+<pre><code>作为缓冲，来异构、解耦系统
+    a. 用户注册需要多个步骤，每个步骤执行都需要很长时间，代表用户等待时间是所有步骤的累计时间
+    b. 为了减少用户等待的时间，使用并行执行，有多少步骤，就开启多少个线程来执行
+        代表用户等待时间是所有步骤中耗时最多的那个步骤时间
+    c. 问题：开启多个线程执行每个步骤，如果以一个步骤执行异常，或者严重超时，
+        用户的等待时间就不可控了
+使用消息队列来保证
+    1.注册时，立刻返回成功
+    2.发送注册成功的消息到消息平台
+    3.对注册信息感兴趣的程序，可以消费消息
+</code></pre><h3 id="kafka的基本架构"><a href="#kafka的基本架构" class="headerlink" title="kafka的基本架构"></a>kafka的基本架构</h3><p><img src="http://m.qpic.cn/psb?/V11BXxlE33Kp9F/x.psMta.aW44s9upJo9IrOikdwcFORL9vPWx0WhaZgA!/b/dFYBAAAAAAAA&amp;bo=CgMQAgAAAAARBys!&amp;rf=viewer_4" alt=""><br>    kafka cluster：由多个服务器组成，每个服务器单独的名字broker(server)<br>    kafka producer：生产者、负责生产数据<br>    kafka consumer：消费者、负责消费数据<br>    kafka topic：主题，一类消息的名称。存储数据时将一类数据存放在某个topic下，消费数据也是消费一类数据<br>        订单系统：创建一个topic，叫做order<br>        用户系统：创建一个topic，叫做user<br>        商品系统：创建一个topic，叫做product<br><img src="http://m.qpic.cn/psb?/V11BXxlE33Kp9F/lmVbiS8e*xd5wkNzFNMQTFPDCKYrpGIGlMDPkcySlww!/b/dDEBAAAAAAAA&amp;bo=PgPcAAAAAAARB9E!&amp;rf=viewer_4" alt=""></p>
+<h5 id="配置kafka需要修改配置文件的三个地方："><a href="#配置kafka需要修改配置文件的三个地方：" class="headerlink" title="配置kafka需要修改配置文件的三个地方："></a>配置kafka需要修改配置文件的三个地方：</h5><pre><code>1.broker.id
+2.数据存放的目录，注意：目录如果不存在，需要新建
+3.zookeeper的地址信息
+</code></pre><h5 id="查看kafka集群"><a href="#查看kafka集群" class="headerlink" title="查看kafka集群"></a>查看kafka集群</h5><pre><code>由于kafka集群没有UI界面，需要借助外部工具，来查看kafka的集群
+这个工具是一个java程序，必须要安装好jdk --- ZooInspector
+</code></pre><h5 id="1-创建一个订单的topic。"><a href="#1-创建一个订单的topic。" class="headerlink" title="1) 创建一个订单的topic。"></a>1) 创建一个订单的topic。</h5><pre><code>bin/kafka-topics.sh --create --zookeeper zk01:2181 --replication-factor 1 --partitions 1 --topic order
+</code></pre><h5 id="2）编写代码启动一个生产者，生产数据"><a href="#2）编写代码启动一个生产者，生产数据" class="headerlink" title="2）编写代码启动一个生产者，生产数据"></a>2）编写代码启动一个生产者，生产数据</h5><pre><code>bin/kafka-console-producer.sh --broker-list kafka01:9092 --topic order
+</code></pre><h5 id="3）-编写代码启动给一个消费者，消费数据"><a href="#3）-编写代码启动给一个消费者，消费数据" class="headerlink" title="3）    编写代码启动给一个消费者，消费数据"></a>3）    编写代码启动给一个消费者，消费数据</h5><pre><code>bin/kafka-console-consumer.sh --zookeeper zk01:2181 --from-beginning --topic order
+</code></pre><h3 id="kafka原理"><a href="#kafka原理" class="headerlink" title="kafka原理"></a>kafka原理</h3><h4 id="1-分片与副本机制"><a href="#1-分片与副本机制" class="headerlink" title="1.分片与副本机制"></a>1.分片与副本机制</h4><pre><code>分片：
+    当数据量非常大的时候，一个服务器存放不了，就将数据分成两个或者多个部分，
+    存放在多台服务器上。每个服务器上的数据，叫做一个分片。
+        问题：
+            如果一个partition中有10T数据，如何存放？是放在一个文件还是多个文件？
+                kafka的解决方案是多个文件！
+                这里说的多个文件就是segment段
+                    [我们在kafka配置文件中配置的数据存储目录：/export/data/kafka]
+                    里面有topicname-index [如：order-0,意思是order这个topic的第0个副本]
+                    这个order-0目录下就是存放着诸如：
+                        00000000000000000.index
+                        00000000000000000.log
+                        segment段包含了这两个文件，segment段默认是1G大小
+                        segment段中有两个核心的文件.log和.index，当log文件等于1G的时候，
+                        新的数据会写入到下个segment中，同时我们也可以看到segment段中有.timeindex文件生成,
+                        而且通过查看，可以看到一个segment段差不多会存储70万条数据。
+</code></pre><p><img src="http://m.qpic.cn/psb?/V11BXxlE33Kp9F/hn5PDC6zOwPd68flbGfMrNXsek.8DkiFksRzxPIWngA!/b/dEEBAAAAAAAA&amp;bo=hAMCAgAAAAARB7c!&amp;rf=viewer_4" alt=""><br>                    如上图所述：</p>
+<pre><code>                *Segment文件命名规则：
+                    partition全局的第一个segment从0开始，后续每个sgment文件名为上一个segment文件最后一条消息的offset值。
+                    数值最大的为64位long大小，19位数字字符长度，没有数字用0填充。
+                *索引文件存储大量元数据，数据文件存储大量消息，索引文件中元数据指向对应数据文件中
+                message的物理偏移地址
+                结论：
+                    kafka查找segment file 只需要两步
+                        1.先找到这个数据对应的segment[通过查看segment的区间，offset在哪个segment段中]
+                        2.根据某个segment段中的.index 索引文件中查找该条数据所在.log文件中的位置
+        kafka为什么要对文件进行切分，保存多个文件中？
+            kafka作为消息中间件，只负责消息的临时存储，并不是永久存储，
+            需要删除过期的数据。
+            如果将所有的数据都存放在一个文件中，要删除过期数据的时候，就麻烦了。
+            因为文件有日期属性，删除过期数据，只需要根据文件的日属性删除就好了
+
+副本：
+    当数据只保存一份的时候，有丢失的风险，为了更好的容错和容灾，
+    将数据拷贝几份，保存到不同的机器上。
+</code></pre><h4 id="kafka生产数据的分发策略"><a href="#kafka生产数据的分发策略" class="headerlink" title="kafka生产数据的分发策略"></a>kafka生产数据的分发策略</h4><pre><code>kafka在生产数据的实惠，有一个数据分发策略。默认的情况使用DefaultPartitoner.class类
+这个类就定义数据分发的策略。
+    1.如果用指定partition，生产就不会条用DefaultPartitoner.partition()方法，直接发到指定的分区
+    [这种不常用！]
+    public ProducerRecord(String topic, Integer partition, K key, V value) {
+        this(topic, partition, null, key, value, null);
+    }
+
+    2.当用户指定key，使用hash算法。如果key一直不变，同一个key算出来的hash值是一个固定值。
+    如果是固定值，这种hash取模就没意义。
+    public ProducerRecord(String topic, K key, V value) {
+        this(topic, null, null, key, value, null);
+    }
+
+    3.当用户既没有指定partition也没有指定key时，使用轮询[round-robin]的方式发送数据
+    public ProducerRecord(String topic, V value) {
+        this(topic, null, null, null, value, null);
+    }
+</code></pre><h3 id="kafka-消费者的负载均衡"><a href="#kafka-消费者的负载均衡" class="headerlink" title="kafka-消费者的负载均衡"></a>kafka-消费者的负载均衡</h3><pre><code>举例说明：[问题重现]
+    当每秒钟有400条数据过来，分了3个partition来存储，但是只有1个消费者并且每秒能消费100条，这样的话，生产者的速度很快，但是消费者跟不上，怎么办？
+    造成了数据大量滞后和延时！
+解决：
+    多几个消费者，共同来消费数据
+        比如3个消费者来共同消费数据这样就解决了。
+新的问题：
+    消费组中消费者的数量和partition的数量一致，但是消费者消费的熟读还是跟不上[比如每个消费者只能消费100条]，怎么办？
+        再加个消费者吗？ 答案是 no！！！！
+        因为根据kafka负载均衡策略规定，多出来的笑着是处于空闲状态的！
+    也就是1个partition只能被1个消费者消费
+真是解决办法：
+    要么修改topic的partition数量；
+    要么减少消费者处理时间，提高处理速度；
+</code></pre><h4 id="kafka消息不丢失机制："><a href="#kafka消息不丢失机制：" class="headerlink" title="kafka消息不丢失机制："></a>kafka消息不丢失机制：</h4><p> 1.producer端消息不丢失机制：</p>
+<pre><code>如果有多个副本，就需要选择一个leader出来，负责消息的读写请求。
+比如：
+    有一条数据经过partitioner.class计算把数据发送给了broker2[producerRecord ---&gt; 2]
+    关于ack的响应有3个状态值：
+        0：生产者只管发数据，并不关心数据是否丢失
+        1：partition的leader收到数据后，就返回响应码状态
+        -1：所有的从节点和leader都收到数据后，才返回响应码状态
+    问题：
+        如果broker端一直不给ack状态码，producer永远不知道是否成功。
+            producer可以设置一个超时时间  10s，超过时间就认为失败。
+    问题又来了：
+        如果一条消息发送一次，得到一次ack相应，在大量数据情况下会占用很多带宽怎么办？
+    解决：
+        生产者将数据线缓存到producer端，达到一定的数量阈值或者时间阈值之后发送
+        [比如：设置缓冲池中可以放2万条数据，或者等待时间设置成500ms]
+    问题：
+        如果设置buffer，按照500条每个批次发送数据到broker，但是broker迟迟不给相应，buffer中的数据如何处理？
+        [而且producer端还源源不断的生产数据，这时候就造成了阻塞情况]
+    解决：
+        可以对buffer进行设置，如果满了，并不确定是否发送，
+        如果需要继续生产数据，就可以选择buffer清空，或者不清空 [消息不丢失，一般会设置不清空]
+    同步模式和异步模式：[异步就是没有设置缓冲池 buffer]
+        在同步模式下：
+            1. 生产者等待10s，如果broker没有给出ack响应，就认为失败。
+            2. 生产者重置3次，如果还没响应，就报错。
+        在异步模式下：[认为设置]
+            1. 现将数据保存在生产者端的buffer中。buffer大小是2万条
+            2. 满足数据阈值或者数量阈值其中的一个条件就可以发送数据
+            3. 发送一批数据的大小是500条
+        如果broker迟迟不给ack，而buffer又满了，开发者自己设置是否直接清空buffer中的数据。
+</code></pre><p>2.broker端消息不丢失机制：</p>
+<pre><code>broker端的消息不丢失，其实就是用partition副本机制来保证的。
+</code></pre><p>3.consumer端消息不丢失机制：</p>
+<pre><code>partition中有个segment段，log和index文件，log文件存放的是消息本身。
+index文件存放的是消息offset值和存放在log文件的哪儿文件。
+问题：[在kafka 0.8版本之前consumer消费数据的offset值是保存在zookeeper上的，但是
+        这样会导致一种现象，就是consumer已经消费完了，但是等还没把offset值保存到zookeeper
+        上的时候，consumer挂了，再次重启后，那么就会出现**重复**消费的问题]
+解决：
+    kafka从0.8版本以后，offset的值是保存在了kafka的内置topic上，
+    这样就不会造成重复消费的问题了
+</code></pre><h4 id="补充："><a href="#补充：" class="headerlink" title="补充："></a>补充：</h4><pre><code>Consumer Group [CG]：
+    kafka用来实现一个topic消息的广播(发给所有的consumer)和单播(发给任意一个consumer)的手段
+    一个topic可以有多个consumer group。topic的消息会复制(不是真的复制，只是概念上的)到所有的CG
+    但每个partition只会把消息发给该CG中的一个consumer。
+    用CG还可以将consumer进行自由的分组而不需要多次发送消息到不同的topic
+broker：
+    一台kafka服务器就是一个broker，一个集群由多个broker组成。
+    一个broker可以容纳多个topic。
+Partition：
+    为了负债均衡
+    kafka只保证按照一个partition中的顺序将消息发给consumer，
+    不保证一个topic的整体（多个partition）的顺序。
+leader：
+    每一个replication集合中的partition都会选出一个唯一的leader，所有的读写请求都是由leader处理，
+    其他的replicas从leader处把数据更新同步到本地。每个cluster当中会选举出一个broker来担任controller，
+    负责处理partition的leader选举，协调partition迁移等工作。
+ISR（In-Sync-Replica）：
+    是Replicas的一个子集，表示目前Alive且与leader能够‘catch-up’的replicas集合。
+    由于读写都是首先落到leader上，
+    所以一般来说通过同步机制从leader上拉取数据的replica都会和leader有一些延迟
+    [包括延迟时间和延迟条数2个维度]
+    任意一个超过阈值都会把该replica提出ISR。每个Partition都有他自己独立的ISR。
+</code></pre><h5 id="配置文件当中配置的kafka多久删除数据"><a href="#配置文件当中配置的kafka多久删除数据" class="headerlink" title="配置文件当中配置的kafka多久删除数据"></a>配置文件当中配置的kafka多久删除数据</h5><pre><code>The minimum age of a log file to be eligible for deletion
+log.retention.hours=168 
+定时检查周期，发现数据存了超过上面配置的时间，就干数据
+log.retention.check.interval.ms=30000
+</code></pre>
+      
+    </div>
+    
+    <div class="article-info article-info-index">
+      
+      
+      
+
+      
+      <div class="clearfix"></div>
+    </div>
+      
+    
+  </div>
+  
+</article>
+
+
+
+
+
+
+
+  
+    <article id="post-ID-Mapping" class="article article-type-post" itemscope itemprop="blogPost">
+  
+    <div class="article-meta">
+      <a href="/2018/05/01/ID-Mapping/" class="article-date">
+  	<time datetime="2018-05-01T13:29:30.000Z" itemprop="datePublished">2018-05-01</time>
+</a>
+    </div>
+  
+  <div class="article-inner">
+    
+      <input type="hidden" class="isFancy" />
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2018/05/01/ID-Mapping/">
+        解密大数据ID-Mapping
+        
+      </a>
+    </h1>
+  
+
+      </header>
+      
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <p>集奥聚合带你解密大数据ID-Mapping<br>来源：数据观 时间：2016-06-27 14:46:24 作者：集奥聚合<br>　　谈到大数据，有一个非常基本但又关键的环节就是ID-Mapping（Identifier -Mapping）。ID-Mapping通俗的说就是把几份不同来源的数据，通过各种技术手段识别为同一个对象或主体，例如同一台设备（直接），同一个用户（间接），同一家企业（间接）等等，可以形象地理解为用户画像的“拼图”过程。一个用户的行为信息、属性数据是分散在很多不同的数据来源的，因此从单个数据来看，都相当于“盲人摸象”，看到的只是这个用户一个片面的画像，而ID-Mapping能把碎片化的数据全部串联起来，消除数据孤岛，提供一个用户的完整信息视图，同时让某一个领域的数据在另一个领域绽放出巨大的价值。<br>　　ID-Mapping有非常多的用处，比如跨屏跟踪和跨设备跟踪，将一个用户的手机、PC、平板等设备的上的行为信息串联到一起。再比如这两年非常热的程序化交易，它的一个重要环节就是要把当前广告请求的用户和第一方DMP平台里的用户历史兴趣数据匹配起来。可以说，没有ID-Mapping，程序化交易就变成了盲目投放，它的实时竞价，精准投放的优势也就不存在了。<br>　　ID-Mapping既然有这么大的作用，那么应该如何做好ID-Mapping呢？这个环节不是一个简单的按照Key匹配的过程，集奥聚合作为领先的第三方大数据公司，研发了多项ID-Mapping 的独家技术，用新的匹配技术和算法模型来重塑了ID-Mapping过程。据粗略评估，集奥聚合ID-Mapping系统有能力把十几个数据源的 56亿ID（Identifier，即标识符）匹配到一起，准确率达到 95%以上，有效用户总量提升了30%，平均每个用户的标签量提升200%以上。值得注意的是，这里的Identifier是指标识符，而并非Identity（身份信息），集奥聚合可在完全脱敏，不（也无需）识别、指出用户姓甚名谁的身份信息的情况下合法地将标识符对应至某匿名用户。<br>　　简单来说，集奥聚合ID-Mapping体系有三个层面。<br>　　第一个层面是物理Mapping<br>　　这是最单纯基本的层面，也就是如何精准地记录和标识一个用户，例如利用硬件设备码生成一个统一的设备码，利用一些强账号来标识用户等等。这个层面上主要的技术难度在于ID的稳定性、唯一性和持久性。<br>　　第二个层面是基于用户行为做迭代滚动Mapping<br>　　由于原始数据存在噪音，同一个用户的多份数据、多种ID之间是“多对多”的关系。那么哪些ID是可信的呢？<br>　　我们设计了一个置信度传播的机器学习图模型来帮助确定哪些身份ID是可信的。</p>
+<p>　　算法示意图如上，每个节点是一个UID或QQ号或GID等标识的潜在的“用户”<br>　　 一开始节点之间关系的概率是随机的<br>　　 其中总有两个ID的关系是强置信的prior<br>　　 迭代收敛后，哪些ID是归属于同一个用户的标识符被识别出来<br>　　大体来说，这个算法的过程是给每一个ID，以及两个ID，如IMEI和邮箱之间的pair关系都有一个预设的置信度。而所有的ID根据两两关联构成了一张图，那么每个ID的置信度根据这张网的结构传播给相关联的ID，同时也从其他ID那边接收置信度，而pair关系的置信度不变。当算法迭代收敛时，高置信度的ID就是可信的。同一个子图内的ID就标识了同一个用户。用类似的算法，我们也可以评价每个数据源的质量等。<br>　　第三个层面是基于用户兴趣做相似用户的合并<br>　　如果说层面二主要还在判断标识一个用户的ID是否正确，那么层面三致力于把行为相似的用户给合并起来。<br>　　例如，某一个用户的设备多次连接同一个Wi-Fi网关，但是每次链接都会随机更换ID，那么相当于这个用户的数据“分裂”在多个不同ID下。那么如何把这些ID合并成同一个用户呢？<br>　　除了上述做法之外，集奥聚合开发了相似用户合并技术。基于用户的上网时间偏好、网址访问偏好、点击行为偏好、浏览行为偏好、APP偏好和社交账号偏好等，为每个用户提取了上千个特征之后，进行相似用户的聚类。<br>　　聚类中选择类中心附近的用户，再加上一些辅助准则判定，就可以把用户合并起来。<br>　　经实际测试，可以把用户ID总量减少80%，同时保持用户合并的准确率在91%以上。使用的历史数据时间窗越长就越精准。仅此一项就能让用户的标签密度提升 500%。最早出现于安卓<br>深入浅出理解 Cookie Mapping<br>Posted on 2014 年 11 月 9 日 by Abbo<br>在RTB（实时竞价广告，Real-Time-Bidding）广告领域（当然实际上不仅仅是这个领域），有一个常见的词汇叫 Cookie Mapping（Cookie 匹配），一会又是DSP（需求方供应平台）与DSP的Cookie Mapping，一会又是DSP与Ad Exchange的Cookie Mapping，一会还有DMP（数据管理平台）与DSP的Cookie Mapping，已经完全把大家搞浑了。许多互联网广告从业者都不清楚到底什么是 Cookie Mapping，到底又是为什么要 Cookie Mapping。今天就以小小的笔记，分享大家疑问的解答。<br>用户唯一标识体系<br>在互联网中，我们有着许多标识唯一用户的技术手段，其中，最为常见的就是 Cookie 了（什么是Cookie请参看网站分析中的Cookie）。简单的多，Cookie具备几个特征：<br>•    唯一性，一个Cookie是唯一存在于一个域名下的；<br>•    归属权，一个Cookie必须属于某一个域名，且相互不能访问使用；<br>•    持久性，一个Cookie可以持久的存在于一个浏览器中。<br>正因为Cookie具备上述几个特征，也就衍生出Cookie在使用上的一些特点了，我们以DSP.COM（广告购买平台），ADX.COM（广告交易平台），DMP.COM（数据管理平台）为例，存在以下结论：<br>•    DSP.COM，ADX.COM，DMP.COM都存在各自的用户标识体系（各自定义的唯一ID标识）；<br>•    用户Abbo在上述三个产品的ID分别是dsp-1，adx-a，dmp-①，且相互不能访问使用。<br>就这样，DSP.COM，ADX.COM，DMP.COM都可以唯一的标识出用户Abbo，但他们并不能互相读取标识信息。<br>共享用户特征<br>由于客户需求，广告主在DSP.COM，ADX.COM，DMP.COM均有业务存在：<br>•    广告主使用DSP.COM进行广告投放，并且用户Abbo点击了游戏广告；<br>•    用户Abbo主动使用了DMP.COM提供的浏览器购物比价插件服务；<br>•    用户Abbo点击过位于交易平台ADX.COM上的职业学习、求职类广告；<br>刚好，DSP.COM识别出了Abbo喜欢玩游戏特征，DMP.COM识别出了Abbo是男性用户，ADX.COM识别出了Abbo是个年轻人。此时问题来了，由于三方的数据并不共享，因此对于广告主而言，仅知道dsp-1喜欢玩游戏，adx-a是年轻人，dmp-①是男性用户。广告主并不能直接知道Abbo是个喜爱玩游戏的年轻男性。<br>最终目标，我们需要不同产品体系中的用户的特征，合并绑定到一个用户上来，这也就是本文主题的关键——Cookie Mapping。<br>常见 Mapping 方式<br>我们刚刚看到，不同厂商、产品对用户都使用了不同的标识体系，诸如dsp-a，adx-a，dmp-①此类。因此，我们在Cookie Mapping中的最为基础的信息表——ID映射关系，俗称Cookie Mapping表。它负责使dsp-1，adx-a，dmp-①关联起来。<br>要使同一个用户在不同体系中关联起来，只有一个做法，那就是当用户发生行为的时候，同时能够联通多家厂商、产品。也就是出现了以下最常见的几种Mapping方式生成ID映射关系表：<br>•    用户加载网页代码时候，同时加载DSP.COM，ADX.COM，DMP.COM的代码，互相调用Mapping接口传输ID信息；（客户端Mapping）<br>•    用户加载网页代码时候，由服务端转发携带ID的请求，由ADX.COM服务器告诉DSP.COM相关ID信息。（服务端Mapping）<br>这样一来，经过大量的Mapping匹配后，不同厂商、产品之间也就自然形成了一套对应ID映射关系表格了。<br>移动端的 Mapping<br>移动终端的发展趋势，Cookie的效果已经远不如PC端了——PC端的用户上网行为，往往发生在一两款Web浏览软件（浏览器）中，而移动端App较为分散，用户行为、特征体现在更多的应用程序（App）上。况且，移动终端的唯一性，存在着更多的ID体系标识唯一用户，诸如MAC地址、iOS IDFA、Android ID等等。这些ID往往是具备一定唯一性，并且能够在不同App中共享的标识信息。因此，移动终端有时候也不需要 Mapping，如果约定俗成的使用某一类ID也是可以进行唯一用户标识的。<br>斗胆小结<br>斗胆小结本文，观点并不一定全部正确，如有不足，还请点出：<br>•    唯一标识需求将长期存在；<br>•    Cookie标识在PC端短期内（10年）不会消失；<br>•    多终端的发展，将出现更多标识体系；<br>•    Mapping ID的需求将长期存在。<br>Open-ID是一个很好的想法，也是一个很好的应用，特别是第三方开源Open-ID产品，个人觉得还是值得一</p>
+<p>一点做用户画像的人生经验（一）：ID强打通</p>
+<ol>
+<li>背景<br>在构建精准用户画像时，面临着这样一个问题：日志采集不能成功地收集用户的所有ID，且每条业务线有各自定义的UID用来标识用户，从而造成了用户ID的零碎化。因此，为了做用户标签的整合，用户ID之间的强打通（亦称为ID-Mapping）成了迫切的需求。大概三年前，在知乎上有这样一个与之相类似的问题：如何用MR实现并查集以对海量数据pair做聚合；目前为止还无人解答。本文将提供一个可能的解决方案——如何用MR计算框架来实现大数据下的ID强打通。<br>首先，简要地介绍下Android设备常见的ID：<br>•    IMEI（International Mobile Equipment Identity），即通常所说的手机序列号、手机“串号”，用于在移动电话网络中识别每一部独立的手机等行动通讯装置；序列号共有15位数字，前6位（TAC）是型号核准号码，代表手机类型。接着2位（FAC）是最后装配号，代表产地。后6位（SNR）是串号，代表生产顺序号。最后1位（SP）一般为0，是检验码，备用。<br>•    MAC(Media Access Control)一般代指MAC位址，为网卡的标识，用来定义网络设备的位置。<br>•    IMSI（International Mobile SubscriberIdentification Number），储存在SIM卡中，可用于区别移动用户的有效信息；其总长度不超过15位，同样使用0～9的数字。其中MCC是移动用户所属国家代号，占3位数字，中国的MCC规定为460；MNC是移动网号码，最多由两位数字组成，用于识别移动用户所归属的移动通信网;MSIN是移动用户识别码，用以识别某一移动通信网中的移动用户。<br>•    Android ID是系统随机生成的设备ID 为一串64位的编码（十六进制的字符串），通过它可以知道设备的寿命（在设备恢复出厂设置或刷机后，该值可能会改变）。</li>
+<li>设计<br>从图论的角度出发，ID强打通更像是将小连通图合并成一个大连通图；比如，在日志中出现如下三条记录，分别表示三个ID集合（小连通图）：<br>A   B   C<pre><code>C   D
+    D   E
+</code></pre>通过将三个小连通图合并，便可得到一个大连通图——完整的ID集合列表A B C D E。淘宝明风介绍了如何用Spark GraphX通过outerJoinVertices等运算符来做大数据下的多图合并；针对ID强打通的场景，也可采用类似的思路：日志数据构建大的稀疏图，然后采用自join的方式做打通。但是，我并没有选用GraphX，理由如下：<br>•    GraphX只支持有向图，而不支持无向图，而ID之间的关联关系是一个无向连通图；<br>•    GraphX的join操作不完全可控，“不完全可控”是指在做图合并时我们需要做过滤山寨设备、一对多的ID等操作，而在GraphX封装好的join算子上实现过滤操作则成本过高。<br>因而，基于MR计算模型（Spark框架）我设计新的ID打通算法；算法流程如下：打通的map阶段将ID集合id_set中每一个Id做key然后进行打散（id_set.map(id -&gt; id_set))），Reduce阶段按key做id_set的合并。通过观察发现：仅需要两步MR便可完成上述打通的操作。以上面的例子做说明，第一步MR完成后，打通ID集合为：A B C D、 C D E，第二步MR完成后便得到完整的ID集合列表A B C D E。但是，在两步MR过程中，所有的key都会对应一个聚合结果，而其中一些聚合结果只是中间结果。故而引入了key_set用于保存聚合时的key值，加入了第三步MR，通过比较key_set与id_set来对中间聚合结果进行过滤。算法的伪代码如下：<br>MR step1:<br> Map: <pre><code>input: id_set
+process: flatMap id_set;
+output: id -&gt; (id_set, 1)
+</code></pre> Rduce:<pre><code>process: reduceByKey
+output: id -&gt; (id_set, empty key_set, int_value)
+</code></pre></li>
+</ol>
+<p>MR step2:<br>    Map:<br>        input: id -&gt; (id_set, empty key_set, int_value)<br>        process: flatMap id_set, if have id_aggregation, then add key to key_set<br>        output: id -&gt; (id_set, key_set, int_value)<br>    Reduce:<br>        process: reduceByKey<br>        output: id -&gt; (id_set, key_set, int_value)</p>
+<p>MR step3:<br>    Map:<br>        input: id -&gt; (id_set, empty key_set, int_value)<br>        process: flatMap id_set, if have id_aggregation, then add key to key_set<br>        output: id -&gt; (id_set, key_set, int_value)<br>    Reduce:<br>        process: reduceByKey<br>        output: id -&gt; (id_set, key_set, int_value)</p>
+<p>Filters:<br>    process: if have id_aggregation, then add key to key_set<br>    filter: if no id_aggregation or key_set == id_set<br>    distinct</p>
+<ol start="3">
+<li>实现<br>针对上述ID强打通算法，Spark实现代码如下：<br>case class DvcId(id: String, value: String)<br>val log: RDD[mutable.Set[DvcId]]// MR1val rdd1: RDD[(DvcId, (mutable.Set[DvcId], mutable.Set[DvcId], Int))] = log<br>.flatMap { set =&gt;<br> set.map(t =&gt; (t, (set, 1)))<br>}.reduceByKey { (t1, t2) =&gt;<br> t1._1 ++= t2._1<br> val added = t1._2 + t2._2<br> (t1._1, added)<br>}.map { t =&gt;<br> (t._1, (t._2._1, mutable.Set.empty[DvcId], t._2._2))<br>}// MR2val rdd2: RDD[(DvcId, (mutable.Set[DvcId], mutable.Set[DvcId], Int))] = rdd1<br>.flatMap(flatIdSet).reduceByKey(tuple3Add)// MR3val rdd3: RDD[(DvcId, (mutable.Set[DvcId], mutable.Set[DvcId], Int))] = rdd2<br>.flatMap(flatIdSet).reduceByKey(tuple3Add)// filterval rdd4 = rdd3.filter { t =&gt;<br>t._2._2 += t._1<br>t._2._3 == 1 || (t._2._1 – t._2.<em>2).isEmpty<br>}.map(</em>._2._1).distinct()<br>// flat id_setdef flatIdSet(row: (DvcId, (mutable.Set[DvcId], mutable.Set[DvcId], Int))) = {<br>row._2._3 match {<br> case 1 =&gt;<br>   Array((row._1, (row._2._1, row._2._2, row._2._3)))<br> case _ =&gt;<br>   row._2._2 += row._1 // add key to keySet<br>   row._2._1.map(d =&gt; (d, (row._2._1, row._2._2, row._2._3))).toArray<br>}<br>}<br>def tuple3Add(t1: (mutable.Set[DvcId], mutable.Set[DvcId], Int),<pre><code>t2: (mutable.Set[DvcId], mutable.Set[DvcId], Int)) = {
+</code></pre>t1._1 ++= t2._1<br>t1._2 ++= t2._2<br>val added = t1._3 + t2._3<br>(t1._1, t1._2, added)<br>}<br>其中，引入常量1是为了标记该条记录是否发生了ID聚合的情况。<br>ID强打通算法实现起来比较简单，但是在实际的应用时，日志数据往往是带噪声的：<br>•    有山寨设备；<br>•    ID之间存在着一对多的情况，比如，各业务线的UID的靠谱程度不一，有的UID会对应到多个设备。<br>另外，ID强打通后是HDFS的离线数据，为了提供线上服务、保证ID之间的一一对应关系，应选择何种分布式数据库、表应如何设计、如何做到数据更新时而不影响线上服务等等，则是另一个需要思考的问题。</li>
+</ol>
+
+      
+    </div>
+    
+    <div class="article-info article-info-index">
+      
+      
+      
+
+      
+      <div class="clearfix"></div>
+    </div>
+      
+    
+  </div>
+  
+</article>
+
+
+
+
+
+
+
+  
     <article id="post-点击流日志分析流程" class="article article-type-post" itemscope itemprop="blogPost">
   
     <div class="article-meta">
@@ -1754,10 +2179,10 @@ ObjectMapper om = new ObjectMapper(); beanJson = om.writeValueAsString(bean);
 
 
   
-    <article id="post-sparkstreaming&amp;kafka" class="article article-type-post" itemscope itemprop="blogPost">
+    <article id="post-storm的架构" class="article article-type-post" itemscope itemprop="blogPost">
   
     <div class="article-meta">
-      <a href="/2018/05/01/sparkstreaming&kafka/" class="article-date">
+      <a href="/2018/05/01/storm的架构/" class="article-date">
   	<time datetime="2018-05-01T13:29:30.000Z" itemprop="datePublished">2018-05-01</time>
 </a>
     </div>
@@ -1771,8 +2196,8 @@ ObjectMapper om = new ObjectMapper(); beanJson = om.writeValueAsString(bean);
         
   
     <h1 itemprop="name">
-      <a class="article-title" href="/2018/05/01/sparkstreaming&kafka/">
-        将offsets存储在HBase中
+      <a class="article-title" href="/2018/05/01/storm的架构/">
+        storm
         
       </a>
     </h1>
@@ -1783,463 +2208,79 @@ ObjectMapper om = new ObjectMapper(); beanJson = om.writeValueAsString(bean);
     
     <div class="article-entry" itemprop="articleBody">
       
-        <p>将offsets存储在HBase中</p>
-<p>HBase可以作为一个可靠的外部数据库来持久化offsets。通过将offsets存储在外部系统中，Spark Streaming应用功能能够重读或者回放任何仍然存储在Kafka中的数据。</p>
-<p>根据HBase的设计模式，允许应用能够以rowkey和column的结构将多个Spark Streaming应用和多个Kafka topic存放在一张表格中。在这个例子中，表格以topic名称、消费者group id和Spark Streaming 的batchTime.milliSeconds作为rowkey以做唯一标识。尽管batchTime.milliSeconds不是必须的，但是它能够更好地展示历史的每批次的offsets。表格将存储30天的累积数据，如果超出30天则会被移除。下面是创建表格的DDL和结构</p>
-<p>对每一个批次的消息，使用saveOffsets()将从指定topic中读取的offsets保存到HBase中</p>
-<p>在执行streaming任务之前，首先会使用getLastCommittedOffsets()来从HBase中读取上一次任务结束时所保存的offsets。该方法将采用常用方案来返回kafka topic分区offsets。</p>
-<p>情形1：Streaming任务第一次启动，从zookeeper中获取给定topic的分区数，然后将每个分区的offset都设置为0，并返回。</p>
-<p>情形2：一个运行了很长时间的streaming任务停止并且给定的topic增加了新的分区，处理方式是从zookeeper中获取给定topic的分区数，对于所有老的分区，offset依然使用HBase中所保存，对于新的分区则将offset设置为0。</p>
-<p>情形3：Streaming任务长时间运行后停止并且topic分区没有任何变化，在这个情形下，直接使用HBase中所保存的offset即可。</p>
-<p>在Spark Streaming应用启动之后如果topic增加了新的分区，那么应用只能读取到老的分区中的数据，新的是读取不到的。所以如果想读取新的分区中的数据，那么就得重新启动Spark Streaming应用。</p>
-<p>当我们获取到offsets之后我们就可以创建一个Kafka Direct DStream</p>
-<p>在完成本批次的数据处理之后调用saveOffsets()保存offsets.<br> 你可以到HBase中去查看不同topic和消费者组的offset数据</p>
+        <h1 id="storm"><a href="#storm" class="headerlink" title="storm"></a>storm</h1><p><img src="http://m.qpic.cn/psb?/V11BXxlE33Kp9F/t7Rbr8aYgIO4*9TbdsjJMgxTPY8JHwAmijtuJfP2rbo!/b/dEMBAAAAAAAA&amp;bo=wAY4BAAAAAADN.g!&amp;rf=viewer_4" alt=""></p>
+<h3 id="Storm架构"><a href="#Storm架构" class="headerlink" title="Storm架构"></a>Storm架构</h3><pre><code>类似于Hadoop的架构，主从(Master/Slave)
+Nimbus: 主
+    集群的主节点，负责任务(task)的指派和分发、资源的分配
+Supervisor: 从
+    可以启动多个Worker，具体几个呢？可以通过配置来指定
+    一个Topo可以运行在多个Worker之上，也可以通过配置来指定
+    集群的从节点，(负责干活的)，负责执行任务的具体部分
+    启动和停止自己管理的Worker进程
+无状态，在他们上面的信息(元数据)会存储在ZK中
+Worker: 运行具体组件逻辑(Spout/Bolt)的进程
+=====================分割线===================
+task： 
+    Spout和Bolt
+    Worker中每一个Spout和Bolt的线程称为一个Task
+executor： spout和bolt可能会共享一个线程
+</code></pre><h5 id="提交代码到集群："><a href="#提交代码到集群：" class="headerlink" title="提交代码到集群："></a>提交代码到集群：</h5><pre><code>storm jar /home/hadoop/lib/storm-1.0.jar com.bigdata.ClusterSumStormTopology
+</code></pre><h5 id="storm-其他命令的使用"><a href="#storm-其他命令的使用" class="headerlink" title="storm 其他命令的使用"></a>storm 其他命令的使用</h5><pre><code>list
+    Syntax: storm list
+    List the running topologies and their statuses.
+如何停止作业
+    kill
+        Syntax: storm kill topology-name [-w wait-time-secs]
+</code></pre><p>并行度</p>
+<pre><code>一个worker进程执行的是一个topo的子集
+一个worker进程会启动1..n个executor线程来执行一个topo的component
+一个运行的topo就是由集群中多台物理机上的多个worker进程组成
 
-      
-    </div>
-    
-    <div class="article-info article-info-index">
-      
-      
-      
+executor是一个被worker进程启动的单独线程，每个executor只会运行1个topo的一个component
+task是最终运行spout或者bolt代码的最小执行单元
 
-      
-      <div class="clearfix"></div>
-    </div>
-      
-    
-  </div>
-  
-</article>
+默认：
+    一个supervisor节点最多启动4个worker进程  
+    每一个topo默认占用一个worker进程         
+    每个worker进程会启动一个executor        
+    每个executor启动一个task   
 
+Total slots:4  
+Executors: 3   但是stormUI上是 spout + bolt = 2  why 3?
+隐藏的acker 导致的
+</code></pre><h5 id="通过代码对并行度的理解："><a href="#通过代码对并行度的理解：" class="headerlink" title="通过代码对并行度的理解："></a>通过代码对并行度的理解：</h5><pre><code>Config conf = new Config();
+conf.setNumWorkers(2); // use two worker processes
+topologyBuilder.setSpout(&quot;blue-spout&quot;, new BlueSpout(), 2); // set parallelism hint to 2
+topologyBuilder.setBolt(&quot;green-bolt&quot;, new GreenBolt(), 2)
+           .setNumTasks(4)
+           .shuffleGrouping(&quot;blue-spout&quot;);topologyBuilder.setBolt(&quot;yellow-bolt&quot;, new YellowBolt(), 6)
+           .shuffleGrouping(&quot;green-bolt&quot;);StormSubmitter.submitTopology(
+    &quot;mytopology&quot;,
+    conf,
+    topologyBuilder.createTopology()
+);
 
+##解释：
+conf.setNumWorkers(2) ---&gt;两个worker
+setSpout(&quot;blue-spout&quot;, new BlueSpout(), 2)---&gt; 2个spout executor 对应默认的2个task
+setBolt(&quot;green-bolt&quot;, new GreenBolt(), 2).setNumTasks(4) ---&gt; 2个executor 4个task(因为它指定了setNumTasks个数)
 
+结果：
+1个topology
+2个workers  
+2+2+2[2个worker 就有2个acker] = 6个executors  
+2+4+2[2个worker 就有2个acker默认2个task] = 8个task
+</code></pre><h5 id="修改正在运行的topology的并行度："><a href="#修改正在运行的topology的并行度：" class="headerlink" title="修改正在运行的topology的并行度："></a>修改正在运行的topology的并行度：</h5><pre><code>#Reconfigure the topology &quot;mytopology&quot; to use 5 worker processes,
+#the spout &quot;blue-spout&quot; to use 3 executors 
+#the bolt &quot;yellow-bolt&quot; to use 10 executors.
 
-
-
-
-  
-    <article id="post-JVM GC " class="article article-type-post" itemscope itemprop="blogPost">
-  
-    <div class="article-meta">
-      <a href="/2018/05/01/JVM GC /" class="article-date">
-  	<time datetime="2018-05-01T13:29:30.000Z" itemprop="datePublished">2018-05-01</time>
-</a>
-    </div>
-  
-  <div class="article-inner">
-    
-      <input type="hidden" class="isFancy" />
-    
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2018/05/01/JVM GC /">
-        JVM总结相关笔记
-        
-      </a>
-    </h1>
-  
-
-      </header>
-      
-    
-    <div class="article-entry" itemprop="articleBody">
-      
-        <h2 id="JVM"><a href="#JVM" class="headerlink" title="JVM"></a>JVM</h2><h4 id="JVM的参数设置"><a href="#JVM的参数设置" class="headerlink" title="JVM的参数设置"></a>JVM的参数设置</h4><pre><code>1. -Xms 初始堆大小  -Xmx 最大堆大小  [一般这两个值设置的是一样的，防止GC后出现内存抖动]
-2. -Xmn 年轻代大小
-    a) 整个堆的大小 = 年轻代大小 + 老年代大小 + 持久代大小
-    b) 持久代一般固定大小为64M
-    c) 所以，增大年轻代后，将会较小老年代的大小。这个值对系统性能影响较大，
-       Sun官方推荐配置为整个堆的3/8
-3. -XX:NewSize 初始年轻代大小     -XX:MaxNewSize 最大年轻代大小
-4. -XX:NewRatio 老年代和年轻代的比值
-5. -XX：SurvivorRatio 设置年轻代中Eden区与Survivor区的大小比值 
-   [默认是8:1:1,比如设置为6，那么就是 6:2:2]
-6. -XX:MaxTenuringThreshold 设置年轻代的对象被回收多少次后才进入老年代，默认15次
-    [控制对象在经过多少次minor GC后进入老年代，此参数只在Serial串行GC时有效]
-7. -XX:PermSize 初始持久代大小  -XX:MaxPermSize 持久代最大值 
-    [这个跟 -Xms 和 -Xmx 堆大小设置一样，都是相等，为了防止内存抖动]
-</code></pre><h4 id="调优"><a href="#调优" class="headerlink" title="调优"></a>调优</h4><pre><code>JVM调优主要针对内存管理方面，包括控制各个代的大小，GC策略。
-由于GC开始垃圾回收时会挂起应用线程，严重影响性能，调优的目的就是
-为了尽量降低GC所导致的应用线程暂停时间、减少Full GC的次数。
-</code></pre><p> 代调优：</p>
-<pre><code> 1) 避免新生代大小设置过小
-     当新生代设置过小时，会产生两种比较明显的现象:
-         一是minor GC次数频繁
-         二是可能导致minor GC对象直接进入老年代。当老年代内存不足时，会出发Full GC。
-2) 避免新生代设置过大
-    新生代设置过大，会带来两个问题：
-        一是老年代变小，可能导致Full GC频繁执行；
-        二是minor GC 执行回收的时间大幅度增加
-那怎么选择年轻代的大小呢？[分不同的应用场景]
-    a. 响应时间优先的应用：
-        尽可能设大，知道接近系统的最低响应时间限制(根据实际情况选择)。
-</code></pre><p><img src="/Users/Macx/Desktop/整理笔记/jvm-gc.png" alt=""><br>说明：新new的对象会首先会进入年轻代的Eden中（如果对象太大可能直接进入年老代），在GC之前对象是存在Eden和from中的，进行GC的时候Eden中的对象被拷贝到To这样一个survive空间（survive（幸存）空间：包括from和to，他们的空间大小是一样的，又叫s1和s2）中（有一个拷贝算法），From中的对象（算法会考虑经过GC幸存的次数）到一定次数 阈值（如果说每次GC之后这个对象依旧在Survive中存在，GC一次他的Age就会加1，默认15就会放到OldGeneration。但是实际情况比较复杂，有可能没有到阈值就从Survive区域直接到Old Generation区域。)</p>
-<h4 id="1-哪些需要回收-—-gt-java堆内存、方法区内存"><a href="#1-哪些需要回收-—-gt-java堆内存、方法区内存" class="headerlink" title="1.哪些需要回收? —-&gt; java堆内存、方法区内存"></a>1.哪些需要回收? —-&gt; java堆内存、方法区内存</h4><h4 id="2-什么时候回收？-—–-gt"><a href="#2-什么时候回收？-—–-gt" class="headerlink" title="2.什么时候回收？ —–&gt;"></a>2.什么时候回收？ —–&gt;</h4><pre><code>2.1：引用计数法【引用count+1，引用失效时count-1，为0时不被引用】
-【如果两个对象相互引用而且都没有被使用了，那么会造成内存泄漏】。
-
-2.2：可达性分析【从根节点搜索，如果没有搜索到就是没有被使用，所以互相引用且搜索不到的也会被清除】
-</code></pre><h4 id="怎么回收？—-gt-垃圾回收算法-3种"><a href="#怎么回收？—-gt-垃圾回收算法-3种" class="headerlink" title="怎么回收？—-&gt; 垃圾回收算法[3种]"></a>怎么回收？—-&gt; 垃圾回收算法[3种]</h4><h4 id="1-标记清除算法-Mark-Sweep"><a href="#1-标记清除算法-Mark-Sweep" class="headerlink" title="1.标记清除算法 [Mark-Sweep]"></a>1.标记清除算法 [Mark-Sweep]</h4><pre><code>遍历所有的GC Root，分别标记处可达的对象和不可达的对象，然后将不可达的对象回收。
-**缺点**是：效率低、回收得到的空间不连续 【当比较大的对象被创建时由于被回收的是不连续的，
-所以被回收的空间就存不下，造成了浪费】
-</code></pre><h4 id="2-标记整理算法"><a href="#2-标记整理算法" class="headerlink" title="2.标记整理算法"></a>2.标记整理算法</h4><pre><code>将所有可用的对象往前移动[标记谁是活跃对象，整理，会把内存对象整理成一棵树一个连续的空间]，这样会很耗资源
-</code></pre><h4 id="3-复制算法"><a href="#3-复制算法" class="headerlink" title="3.复制算法"></a>3.复制算法</h4><pre><code>将内存分为两块，每次只使用一块。当这一块内存满了，就将还存活的对象复制到另一块上，并且严格按照内存地址排列，然后把已使用的那块内存统一回收。
-**优点**是：能够得到连续的内存空间 
-**缺点**是：浪费了一半内存
-年轻代使用的是复制整理算法
-</code></pre><h5 id="有一点需要注意："><a href="#有一点需要注意：" class="headerlink" title="有一点需要注意："></a>有一点需要注意：</h5>
-      
-    </div>
-    
-    <div class="article-info article-info-index">
-      
-      
-      
-
-      
-      <div class="clearfix"></div>
-    </div>
-      
-    
-  </div>
-  
-</article>
-
-
-
-
-
-
-
-  
-    <article id="post-HDFS读写流程&amp;Yarn执行流程" class="article article-type-post" itemscope itemprop="blogPost">
-  
-    <div class="article-meta">
-      <a href="/2018/05/01/HDFS读写流程&Yarn执行流程/" class="article-date">
-  	<time datetime="2018-05-01T13:29:30.000Z" itemprop="datePublished">2018-05-01</time>
-</a>
-    </div>
-  
-  <div class="article-inner">
-    
-      <input type="hidden" class="isFancy" />
-    
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2018/05/01/HDFS读写流程&Yarn执行流程/">
-        客户端向HDFS读写数据流程
-        
-      </a>
-    </h1>
-  
-
-      </header>
-      
-    
-    <div class="article-entry" itemprop="articleBody">
-      
-        <h2 id="客户端向HDFS写数据流程"><a href="#客户端向HDFS写数据流程" class="headerlink" title="客户端向HDFS写数据流程"></a>客户端向HDFS写数据流程</h2><p><img src="http://m.qpic.cn/psb?/V11BXxlE33Kp9F/KYeqSTrKzIYBJCYrfZ6gqk7Ztvhkl3Ax*HFAUXpr1fM!/b/dGgBAAAAAAAA&amp;bo=SgVRAgAAAAADBz4!&amp;rf=viewer_4" alt=""></p>
-<pre><code>1. 客户端向Namenode请求上传文件 /aaa/xxx.log
-2. Namenode 检查自己的元数据，看看元数据下有没有这个目录，假设满足条件(没有这个目录可以上传)
-    响应客户端的请求[客户端可以上传]
-3. 客户端RPC请求上传1个Block(0-128M),请返回DataNode(返回几个DataNode是客户端配置的,默认3个)
-4. 返回(dn1,dn3,dn4)给客户端
-    为什么要给客户端返回这三台机器呢？
-        考虑因素： 空间/距离
-            1. 第1个副本(dn1),要看DataNode的空间(剩余存储空间)和距离(同一个机架上的距离一样，而不是谁的网线长短)
-            假如这几台机器的空间差不多，NameNode就随机返回一台；
-            2. 第2个副本(dn3),考虑跨机架挑选1个DataNode，增加副本的可靠性
-            3. 第3个副本就在第1个副本同机架另外挑选1台DataNode存放
-        怎么能让NameNode知道哪个datanode在1个机架，哪个datanode在另1个机架，这个要配个文件，
-        配机架感知。[就是在配置文件里写死了，哪个机架有哪几台DataNode（网咯拓扑）]
-5. 客户端会找最近的(将要上传副本到的那台机器)一台DataNode[假如找的是dn1]，请求建立Block传输通道channel[本地流，以供写入数据]
-    5.1 dn1接收到请求看到还有2台机器(dn3、dn4)，dn1就向dn3发送请求建立管道
-    5.2 dn3接收到请求看到还有一台dn4，就向dn4发送请求建立管道
-6.1 dn4建立管道成功后，给dn3发送响应，建立管道成功
-6.2 dn3再给dn1发送响应，建立管道成功
-    这样一来，管道 PipeLine就建立成功了
-7. 客户端读取本地的1块数据(默认128M)，向dn1传输数据(数据是以1个1个packet[默认64k]的形式上传的)
-    packet是以chunk(Byte)为单位校验
-    7.1 每个DataNode写入磁盘之前都会有1个缓冲区(ByteBuf)，先写入缓冲区，再写入本地磁盘
-         因为每个packet只有64k，所以dn写入之后，基本上后面的dn3和dn4也都复制上传完成了[几乎同步完成]
-         每个DataNode上传成功packet 都会向前面的DataNode反馈说上传成功，第一个DataNode才给客户端说上传成功
-    假如说是后面两台DataNode节点没有上传成功，但是只要是第1台上传成功了，客户端就认为上传成功了
-    [因为NameNode最后会帮客户端异步去复制，省得客户端一直阻塞，说没成功再来，没成功再来]；
-    假如第1台也失败了，客户端就会找NameNode，告诉他这台DataNode不行，再换，然后重新返回DataNode，重新上传；
-8. 上传完了第1个Block，客户端会再次向NameNode发送请求说要上传第2块Block，然后重新走刚刚的流程
-总结：
-    这样一来，NameNode的元数据就记录了，上传的文件的 路径、文件有几个Block、Block副本在哪些机器
-</code></pre><h2 id="客户端向HDFS读数据流程"><a href="#客户端向HDFS读数据流程" class="headerlink" title="客户端向HDFS读数据流程"></a>客户端向HDFS读数据流程</h2><p><img src="http://m.qpic.cn/psb?/V11BXxlE33Kp9F/*cdq.W37ZmIVEpun93YYQqysu6asV1HifPC7o7.VPys!/b/dDEBAAAAAAAA&amp;bo=ygTkAQAAAAADFxk!&amp;rf=viewer_4" alt=""></p>
-<pre><code>1. 客户端向NameNode请求下载/aa/xx.log
-2. NameNode的元数据上面查看/aa/xx.log，然后查询得到：3个Block(Block1,Block2,Block3)、{Block1:dn1,dn3,dn4 Block2:dn1,dn4,dn5...}
-    并返回给客户端目标文件的元数据信息
-3. 客户端要下载第1个Block，然后就去找副本所在节点距离它最近的(dn1)，建立管道，请求读取Block1
-4. dn1建立本地流，fileInpuStream，dn1建立 NIO socket - socketOutPutStream
-5. 客户端建立socketInputStream，还有fileOutPutStream 写入本地 如：c:/xxx.log
-6. dn1 传输通过通道传输数据
-Block1上传到客户端完成后，客户端会再去找第2块Block 跟找Block1是一样的，还有Block3
-</code></pre><h2 id="MR-Yarn的提交流程"><a href="#MR-Yarn的提交流程" class="headerlink" title="MR Yarn的提交流程"></a>MR Yarn的提交流程</h2><pre><code>Yarn：
-    只负责程序运行所需资源的分配回收等调度任务，与应用程序的内部运行工作机制完全无关，
-    所以Yarn已经成为一个通用的资源调度平台，许许多多的运算框架都可以借助他来实现资源管理，
-    比如：MR/SPARK/FLINK/TEZ...
-NodeManager分配container基于：
-Linux的资源隔离机制cgroup  比如：docker也是基于此
-</code></pre><p><img src="http://m.qpic.cn/psb?/V11BXxlE33Kp9F/9zhVGQyCCNef1I8asBSqn83n.wL1HN35NFV9J.n7CUM!/b/dJEAAAAAAAAA&amp;bo=QAXgAgAAAAADB4U!&amp;rf=viewer_4" alt=""></p>
-<pre><code>1. 客户端所在节点，运行jar包，main方法里，job.submit() 
-  YarnRunner(Proxy[实现了ClientProtocol])找Yarn集群的老大ResourceManager申请提交1个Application
-2. ResourceManager返回Application提交资源路径：hdfs://xxx/xx.staging 和 application_id
-3. YarnRunner提交job运行所需的资源文件，提交到hdfs://xxx/xx.staging/application_id
-                                                                                    /job.split
-                                                                                    /job.xml
-                                                                                    wc.jar
-4. 客户端通过RPC调用 告诉ResourceManager 资源提交完毕，申请运行mrAppMaster [后面的事情就和客户端没关系了]
-ResourceManager运行的时候不止是接收这1个程序，还可能接收其他的程序提交，所以ResourceManager也有不同的调度策略[三种策略]：
-    4.1 FIFO[先进先出]：任务在队列里，要先运行完第1个，再运行第2个
-        [这个时候是可以接收其他的任务提交的，只不过要等][这个在老版本里是默认的]
-    4.2 Fair：每个job提交后，都会分配一点点资源给他们
-    4.3 capacity：第1个job提交之后，把资源全部给他，当第2个job来的时候，第1个job的一些task可能就已经运行完了，
-        这样的话空余出来的资源就可以给后来提交的job了，如果后来的job需要的资源很少，可能直接就运行完了，运行完了，            还可以把这些资源给之前的应用继续使用
-        [新版本的默认就是capacity调度策略]
-5. 将用户的请求初始化成一个task
-6. 因为nodeManager和NamenodeManager一直保持着心跳，所以会去领取任务(task),假如nm1领取到任务
-7. nm1就会生成1个container容器[分配了cpu + ram]，到HDFS上下载资源并启动mrAppMatser
-8. mrAppMatser向NamenodeManager申请运行MapTask的容器
-9. 假如这时候nm2和nm3领取到task任务，然后分别在各自的节点生成1个容器[这个容器就是1个进程叫做YarnChild,可以通过jps查看]
-10. mrAppMatser发送程序启动脚本[java -cp...]给nm2和nm3来运行MapTask
-        mrAppMatser会监管这些MapTask的运行情况，如果哪个MapTask运行失败，
-        他还会去找NamenodeManager重新申请1个nodeManager来生成container来运行MapTask
-        如果他发现有一个MapTask运行的特别慢，他还会去重新申请1个新的nodeManager生成container，
-        两个同时处理一个切片，看哪个先执行完，就用哪个的结果文件作为reduce的输入 **[推测执行]**
-11. 当MapTask运行完成之后，mrAppMatser知道MapTask的输出文件[分区且排序，不如有3个分区]在哪[container里的工作目录]
-12. mrAppMatser向NamenodeManager申请3个容器，来运行reduceTask程序
-13. 这3个容器运行的reduce task会向相对应map task的nodeManager拉取相对应分区的数据过来
-14. reduce 对数据进行merge + 排序 ，调用reduce方法 ，输出结果
-15. 当mrAppMatser执行完了之后就会去找ResourceManager申请注销自己
-</code></pre><h4 id="总结hadoop1和hadoop2的比较："><a href="#总结hadoop1和hadoop2的比较：" class="headerlink" title="总结hadoop1和hadoop2的比较："></a>总结hadoop1和hadoop2的比较：</h4><pre><code>a) 1里面没有yarn，只有jobTracker，负责资源调度和应用运算流程管理，
-如果后面还有任务提交，还是他来管理和调度资源，这样的话都在1个节点上，
-很消耗性能，而且当jobTracker挂掉之后，任务都不能运行了。
-b) 2里面有yarn，只要把任务提交给yarn ，然后yarn进行资源管理就可以了，
-appMaster来负责应用运算流程管理，当一个appMaster挂了之后，也不会影响
-其他应用的作业                                                 
-</code></pre>
-      
-    </div>
-    
-    <div class="article-info article-info-index">
-      
-      
-      
-
-      
-      <div class="clearfix"></div>
-    </div>
-      
-    
-  </div>
-  
-</article>
-
-
-
-
-
-
-
-  
-    <article id="post-kafka - scala 语言写的 版本 1.0.0 scala 2.11 官方推荐" class="article article-type-post" itemscope itemprop="blogPost">
-  
-    <div class="article-meta">
-      <a href="/2018/05/01/kafka - scala 语言写的 版本 1.0.0 scala 2.11 官方推荐/" class="article-date">
-  	<time datetime="2018-05-01T13:29:30.000Z" itemprop="datePublished">2018-05-01</time>
-</a>
-    </div>
-  
-  <div class="article-inner">
-    
-      <input type="hidden" class="isFancy" />
-    
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2018/05/01/kafka - scala 语言写的 版本 1.0.0 scala 2.11 官方推荐/">
-        kafka总结相关笔记
-        
-      </a>
-    </h1>
-  
-
-      </header>
-      
-    
-    <div class="article-entry" itemprop="articleBody">
-      
-        <h1 id="kafka-scala-语言写的-版本-1-0-0-scala-2-11-官方推荐"><a href="#kafka-scala-语言写的-版本-1-0-0-scala-2-11-官方推荐" class="headerlink" title="kafka - scala 语言写的 版本 1.0.0 scala 2.11 官方推荐"></a>kafka - scala 语言写的 版本 1.0.0 scala 2.11 官方推荐</h1><p>kafka 是什么？</p>
-<pre><code>1.kafka是一个消息队列(生产者消费者模式)
-2.目标：构建企业中统一的、高通量、低延时的消息平台
-3.大多的是消息队列（消息中间件）都是基于JMS标准实现的，Kafka类似于JMS的实现
-</code></pre><p>kafka 有什么用？(消息队列有什么用？)</p>
-<pre><code>作为缓冲，来异构、解耦系统
-    a. 用户注册需要多个步骤，每个步骤执行都需要很长时间，代表用户等待时间是所有步骤的累计时间
-    b. 为了减少用户等待的时间，使用并行执行，有多少步骤，就开启多少个线程来执行
-        代表用户等待时间是所有步骤中耗时最多的那个步骤时间
-    c. 问题：开启多个线程执行每个步骤，如果以一个步骤执行异常，或者严重超时，
-        用户的等待时间就不可控了
-使用消息队列来保证
-    1.注册时，立刻返回成功
-    2.发送注册成功的消息到消息平台
-    3.对注册信息感兴趣的程序，可以消费消息
-</code></pre><h3 id="kafka的基本架构"><a href="#kafka的基本架构" class="headerlink" title="kafka的基本架构"></a>kafka的基本架构</h3><p><img src="http://m.qpic.cn/psb?/V11BXxlE33Kp9F/x.psMta.aW44s9upJo9IrOikdwcFORL9vPWx0WhaZgA!/b/dFYBAAAAAAAA&amp;bo=CgMQAgAAAAARBys!&amp;rf=viewer_4" alt=""><br>    kafka cluster：由多个服务器组成，每个服务器单独的名字broker(server)<br>    kafka producer：生产者、负责生产数据<br>    kafka consumer：消费者、负责消费数据<br>    kafka topic：主题，一类消息的名称。存储数据时将一类数据存放在某个topic下，消费数据也是消费一类数据<br>        订单系统：创建一个topic，叫做order<br>        用户系统：创建一个topic，叫做user<br>        商品系统：创建一个topic，叫做product<br><img src="http://m.qpic.cn/psb?/V11BXxlE33Kp9F/lmVbiS8e*xd5wkNzFNMQTFPDCKYrpGIGlMDPkcySlww!/b/dDEBAAAAAAAA&amp;bo=PgPcAAAAAAARB9E!&amp;rf=viewer_4" alt=""></p>
-<h5 id="配置kafka需要修改配置文件的三个地方："><a href="#配置kafka需要修改配置文件的三个地方：" class="headerlink" title="配置kafka需要修改配置文件的三个地方："></a>配置kafka需要修改配置文件的三个地方：</h5><pre><code>1.broker.id
-2.数据存放的目录，注意：目录如果不存在，需要新建
-3.zookeeper的地址信息
-</code></pre><h5 id="查看kafka集群"><a href="#查看kafka集群" class="headerlink" title="查看kafka集群"></a>查看kafka集群</h5><pre><code>由于kafka集群没有UI界面，需要借助外部工具，来查看kafka的集群
-这个工具是一个java程序，必须要安装好jdk --- ZooInspector
-</code></pre><h5 id="1-创建一个订单的topic。"><a href="#1-创建一个订单的topic。" class="headerlink" title="1) 创建一个订单的topic。"></a>1) 创建一个订单的topic。</h5><pre><code>bin/kafka-topics.sh --create --zookeeper zk01:2181 --replication-factor 1 --partitions 1 --topic order
-</code></pre><h5 id="2）编写代码启动一个生产者，生产数据"><a href="#2）编写代码启动一个生产者，生产数据" class="headerlink" title="2）编写代码启动一个生产者，生产数据"></a>2）编写代码启动一个生产者，生产数据</h5><pre><code>bin/kafka-console-producer.sh --broker-list kafka01:9092 --topic order
-</code></pre><h5 id="3）-编写代码启动给一个消费者，消费数据"><a href="#3）-编写代码启动给一个消费者，消费数据" class="headerlink" title="3）    编写代码启动给一个消费者，消费数据"></a>3）    编写代码启动给一个消费者，消费数据</h5><pre><code>bin/kafka-console-consumer.sh --zookeeper zk01:2181 --from-beginning --topic order
-</code></pre><h3 id="kafka原理"><a href="#kafka原理" class="headerlink" title="kafka原理"></a>kafka原理</h3><h4 id="1-分片与副本机制"><a href="#1-分片与副本机制" class="headerlink" title="1.分片与副本机制"></a>1.分片与副本机制</h4><pre><code>分片：
-    当数据量非常大的时候，一个服务器存放不了，就将数据分成两个或者多个部分，
-    存放在多台服务器上。每个服务器上的数据，叫做一个分片。
-        问题：
-            如果一个partition中有10T数据，如何存放？是放在一个文件还是多个文件？
-                kafka的解决方案是多个文件！
-                这里说的多个文件就是segment段
-                    [我们在kafka配置文件中配置的数据存储目录：/export/data/kafka]
-                    里面有topicname-index [如：order-0,意思是order这个topic的第0个副本]
-                    这个order-0目录下就是存放着诸如：
-                        00000000000000000.index
-                        00000000000000000.log
-                        segment段包含了这两个文件，segment段默认是1G大小
-                        segment段中有两个核心的文件.log和.index，当log文件等于1G的时候，
-                        新的数据会写入到下个segment中，同时我们也可以看到segment段中有.timeindex文件生成,
-                        而且通过查看，可以看到一个segment段差不多会存储70万条数据。
-</code></pre><p><img src="http://m.qpic.cn/psb?/V11BXxlE33Kp9F/hn5PDC6zOwPd68flbGfMrNXsek.8DkiFksRzxPIWngA!/b/dEEBAAAAAAAA&amp;bo=hAMCAgAAAAARB7c!&amp;rf=viewer_4" alt=""><br>                    如上图所述：</p>
-<pre><code>                *Segment文件命名规则：
-                    partition全局的第一个segment从0开始，后续每个sgment文件名为上一个segment文件最后一条消息的offset值。
-                    数值最大的为64位long大小，19位数字字符长度，没有数字用0填充。
-                *索引文件存储大量元数据，数据文件存储大量消息，索引文件中元数据指向对应数据文件中
-                message的物理偏移地址
-                结论：
-                    kafka查找segment file 只需要两步
-                        1.先找到这个数据对应的segment[通过查看segment的区间，offset在哪个segment段中]
-                        2.根据某个segment段中的.index 索引文件中查找该条数据所在.log文件中的位置
-        kafka为什么要对文件进行切分，保存多个文件中？
-            kafka作为消息中间件，只负责消息的临时存储，并不是永久存储，
-            需要删除过期的数据。
-            如果将所有的数据都存放在一个文件中，要删除过期数据的时候，就麻烦了。
-            因为文件有日期属性，删除过期数据，只需要根据文件的日属性删除就好了
-
-副本：
-    当数据只保存一份的时候，有丢失的风险，为了更好的容错和容灾，
-    将数据拷贝几份，保存到不同的机器上。
-</code></pre><h4 id="kafka生产数据的分发策略"><a href="#kafka生产数据的分发策略" class="headerlink" title="kafka生产数据的分发策略"></a>kafka生产数据的分发策略</h4><pre><code>kafka在生产数据的实惠，有一个数据分发策略。默认的情况使用DefaultPartitoner.class类
-这个类就定义数据分发的策略。
-    1.如果用指定partition，生产就不会条用DefaultPartitoner.partition()方法，直接发到指定的分区
-    [这种不常用！]
-    public ProducerRecord(String topic, Integer partition, K key, V value) {
-        this(topic, partition, null, key, value, null);
-    }
-
-    2.当用户指定key，使用hash算法。如果key一直不变，同一个key算出来的hash值是一个固定值。
-    如果是固定值，这种hash取模就没意义。
-    public ProducerRecord(String topic, K key, V value) {
-        this(topic, null, null, key, value, null);
-    }
-
-    3.当用户既没有指定partition也没有指定key时，使用轮询[round-robin]的方式发送数据
-    public ProducerRecord(String topic, V value) {
-        this(topic, null, null, null, value, null);
-    }
-</code></pre><h3 id="kafka-消费者的负载均衡"><a href="#kafka-消费者的负载均衡" class="headerlink" title="kafka-消费者的负载均衡"></a>kafka-消费者的负载均衡</h3><pre><code>举例说明：[问题重现]
-    当每秒钟有400条数据过来，分了3个partition来存储，但是只有1个消费者并且每秒能消费100条，这样的话，生产者的速度很快，但是消费者跟不上，怎么办？
-    造成了数据大量滞后和延时！
-解决：
-    多几个消费者，共同来消费数据
-        比如3个消费者来共同消费数据这样就解决了。
-新的问题：
-    消费组中消费者的数量和partition的数量一致，但是消费者消费的熟读还是跟不上[比如每个消费者只能消费100条]，怎么办？
-        再加个消费者吗？ 答案是 no！！！！
-        因为根据kafka负载均衡策略规定，多出来的笑着是处于空闲状态的！
-    也就是1个partition只能被1个消费者消费
-真是解决办法：
-    要么修改topic的partition数量；
-    要么减少消费者处理时间，提高处理速度；
-</code></pre><h4 id="kafka消息不丢失机制："><a href="#kafka消息不丢失机制：" class="headerlink" title="kafka消息不丢失机制："></a>kafka消息不丢失机制：</h4><p> 1.producer端消息不丢失机制：</p>
-<pre><code>如果有多个副本，就需要选择一个leader出来，负责消息的读写请求。
-比如：
-    有一条数据经过partitioner.class计算把数据发送给了broker2[producerRecord ---&gt; 2]
-    关于ack的响应有3个状态值：
-        0：生产者只管发数据，并不关心数据是否丢失
-        1：partition的leader收到数据后，就返回响应码状态
-        -1：所有的从节点和leader都收到数据后，才返回响应码状态
-    问题：
-        如果broker端一直不给ack状态码，producer永远不知道是否成功。
-            producer可以设置一个超时时间  10s，超过时间就认为失败。
-    问题又来了：
-        如果一条消息发送一次，得到一次ack相应，在大量数据情况下会占用很多带宽怎么办？
-    解决：
-        生产者将数据线缓存到producer端，达到一定的数量阈值或者时间阈值之后发送
-        [比如：设置缓冲池中可以放2万条数据，或者等待时间设置成500ms]
-    问题：
-        如果设置buffer，按照500条每个批次发送数据到broker，但是broker迟迟不给相应，buffer中的数据如何处理？
-        [而且producer端还源源不断的生产数据，这时候就造成了阻塞情况]
-    解决：
-        可以对buffer进行设置，如果满了，并不确定是否发送，
-        如果需要继续生产数据，就可以选择buffer清空，或者不清空 [消息不丢失，一般会设置不清空]
-    同步模式和异步模式：[异步就是没有设置缓冲池 buffer]
-        在同步模式下：
-            1. 生产者等待10s，如果broker没有给出ack响应，就认为失败。
-            2. 生产者重置3次，如果还没响应，就报错。
-        在异步模式下：[认为设置]
-            1. 现将数据保存在生产者端的buffer中。buffer大小是2万条
-            2. 满足数据阈值或者数量阈值其中的一个条件就可以发送数据
-            3. 发送一批数据的大小是500条
-        如果broker迟迟不给ack，而buffer又满了，开发者自己设置是否直接清空buffer中的数据。
-</code></pre><p>2.broker端消息不丢失机制：</p>
-<pre><code>broker端的消息不丢失，其实就是用partition副本机制来保证的。
-</code></pre><p>3.consumer端消息不丢失机制：</p>
-<pre><code>partition中有个segment段，log和index文件，log文件存放的是消息本身。
-index文件存放的是消息offset值和存放在log文件的哪儿文件。
-问题：[在kafka 0.8版本之前consumer消费数据的offset值是保存在zookeeper上的，但是
-        这样会导致一种现象，就是consumer已经消费完了，但是等还没把offset值保存到zookeeper
-        上的时候，consumer挂了，再次重启后，那么就会出现**重复**消费的问题]
-解决：
-    kafka从0.8版本以后，offset的值是保存在了kafka的内置topic上，
-    这样就不会造成重复消费的问题了
-</code></pre><h4 id="补充："><a href="#补充：" class="headerlink" title="补充："></a>补充：</h4><pre><code>Consumer Group [CG]：
-    kafka用来实现一个topic消息的广播(发给所有的consumer)和单播(发给任意一个consumer)的手段
-    一个topic可以有多个consumer group。topic的消息会复制(不是真的复制，只是概念上的)到所有的CG
-    但每个partition只会把消息发给该CG中的一个consumer。
-    用CG还可以将consumer进行自由的分组而不需要多次发送消息到不同的topic
-broker：
-    一台kafka服务器就是一个broker，一个集群由多个broker组成。
-    一个broker可以容纳多个topic。
-Partition：
-    为了负债均衡
-    kafka只保证按照一个partition中的顺序将消息发给consumer，
-    不保证一个topic的整体（多个partition）的顺序。
-leader：
-    每一个replication集合中的partition都会选出一个唯一的leader，所有的读写请求都是由leader处理，
-    其他的replicas从leader处把数据更新同步到本地。每个cluster当中会选举出一个broker来担任controller，
-    负责处理partition的leader选举，协调partition迁移等工作。
-ISR（In-Sync-Replica）：
-    是Replicas的一个子集，表示目前Alive且与leader能够‘catch-up’的replicas集合。
-    由于读写都是首先落到leader上，
-    所以一般来说通过同步机制从leader上拉取数据的replica都会和leader有一些延迟
-    [包括延迟时间和延迟条数2个维度]
-    任意一个超过阈值都会把该replica提出ISR。每个Partition都有他自己独立的ISR。
-</code></pre><h5 id="配置文件当中配置的kafka多久删除数据"><a href="#配置文件当中配置的kafka多久删除数据" class="headerlink" title="配置文件当中配置的kafka多久删除数据"></a>配置文件当中配置的kafka多久删除数据</h5><pre><code>The minimum age of a log file to be eligible for deletion
-log.retention.hours=168 
-定时检查周期，发现数据存了超过上面配置的时间，就干数据
-log.retention.check.interval.ms=30000
+1.可以使用StormUI来rebalance the topology.
+2.也可以使用命令行来修改：$ storm rebalance mytopology -n 5 -e blue-spout=3 -e yellow-bolt=10
+</code></pre><p>stream grouping分组策略内置[build-in]有8种：</p>
+<pre><code>常用的有两种：
+1.shuffle grouping 随机分配也就是轮询RoundRobin 这样不会造成数据倾斜
+2.fileds grouping 比如按照字段hash取模分组 
+如果想自定义分组策略：--&gt; 自定义分组策略需要实现CustomStreamGroup接口
 </code></pre>
       
     </div>
