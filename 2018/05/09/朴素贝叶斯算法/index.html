@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>朴素贝叶斯算法 | Hexo</title>
+
+  <!-- keywords -->
+  
+
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="description" content="1、摘要在所有的机器学习分类算法中，朴素贝叶斯和其他绝大多数的分类算法都不同。对于大多数的分类算法，比如决策树,KNN,逻辑回归，支持向量机等，他们都是判别方法，也就是直接学习出特征输出Y和特征X之间的关系，要么是决策函数Y=f(X),要么是条件分布P(Y|X)。但是朴素贝叶斯却是生成方法，也就是直接找出特征输出Y和特征X的联合分布P(X,Y),然后用P(Y|X)=P(X,Y)/P(X)得出。 2">
+<meta property="og:type" content="article">
+<meta property="og:title" content="朴素贝叶斯算法">
+<meta property="og:url" content="http://yoursite.com/2018/05/09/朴素贝叶斯算法/index.html">
+<meta property="og:site_name" content="Hexo">
+<meta property="og:description" content="1、摘要在所有的机器学习分类算法中，朴素贝叶斯和其他绝大多数的分类算法都不同。对于大多数的分类算法，比如决策树,KNN,逻辑回归，支持向量机等，他们都是判别方法，也就是直接学习出特征输出Y和特征X之间的关系，要么是决策函数Y=f(X),要么是条件分布P(Y|X)。但是朴素贝叶斯却是生成方法，也就是直接找出特征输出Y和特征X的联合分布P(X,Y),然后用P(Y|X)=P(X,Y)/P(X)得出。 2">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="https://s1.ax1x.com/2018/05/11/C0bdB9.png">
+<meta property="og:image" content="https://s1.ax1x.com/2018/05/11/C0bw7R.png">
+<meta property="og:image" content="https://s1.ax1x.com/2018/05/11/C0bDtx.png">
+<meta property="og:image" content="https://s1.ax1x.com/2018/05/11/C0b61O.png">
+<meta property="og:image" content="https://s1.ax1x.com/2018/05/11/C0bRnH.png">
+<meta property="og:image" content="https://s1.ax1x.com/2018/05/11/C0HteA.png">
+<meta property="og:image" content="https://s1.ax1x.com/2018/05/11/C0HsyQ.png">
+<meta property="og:image" content="https://s1.ax1x.com/2018/05/11/C0LpdA.png">
+<meta property="og:image" content="https://s1.ax1x.com/2018/05/11/C0LiJP.md.png">
+<meta property="og:image" content="https://s1.ax1x.com/2018/05/11/C0Lkz8.png">
+<meta property="og:image" content="https://s1.ax1x.com/2018/05/11/C0LVsg.png">
+<meta property="og:image" content="https://s1.ax1x.com/2018/05/11/C0Lnds.md.png">
+<meta property="og:image" content="https://s1.ax1x.com/2018/05/11/C0LwJx.png">
+<meta property="og:image" content="https://s1.ax1x.com/2018/05/11/C0LDSK.png">
+<meta property="og:image" content="https://s1.ax1x.com/2018/05/11/C0LceH.png">
+<meta property="og:image" content="https://s1.ax1x.com/2018/05/11/C0LhfP.png">
+<meta property="og:updated_time" content="2018-05-11T09:49:23.893Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="朴素贝叶斯算法">
+<meta name="twitter:description" content="1、摘要在所有的机器学习分类算法中，朴素贝叶斯和其他绝大多数的分类算法都不同。对于大多数的分类算法，比如决策树,KNN,逻辑回归，支持向量机等，他们都是判别方法，也就是直接学习出特征输出Y和特征X之间的关系，要么是决策函数Y=f(X),要么是条件分布P(Y|X)。但是朴素贝叶斯却是生成方法，也就是直接找出特征输出Y和特征X的联合分布P(X,Y),然后用P(Y|X)=P(X,Y)/P(X)得出。 2">
+<meta name="twitter:image" content="https://s1.ax1x.com/2018/05/11/C0bdB9.png">
+  
+    <link rel="alternative" href="/atom.xml" title="Hexo" type="application/atom+xml">
+  
+  
+    <link rel="icon" href="http://7xkj1z.com1.z0.glb.clouddn.com/head.jpg">
+  
+  <link rel="stylesheet" href="/css/style.css">
+  
+  
+
+  <script src="//cdn.bootcss.com/require.js/2.3.2/require.min.js"></script>
+  <script src="//cdn.bootcss.com/jquery/3.1.1/jquery.min.js"></script>
+
+  
+</head>
+<body>
+  <div id="container">
+    <div id="particles-js"></div>
+    <div class="left-col">
+    <div class="overlay"></div>
+<div class="intrude-less">
+	<header id="header" class="inner">
+		<a href="/" class="profilepic">
+			
+			<img lazy-src="http://7xkj1z.com1.z0.glb.clouddn.com/head.jpg" class="js-avatar">
+			
+		</a>
+
+		<hgroup>
+		  <h1 class="header-author"><a href="/">rongyuewu</a></h1>
+		</hgroup>
+
+		
+
+		
+			<div class="switch-btn">
+				<div class="icon">
+					<div class="icon-ctn">
+						<div class="icon-wrap icon-house" data-idx="0">
+							<div class="birdhouse"></div>
+							<div class="birdhouse_holes"></div>
+						</div>
+						<div class="icon-wrap icon-ribbon hide" data-idx="1">
+							<div class="ribbon"></div>
+						</div>
+						
+						<div class="icon-wrap icon-link hide" data-idx="2">
+							<div class="loopback_l"></div>
+							<div class="loopback_r"></div>
+						</div>
+						
+						
+					</div>
+					
+				</div>
+				<div class="tips-box hide">
+					<div class="tips-arrow"></div>
+					<ul class="tips-inner">
+						<li>菜单</li>
+						<li>标签</li>
+						
+						<li>友情链接</li>
+						
+						
+					</ul>
+				</div>
+			</div>
+		
+
+		<div class="switch-area">
+			<div class="switch-wrap">
+				<section class="switch-part switch-part1">
+					<nav class="header-menu">
+						<ul>
+						
+							<li><a href="/">主页</a></li>
+				        
+							<li><a href="/archives">所有文章</a></li>
+				        
+						</ul>
+					</nav>
+					<nav class="header-nav">
+						<div class="social">
+							
+						</div>
+					</nav>
+				</section>
+				
+				
+				<section class="switch-part switch-part2">
+					<div class="widget tagcloud" id="js-tagcloud">
+						
+					</div>
+				</section>
+				
+				
+				
+				<section class="switch-part switch-part3">
+					<div id="js-friends">
+					
+			          <a target="_blank" class="main-nav-link switch-friends-link" href="https://github.com/smackgg/hexo-theme-smackdown">smackdown</a>
+			        
+			        </div>
+				</section>
+				
+
+				
+			</div>
+		</div>
+	</header>				
+</div>
+    </div>
+    <div class="mid-col">
+      <nav id="mobile-nav">
+  	<div class="overlay">
+  		<div class="slider-trigger"></div>
+  		<h1 class="header-author js-mobile-header hide">rongyuewu</h1>
+  	</div>
+	<div class="intrude-less">
+		<header id="header" class="inner">
+			<div class="profilepic">
+				<img lazy-src="http://7xkj1z.com1.z0.glb.clouddn.com/head.jpg" class="js-avatar">
+			</div>
+			<hgroup>
+			  <h1 class="header-author">rongyuewu</h1>
+			</hgroup>
+			
+			<nav class="header-menu">
+				<ul>
+				
+					<li><a href="/">主页</a></li>
+		        
+					<li><a href="/archives">所有文章</a></li>
+		        
+		        <div class="clearfix"></div>
+				</ul>
+			</nav>
+			<nav class="header-nav">
+				<div class="social">
+					
+				</div>
+			</nav>
+		</header>				
+	</div>
+</nav>
+      <div class="body-wrap"><article id="post-朴素贝叶斯算法" class="article article-type-post" itemscope itemprop="blogPost">
+  
+    <div class="article-meta">
+      <a href="/2018/05/09/朴素贝叶斯算法/" class="article-date">
+  	<time datetime="2018-05-09T11:29:30.000Z" itemprop="datePublished">2018-05-09</time>
+</a>
+    </div>
+  
+  <div class="article-inner">
+    
+      <input type="hidden" class="isFancy" />
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="article-title" itemprop="name">
+      朴素贝叶斯算法
+      
+    </h1>
+  
+
+      </header>
+      
+      <div class="article-info article-info-post">
+        
+        
+
+        
+        <div class="clearfix"></div>
+      </div>
+      
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <h3 id="1、摘要"><a href="#1、摘要" class="headerlink" title="1、摘要"></a>1、摘要</h3><p>在所有的机器学习分类算法中，朴素贝叶斯和其他绝大多数的分类算法都不同。对于大多数的分类算法，比如决策树,KNN,逻辑回归，支持向量机等，他们都是判别方法，也就是直接学习出特征输出Y和特征X之间的关系，要么是决策函数Y=f(X),要么是条件分布P(Y|X)。但是朴素贝叶斯却是生成方法，也就是直接找出特征输出Y和特征X的联合分布P(X,Y),然后用P(Y|X)=P(X,Y)/P(X)得出。</p>
+<h3 id="2、分类问题综述"><a href="#2、分类问题综述" class="headerlink" title="2、分类问题综述"></a>2、分类问题综述</h3><p>对于分类问题，其实谁都不会陌生，说我们每个人每天都在执行分类操作一点都不夸张，只是我们没有意识到罢了。例如，当你看到一个陌生人，你的脑子下意识判断TA是男是女；你可能经常会走在路上对身旁的朋友说“这个人一看就很有钱、那边有个非主流”之类的话，其实这就是一种分类操作。</p>
+<p>从数学角度来说，分类问题可做如下定义：</p>
+<p>已知集合：<img src="https://s1.ax1x.com/2018/05/11/C0bdB9.png" alt="C0bdB9.png">和<img src="https://s1.ax1x.com/2018/05/11/C0bw7R.png" alt="C0bw7R.png">，确定映射规则y=f(x)，使得任意<img src="https://s1.ax1x.com/2018/05/11/C0bDtx.png" alt="C0bDtx.png">有且仅有一个<img src="https://s1.ax1x.com/2018/05/11/C0b61O.png" alt="C0b61O.png">使得<img src="https://s1.ax1x.com/2018/05/11/C0bRnH.png" alt="C0bRnH.png">成立。（不考虑模糊数学里的模糊集情况）</p>
+<p>其中C叫做类别集合，其中每一个元素是一个类别，而I叫做项集合，其中每一个元素是一个待分类项，f叫做分类器。分类算法的任务就是构造分类器f。</p>
+<p>这里要着重强调，分类问题往往采用经验性方法构造映射规则，即一般情况下的分类问题缺少足够的信息来构造100%正确的映射规则，而是通过对经验数据的学习从而实现一定概率意义上正确的分类，因此所训练出的分类器并不是一定能将每个待分类项准确映射到其分类，分类器的质量与分类器构造方法、待分类数据的特性以及训练样本数量等诸多因素有关。</p>
+<p>例如，医生对病人进行诊断就是一个典型的分类过程，任何一个医生都无法直接看到病人的病情，只能观察病人表现出的症状和各种化验检测数据来推断病情，这时医生就好比一个分类器，而这个医生诊断的准确率，与他当初受到的教育方式（构造方法）、病人的症状是否突出（待分类数据的特性）以及医生的经验多少（训练样本数量）都有密切关系。</p>
+<h3 id="3、贝叶斯分类的基础——贝叶斯定理"><a href="#3、贝叶斯分类的基础——贝叶斯定理" class="headerlink" title="3、贝叶斯分类的基础——贝叶斯定理"></a>3、贝叶斯分类的基础——贝叶斯定理</h3><p>每次提到贝叶斯定理，我心中的崇敬之情都油然而生，倒不是因为这个定理多高深，而是因为它特别有用。这个定理解决了现实生活里经常遇到的问题：已知某条件概率，如何得到两个事件交换后的概率，也就是在已知P(A|B)的情况下如何求得P(B|A)。这里先解释什么是条件概率：</p>
+<p>P(A|B)表示事件B已经发生的前提下，事件A发生的概率，叫做事件B发生下事件A的条件概率。其基本求解公式为：<img src="https://s1.ax1x.com/2018/05/11/C0HteA.png" alt="C0HteA.png">。</p>
+<p>贝叶斯定理之所以有用，是因为我们在生活中经常遇到这种情况：我们可以很容易直接得出P(A|B)，P(B|A)则很难直接得出，但我们更关心P(B|A)，贝叶斯定理就为我们打通从P(A|B)获得P(B|A)的道路。</p>
+<p>下面不加证明地直接给出贝叶斯定理：<img src="https://s1.ax1x.com/2018/05/11/C0HsyQ.png" alt="C0HsyQ.png"></p>
+<h3 id="4、朴素贝叶斯分类的原理与流程"><a href="#4、朴素贝叶斯分类的原理与流程" class="headerlink" title="4、朴素贝叶斯分类的原理与流程"></a>4、朴素贝叶斯分类的原理与流程</h3><p>朴素贝叶斯分类是一种十分简单的分类算法，叫它朴素贝叶斯分类是因为这种方法的思想真的很朴素，朴素贝叶斯的思想基础是这样的：对于给出的待分类项，求解在此项出现的条件下各个类别出现的概率，哪个最大，就认为此待分类项属于哪个类别。通俗来说，就好比这么个道理，你在街上看到一个黑人，我问你你猜这哥们哪里来的，你十有八九猜非洲。为什么呢？因为黑人中非洲人的比率最高，当然人家也可能是美洲人或亚洲人，但在没有其它可用信息下，我们会选择条件概率最大的类别，这就是朴素贝叶斯的思想基础。</p>
+<p>朴素贝叶斯分类的正式定义如下：<br><img src="https://s1.ax1x.com/2018/05/11/C0LpdA.png" alt="C0LpdA.png"></p>
+<p>那么现在的关键就是如何计算第3步中的各个条件概率。我们可以这么做：</p>
+<blockquote>
+<p>1、找到一个已知分类的待分类项集合，这个集合叫做训练样本集。</p>
+<p>2、统计得到在各类别下各个特征属性的条件概率估计。即<a href="https://imgchr.com/i/C0LiJP" target="_blank" rel="noopener"><img src="https://s1.ax1x.com/2018/05/11/C0LiJP.md.png" alt="C0LiJP.md.png"></a>。</p>
+<p>3、如果各个特征属性是条件独立的，则根据贝叶斯定理有如下推导：<img src="https://s1.ax1x.com/2018/05/11/C0Lkz8.png" alt="C0Lkz8.png">   </p>
+</blockquote>
+<p>因为分母对于所有类别为常数，因为我们只要将分子最大化皆可。又因为各特征属性是条件独立的，所以有：</p>
+<p><img src="https://s1.ax1x.com/2018/05/11/C0LVsg.png" alt="C0LVsg.png"></p>
+<p>根据上述分析，朴素贝叶斯分类的流程可以由下图表示（暂时不考虑验证）：</p>
+<p><a href="https://imgchr.com/i/C0Lnds" target="_blank" rel="noopener"><img src="https://s1.ax1x.com/2018/05/11/C0Lnds.md.png" alt="C0Lnds.md.png"></a></p>
+<p>可以看到，整个朴素贝叶斯分类分为三个阶段：</p>
+<blockquote>
+<p>第一阶段——准备工作阶段，这个阶段的任务是为朴素贝叶斯分类做必要的准备，主要工作是根据具体情况确定特征属性，并对每个特征属性进行适当划分，然后由人工对一部分待分类项进行分类，形成训练样本集合。这一阶段的输入是所有待分类数据，输出是特征属性和训练样本。这一阶段是整个朴素贝叶斯分类中唯一需要人工完成的阶段，其质量对整个过程将有重要影响，分类器的质量很大程度上由特征属性、特征属性划分及训练样本质量决定。</p>
+<p>第二阶段——分类器训练阶段，这个阶段的任务就是生成分类器，主要工作是计算每个类别在训练样本中的出现频率及每个特征属性划分对每个类别的条件概率估计，并将结果记录。其输入是特征属性和训练样本，输出是分类器。这一阶段是机械性阶段，根据前面讨论的公式可以由程序自动计算完成。</p>
+<p>第三阶段——应用阶段。这个阶段的任务是使用分类器对待分类项进行分类，其输入是分类器和待分类项，输出是待分类项与类别的映射关系。这一阶段也是机械性阶段，由程序完成。</p>
+</blockquote>
+<h3 id="5、朴素贝叶斯分类实例：检测SNS社区中不真实账号"><a href="#5、朴素贝叶斯分类实例：检测SNS社区中不真实账号" class="headerlink" title="5、朴素贝叶斯分类实例：检测SNS社区中不真实账号"></a>5、朴素贝叶斯分类实例：检测SNS社区中不真实账号</h3><p>下面讨论一个使用朴素贝叶斯分类解决实际问题的例子，为了简单起见，对例子中的数据做了适当的简化。</p>
+<p>这个问题是这样的，对于SNS社区来说，不真实账号（使用虚假身份或用户的小号）是一个普遍存在的问题，作为SNS社区的运营商，希望可以检测出这些不真实账号，从而在一些运营分析报告中避免这些账号的干扰，亦可以加强对SNS社区的了解与监管。</p>
+<p>如果通过纯人工检测，需要耗费大量的人力，效率也十分低下，如能引入自动检测机制，必将大大提升工作效率。这个问题说白了，就是要将社区中所有账号在真实账号和不真实账号两个类别上进行分类，下面我们一步一步实现这个过程。</p>
+<p>首先设C=0表示真实账号，C=1表示不真实账号。</p>
+<h4 id="5-1、确定特征属性及划分"><a href="#5-1、确定特征属性及划分" class="headerlink" title="5.1、确定特征属性及划分"></a>5.1、确定特征属性及划分</h4><p>这一步要找出可以帮助我们区分真实账号与不真实账号的特征属性，在实际应用中，特征属性的数量是很多的，划分也会比较细致，但这里为了简单起见，我们用少量的特征属性以及较粗的划分，并对数据做了修改。</p>
+<p>我们选择三个特征属性：a1：日志数量/注册天数，a2：好友数量/注册天数，a3：是否使用真实头像。在SNS社区中这三项都是可以直接从数据库里得到或计算出来的。</p>
+<p>下面给出划分：a1：{a&lt;=0.05, 0.05&lt;a&lt;0.2, a&gt;=0.2}，a1：{a&lt;=0.1, 0.1&lt;a&lt;0.8, a&gt;=0.8}，a3：{a=0（不是）,a=1（是）}。</p>
+<h4 id="5-2、获取训练样本"><a href="#5-2、获取训练样本" class="headerlink" title="5.2、获取训练样本"></a>5.2、获取训练样本</h4><p>这里使用运维人员曾经人工检测过的1万个账号作为训练样本。</p>
+<h4 id="5-3、计算训练样本中每个类别的频率"><a href="#5-3、计算训练样本中每个类别的频率" class="headerlink" title="5.3、计算训练样本中每个类别的频率"></a>5.3、计算训练样本中每个类别的频率</h4><p>用训练样本中真实账号和不真实账号数量分别除以一万，得到：</p>
+<p><img src="https://s1.ax1x.com/2018/05/11/C0LwJx.png" alt="C0LwJx.png"></p>
+<h4 id="5-4、计算每个类别条件下各个特征属性划分的频率"><a href="#5-4、计算每个类别条件下各个特征属性划分的频率" class="headerlink" title="5.4、计算每个类别条件下各个特征属性划分的频率"></a>5.4、计算每个类别条件下各个特征属性划分的频率</h4><p><img src="https://s1.ax1x.com/2018/05/11/C0LDSK.png" alt="C0LDSK.png"></p>
+<h4 id="5-5、使用分类器进行鉴别"><a href="#5-5、使用分类器进行鉴别" class="headerlink" title="5.5、使用分类器进行鉴别"></a>5.5、使用分类器进行鉴别</h4><p>下面我们使用上面训练得到的分类器鉴别一个账号，这个账号使用非真实头像，日志数量与注册天数的比率为0.1，好友数与注册天数的比率为0.2。</p>
+<p><img src="https://s1.ax1x.com/2018/05/11/C0LceH.png" alt="C0LceH.png"></p>
+<p>可以看到，虽然这个用户没有使用真实头像，但是通过分类器的鉴别，更倾向于将此账号归入真实账号类别。这个例子也展示了当特征属性充分多时，朴素贝叶斯分类对个别属性的抗干扰性。      </p>
+<h3 id="6、朴素贝叶斯分类实例：性别分类的例子"><a href="#6、朴素贝叶斯分类实例：性别分类的例子" class="headerlink" title="6、朴素贝叶斯分类实例：性别分类的例子"></a>6、朴素贝叶斯分类实例：性别分类的例子</h3><p>本例摘自维基百科，关于处理连续变量的另一种方法。</p>
+<p>下面是一组人类身体特征的统计资料。</p>
+<p>　　性别　　身高（英尺）　体重（磅）　　脚掌（英寸）</p>
+<p>　　男 　　　6 　　　　　　180　　　　　12<br>　　男 　　　5.92　　　　　190　　　　　11<br>　　男 　　　5.58　　　　　170　　　　　12<br>　　男 　　　5.92　　　　　165　　　　　10<br>　　女 　　　5 　　　　　　100　　　　　6<br>　　女 　　　5.5 　　　　　150　　　　　8<br>　　女 　　　5.42　　　　　130　　　　　7<br>　　女 　　　5.75　　　　　150　　　　　9</p>
+<p>已知某人身高6英尺、体重130磅，脚掌8英寸，请问该人是男是女？</p>
+<p>根据朴素贝叶斯分类器，计算下面这个式子的值。</p>
+<p>P(身高|性别) x P(体重|性别) x P(脚掌|性别) x P(性别)</p>
+<p>这里的困难在于，由于身高、体重、脚掌都是连续变量，不能采用离散变量的方法计算概率。而且由于样本太少，所以也无法分成区间计算。怎么办？</p>
+<p>这时，可以假设男性和女性的身高、体重、脚掌都是正态分布，通过样本计算出均值和方差，也就是得到正态分布的密度函数。有了密度函数，就可以把值代入，算出某一点的密度函数的值。</p>
+<p>比如，男性的身高是均值5.855、方差0.035的正态分布。所以，男性的身高为6英尺的概率的相对值等于1.5789（大于1并没有关系，因为这里是密度函数的值，只用来反映各个值的相对可能性）。<br><img src="https://s1.ax1x.com/2018/05/11/C0LhfP.png" alt="C0LhfP.png"></p>
+<p>有了这些数据以后，就可以计算性别的分类了。</p>
+<p>　　P(身高=6|男) x P(体重=130|男) x P(脚掌=8|男) x P(男)<br>　　　　= 6.1984 x e-9</p>
+<p>　　P(身高=6|女) x P(体重=130|女) x P(脚掌=8|女) x P(女)<br>　　　　= 5.3778 x e-4</p>
+<p>可以看到，女性的概率比男性要高出将近10000倍，所以判断该人为女性。</p>
+<h3 id="7、分类器的评价"><a href="#7、分类器的评价" class="headerlink" title="7、分类器的评价"></a>7、分类器的评价</h3><p>虽然后续还会提到其它分类算法，不过这里我想先提一下如何评价分类器的质量。</p>
+<p>首先要定义，分类器的正确率指分类器正确分类的项目占所有被分类项目的比率。</p>
+<p>通常使用回归测试来评估分类器的准确率，最简单的方法是用构造完成的分类器对训练数据进行分类，然后根据结果给出正确率评估。但这不是一个好方法，因为使用训练数据作为检测数据有可能因为过分拟合而导致结果过于乐观，所以一种更好的方法是在构造初期将训练数据一分为二，用一部分构造分类器，然后用另一部分检测分类器的准确率。      </p>
+
+      
+    </div>
+    
+  </div>
+  
+    
+<nav id="article-nav">
+  
+  
+    <a href="/2018/05/03/Hive的优化：/" id="article-nav-older" class="article-nav-link-wrap">
+      <div class="article-nav-title">HIVE 总结</div>
+      <strong class="article-nav-caption">&gt;</strong>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+
+<div class="ds-share share" data-thread-key="朴素贝叶斯算法" data-title="朴素贝叶斯算法" data-url="http://yoursite.com/2018/05/09/朴素贝叶斯算法/"  data-images="http://7xkj1z.com1.z0.glb.clouddn.com/head.jpg" data-content="朴素贝叶斯算法">
+    <div class="ds-share-inline">
+      <ul  class="ds-share-icons-16">
+      	<li data-toggle="ds-share-icons-more"><a class="ds-more" href="javascript:void(0);">分享到：</a></li>
+        <li><a class="ds-weibo" href="javascript:void(0);" data-service="weibo">微博</a></li>
+        <li><a class="ds-qzone" href="javascript:void(0);" data-service="qzone">QQ空间</a></li>
+        <li><a class="ds-qqt" href="javascript:void(0);" data-service="qqt">腾讯微博</a></li>
+        <li><a class="ds-wechat" href="javascript:void(0);" data-service="wechat">微信</a></li>
+      </ul>
+      <div class="ds-share-icons-more">
+      </div>
+    </div>
+ </div>
+ 
+
+
+
+
+
+</div>
+      <footer id="footer">
+  <div class="outer">
+    <div id="footer-info">
+      <div class="footer-left">
+        &copy; 2018 rongyuewu
+      </div>
+        <div class="footer-right">
+          <a href="http://hexo.io/" target="_blank">Hexo</a>  Theme <a href="https://github.com/smackgg/hexo-theme-smackdown" target="_blank">Smackdown</a>
+        </div>
+    </div>
+  </div>
+</footer>
+    </div>
+    
+  <link rel="stylesheet" href="/fancybox/jquery.fancybox.css">
+
+
+<script>
+	var yiliaConfig = {
+		fancybox: true,
+		mathjax: true,
+		animate: true,
+		isHome: false,
+		isPost: true,
+		isArchive: false,
+		isTag: false,
+		isCategory: false,
+		open_in_new: false
+	}
+</script>
+<script src="/js/main.js"></script>
+
+
+
+<script type="text/x-mathjax-config">
+MathJax.Hub.Config({
+    tex2jax: {
+        inlineMath: [ ['$','$'], ["\\(","\\)"]  ],
+        processEscapes: true,
+        skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+    }
+});
+
+MathJax.Hub.Queue(function() {
+    var all = MathJax.Hub.getAllJax(), i;
+    for(i=0; i < all.length; i += 1) {
+        all[i].SourceElement().parentNode.className += ' has-jax';                 
+    }       
+});
+</script>
+
+<script src="//cdn.bootcss.com/mathjax/2.7.0/MathJax.js"></script>
+
+
+  </div>
+</body>
+</html>
