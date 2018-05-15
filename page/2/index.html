@@ -300,10 +300,10 @@ appMaster来负责应用运算流程管理，当一个appMaster挂了之后，�
 
 
   
-    <article id="post-点击流日志分析流程" class="article article-type-post" itemscope itemprop="blogPost">
+    <article id="post-JVM GC " class="article article-type-post" itemscope itemprop="blogPost">
   
     <div class="article-meta">
-      <a href="/2018/05/01/点击流日志分析流程/" class="article-date">
+      <a href="/2018/05/01/JVM GC /" class="article-date">
   	<time datetime="2018-05-01T13:29:30.000Z" itemprop="datePublished">2018-05-01</time>
 </a>
     </div>
@@ -317,8 +317,8 @@ appMaster来负责应用运算流程管理，当一个appMaster挂了之后，�
         
   
     <h1 itemprop="name">
-      <a class="article-title" href="/2018/05/01/点击流日志分析流程/">
-        点击流日志分析流程
+      <a class="article-title" href="/2018/05/01/JVM GC /">
+        JVM总结相关笔记
         
       </a>
     </h1>
@@ -329,458 +329,49 @@ appMaster来负责应用运算流程管理，当一个appMaster挂了之后，�
     
     <div class="article-entry" itemprop="articleBody">
       
-        <h1 id="点击流日志分析流程"><a href="#点击流日志分析流程" class="headerlink" title="点击流日志分析流程"></a>点击流日志分析流程</h1><p>流程图如下：<br>    <img src="http://m.qpic.cn/psb?/V11BXxlE33Kp9F/UbKrmZeyW3FpirSZBEMFrDGawneMp6lIpLWKfxekmLw!/b/dJUAAAAAAAAA&amp;bo=QgauAgAAAAARB9g!&amp;rf=viewer_4" alt=""><br>    <img src="http://m.qpic.cn/psb?/V11BXxlE33Kp9F/FimQ39x6PIwqFTl56xYF*n.qFv3LMDsUx5Bk7YsN*vs!/b/dGoBAAAAAAAA&amp;bo=kgU4BAAAAAARB5s!&amp;rf=viewer_4" alt=""></p>
-<h6 id="原始数据："><a href="#原始数据：" class="headerlink" title="原始数据："></a>原始数据：</h6><pre><code>194.237.142.21 - - [18/Sep/2013:06:49:18 +0000] &quot;GET /wp-content/uploads/2013/07/rstudio-git3.png HTTP/1.1&quot; 304 0 &quot;-&quot; &quot;Mozilla/4.0 (compatible;)&quot;
-字段解析:
-1、访客 ip 地址: 58.215.204.118
-2、访客用户信息: - -
-3、请求时间:[18/Sep/2013:06:51:35 +0000]
-4、请求方式:GET
-5、请求的 url:/wp-includes/js/jquery/jquery.js?ver=1.10.2 6、请求所用协议:HTTP/1.1
-7、响应码:304
-8、返回的数据流量:0
-9、访客的来源 url:http://blog.fens.me/nodejs-socketio-chat/
-10 、 访 客 所 用 浏 览 器 : Mozilla/5.0 (Windows NT 5.1; rv:23.0) Firefox/23.0
-Gecko/20100101
-</code></pre><p>1.根据原始数据生成点击流模型 PageViews 和 Visits</p>
-<pre><code>PageViews:
-    根据IP判断是否是同一用户，根据前后两条日志时间相差是否在30分钟内，
-    判断访问日志是否是属于同一个session[会话]，按照时间顺序标上步骤，
-    这样就构成了一条访问轨迹线;
-Visits：
-    侧重于体现用户在一次session中的进入离开时间、进入离开页面，
-    还有统计出在本次session中用户总共访问了几个页面
-</code></pre><p>2.漏斗模型</p>
-<pre><code>逐层递减
-</code></pre><p>3.常见指标：</p>
-<pre><code>骨灰级指标：
-    IP：1天内访问网站的不重复IP总数
-    PV[PageView]:用户每打开1次网页，记录1个PV
-    UV[Unique Pageview]:1天以内，访问网站不重复的用户数据(以cookie为依据)，1天内同1访客多次访问网站只被计算1次
-基础级指标：
-    访问次数：
-        访客从进入网站到离开网站一系列活动极为一次访问，也就是session
-    网站停留时间：
-        访问者在网站上花费的时间
-    页面停留时间：
-        访问者在某个特定页面或某组网页上所花费的时间
-复合级指标:
-    人均浏览页面：
-        浏览次数/独立访客数  --体现网站对访客的吸引程度
-    二跳率：
-        二跳率的概念是当网站页面展开后，用户在页面上产生的首次点击被称为“二跳”，二跳的次数即为“二跳量”。二跳量与到达量（进入网站的人）的比值称为页面的二跳率。
-    跳出率：
-        跳出率是指在只访问了入口页面（例如网站首页）就离开的访问量与所产生总访问量的百分比。跳出率计算公式：跳出率=访问一个页面后离开网站的次数/总访问次数。
-    二跳率越高越好，跳出率越低越好。
-4.基础分析(PV,IP,UV)
-5.来源分析
-6.受访分析
-7.访客分析
-    终端详情[PC,移动端]新老访客、忠诚度、活跃度
-8.转化路径分析
-</code></pre><blockquote>
-<blockquote>
-<blockquote>
-<p>数据处理流程：</p>
-</blockquote>
-</blockquote>
-</blockquote>
-<pre><code>&gt; 数据采集
-    Flume采集需要在配置文件里配置source、channel、sink：
-        source:
-            1.spoolDir的作用是：监控文件夹，如果有新的文件产生，采集开始
-            2.exec tail -f access.log 只能监听文件追加的内容
-    以上1和2都没办法满足我们的log日志采集，因为既要监控文件也要监控文件夹，
-    **好在Flume1.7的稳定版本提供了TAILDIR类型的source，
-    可以监控一个目录，并且使用正则表达式匹配目录中的文件名进行实时收集，具体配置详情如下：
-        a1.sources.r1.type = TAILDIR
-        a1.sources.r1.positionFile = /var/log/flume/taildir_position.json
-        a1.sources.r1.filegroups = f1 f2
-        a1.sources.r1.filegroups.f1 = /var/log/test1/example.log 
-        a1.sources.r1.filegroups.f2 = /var/log/test2/.*log.*
-    解释：
-        filegroups:指定 filegroups，可以有多个[每个还可以使用正则表达式来匹配]，
-        以空格分隔;(TailSource 可以同时监控 tail 多个目录中的文件)
-      **positionFile:解决了机器重启后无法**断点续传**的问题[检查点文件会以 json 格式保存已经 tail 文件的位置]
+        <h2 id="JVM"><a href="#JVM" class="headerlink" title="JVM"></a>JVM</h2><h4 id="JVM的参数设置"><a href="#JVM的参数设置" class="headerlink" title="JVM的参数设置"></a>JVM的参数设置</h4><pre><code>1. -Xms 初始堆大小  -Xmx 最大堆大小  [一般这两个值设置的是一样的，防止GC后出现内存抖动]
+2. -Xmn 年轻代大小
+    a) 整个堆的大小 = 年轻代大小 + 老年代大小 + 持久代大小
+    b) 持久代一般固定大小为64M
+    c) 所以，增大年轻代后，将会较小老年代的大小。这个值对系统性能影响较大，
+       Sun官方推荐配置为整个堆的3/8
+3. -XX:NewSize 初始年轻代大小     -XX:MaxNewSize 最大年轻代大小
+4. -XX:NewRatio 老年代和年轻代的比值
+5. -XX：SurvivorRatio 设置年轻代中Eden区与Survivor区的大小比值 
+   [默认是8:1:1,比如设置为6，那么就是 6:2:2]
+6. -XX:MaxTenuringThreshold 设置年轻代的对象被回收多少次后才进入老年代，默认15次
+    [控制对象在经过多少次minor GC后进入老年代，此参数只在Serial串行GC时有效]
+7. -XX:PermSize 初始持久代大小  -XX:MaxPermSize 持久代最大值 
+    [这个跟 -Xms 和 -Xmx 堆大小设置一样，都是相等，为了防止内存抖动]
+</code></pre><h4 id="调优"><a href="#调优" class="headerlink" title="调优"></a>调优</h4><pre><code>JVM调优主要针对内存管理方面，包括控制各个代的大小，GC策略。
+由于GC开始垃圾回收时会挂起应用线程，严重影响性能，调优的目的就是
+为了尽量降低GC所导致的应用线程暂停时间、减少Full GC的次数。
+</code></pre><p> 代调优：</p>
+<pre><code> 1) 避免新生代大小设置过小
+     当新生代设置过小时，会产生两种比较明显的现象:
+         一是minor GC次数频繁
+         二是可能导致minor GC对象直接进入老年代。当老年代内存不足时，会出发Full GC。
+2) 避免新生代设置过大
+    新生代设置过大，会带来两个问题：
+        一是老年代变小，可能导致Full GC频繁执行；
+        二是minor GC 执行回收的时间大幅度增加
+那怎么选择年轻代的大小呢？[分不同的应用场景]
+    a. 响应时间优先的应用：
+        尽可能设大，知道接近系统的最低响应时间限制(根据实际情况选择)。
+</code></pre><p><img src="/Users/Macx/Desktop/整理笔记/jvm-gc.png" alt=""><br>说明：新new的对象会首先会进入年轻代的Eden中（如果对象太大可能直接进入年老代），在GC之前对象是存在Eden和from中的，进行GC的时候Eden中的对象被拷贝到To这样一个survive空间（survive（幸存）空间：包括from和to，他们的空间大小是一样的，又叫s1和s2）中（有一个拷贝算法），From中的对象（算法会考虑经过GC幸存的次数）到一定次数 阈值（如果说每次GC之后这个对象依旧在Survive中存在，GC一次他的Age就会加1，默认15就会放到OldGeneration。但是实际情况比较复杂，有可能没有到阈值就从Survive区域直接到Old Generation区域。)</p>
+<h4 id="1-哪些需要回收-—-gt-java堆内存、方法区内存"><a href="#1-哪些需要回收-—-gt-java堆内存、方法区内存" class="headerlink" title="1.哪些需要回收? —-&gt; java堆内存、方法区内存"></a>1.哪些需要回收? —-&gt; java堆内存、方法区内存</h4><h4 id="2-什么时候回收？-—–-gt"><a href="#2-什么时候回收？-—–-gt" class="headerlink" title="2.什么时候回收？ —–&gt;"></a>2.什么时候回收？ —–&gt;</h4><pre><code>2.1：引用计数法【引用count+1，引用失效时count-1，为0时不被引用】
+【如果两个对象相互引用而且都没有被使用了，那么会造成内存泄漏】。
 
-&gt; 数据预处理
-    通过MapReduce程序对采集到的原始日志数据进行预处理，
-    比如清洗，格式整理，滤除脏数据等，并且梳理成点击流模型数据
-        1.一般来说，开发中针对不合法的数据，我们不是直接删除，而是打个标签 比如true或者false，
-        因为这些数据可能对这个场景是无用的，但是对其他场景是有用的
-        2.编写MapReduce程序，只有map没有reduce，因为输入一条数据，处理完后直接输出不需要聚合,setReduceNum = 0 ,输出的结果文件就是part-m
-        3.编写相对应的Javabean的时候要实现Writable接口，
-        重写toString方法的时候是按照Hive的默认分隔符&apos;\001&apos;进行分割的，
-        导入hive表的时候直接按照默认的分隔符就ok了,
-        注意：readFields 和 write 的方法写得时候要一致对应
-        4.业务要求状态码为400以上的设置valid为false，还有时间不合法[为null或者双引号]
-        5.过滤掉静态资源[图片/css/js],这个标准是根据业务来定的，一般会在mapper的set up 
-        初始化方法里定义hashSet来存这些准则，然后进行标记清除
-        6.PageViews数据生成： (session[UUID] + stayTime + step)
-        ---------------------------------------------------------------------------------------
-                    Session + IP + 地址 + 时间 + 访问页面 + URL + 停留时长 + 第几步
-        ---------------------------------------------------------------------------------------
-            a) 编写MapReduce程序，map端以Ip为key，Javabean为value，发送到reduce，
-            reduce端进行values的排序，这里需要遍历values，每一次都new
-            一个新的Javabean然后进行赋值[因为Javabean是引用类型，然后添加入新的ArrayList中，
-            如果不重新new 一个新的对象的话，那么到最后ArrayList里面的对象就是同一个，因为他们指向的都是同一块堆内存！！！]，
-            再把这个Javabean添加到新的ArrayList中
-            b) 按照时间排序,然后对新的ArrayList进行排序，Collections.sort(beansList,new Comparabtor(javabean){中间获取时间来进行升序排序})
-            c) 从有序的beans中分辨出歌词visit，并对一次visit中所访问的page按顺序标号step
-                核心思想：比较相邻两条记录中的时间差，如果时间差&lt;30分钟，则该两条记录属于同一个session[生成UUID]，否则属于不同的session
-                只有1条的和大于1条的，他们的默认时间都是60秒
-        7.Visits模型：数据来自PageViews模型
-        ---------------------------------------------------------------------------------------
-        Session + 起始时间 + 结束时间 + 进入页面URL + 离开页面URL + 访问页面数 + 停留时长 + IP + referer
-        ---------------------------------------------------------------------------------------
-             编写MapReduce程序：
-                 mapper端：k为session，value：javabean
-                 reduce端：
-                     以step进行排序
-
-
-&gt; 数据入库
-    将预处理之后的数据导入到Hive仓库中相应的库和表中
-&gt; 数据分析
-    项目的核心内容，即根据需求开发ETL分析语句，得出各种统计结果
-&gt; 工作流调度：
-    简单的任务调度:
-        可以使用Linux的crontab -e 来设置调度，但是其缺点是无法设置依赖
-    复杂的任务调度：
-        推荐使用 : azkaban [Java语言实现的，他有管理页面，配置起来比较简单]
-            azkaban是由LinkedIn公司推出的一个批量工作流任务调度器，
-            用于在一个工作流内以一个特定的顺序运行一组工作和流程。
-            使用job配置文件简历任务之间的依赖关系，并提供了一个已使用的web用户界面维护和跟踪工作流。
-            支持command、Java、Hive、pig、Hadoop，而且是基于java开发，代码结构清晰，抑郁二次开发
-                azkaban的组成：
-                    1.mysql服务器
-                        用于存储项目、日志或者执行计划[执行周期等]之类的信息
-                    2.web服务器：
-                        使用jetty[开源的serverlet容器]对外提供web服务，使用户可以通过wen页面方便管理
-                    3.executor服务器：
-                        负责具体的工作流的提交、执行
-           配置azkaban步骤：[cluster模式]
-                   1.生成keystore证书文件，mv到webserver下
-                   2.配置为年修改一下时区：Asia/Shanghai
-                   3.配置数据库mysql
-                   4.配置user admin的登录
-          使用azkaban的步骤：
-                  1.创建a.job文件并且已经配置b.job ，里面的type为command，中间可以配置的dependencies=b，然后command=xxxx
-                    期间要把这些job打成zip包，通过web提交上去配置立刻执行还是scheduler定期执行
-                      # a.job
-                    type=command
-                    dependencies=b
-                    command=echo hahaha
-                这样的话a的job任务就会等待b结束后再执行
-                2.hdfs操作任务
-                    command=/home/hadoop/apps/hadoop-2.6.1/bin/hadoop fs -mkdir /azaz
-                  3.MapReduce操作任务
-                      command=/home/hadoop/apps/hadoop-2.6.1/bin/hadoop jar hadoop-mapreduce- examples-2.6.1.jar wordcount /wordcount/input /wordcount/azout
-                  4.hive操作任务
-                      执行一个命令是 command=/xx/hive -e &apos;show tables&apos;
-                      执行一个文件，里面是hive sql语句， commmand=/xx/hive -f &apos;test.sql&apos;
-                      Hive 脚本: test.sql
-                        type=command
-                        command=/home/hadoop/apps/hadoop-2.6.1/bin/hadoop jar hadoop-mapreduce- examples-2.6.1.jar wordcount /wordcount/input /wordcount/azout
-                        use default;
-                        drop table aztest;
-                        create table aztest(id int,name string) row format delimited fields terminated by &apos;,&apos;;
-                        load data inpath &apos;/aztest/hiveinput&apos; into table aztest;
-                        create table azres as select * from aztest;
-                        insert overwrite directory &apos;/aztest/hiveoutput&apos; select count(1) from aztest;
-        不推荐使用: ooize[虽然是Apache旗下的，但是工作流的过程是编写大量的XML文件配置，而且代码复杂度比较高，不易于二次开发]
-&gt; 数据展现
-    将分析所得到的数据进行数据可视化，一般通过图表[百度的echarts]进行展示
-</code></pre><h2 id="模块开发-数据仓库的设计"><a href="#模块开发-数据仓库的设计" class="headerlink" title="模块开发-数据仓库的设计"></a>模块开发-数据仓库的设计</h2><pre><code>1.纬度建模
-    纬度表(demension)
-        通常指 按照类别、区域或者时间等等来分析，维度表数据比较固定，数据量小
-     事实表
-        事实表的设计是以能够正确记录历史信息为准则也就是一条一条的数据，就像是消费记录里面有product_id
-        维度表的设计是以能够以合适的角度来聚合主题内容为准则  这边有product_id对应的产品信息
-2.纬度建模三种模式：
-    2.1 星型模式 [像星星一样]
-            由一个事实表和一组维度表组成    
-                比如：
-                    事实表里有地域主键、时间键、部门键、产品键 对应有4个维度表相关联
-    2.2 雪花模式[不常用，因为不容易维护！！！]
-            在星型模式基础上，维度表还有维度表
-    2.3 星座模式 [开发常用！！！]
-        基于多张事实表，而且共享纬度信息
-</code></pre><p>本项目数据仓库的设计：</p>
-<pre><code>1.事实表的设计 ods_weblog_orgin =&gt; 对应mr清洗完之后的数据 【窄表】和【宽表或者明细表】
-    窄表：对应原始数据表，字段跟数据中一一对应，但是不利于分析
----------------------------------------------------------------------------------------------------------------
-        valid  remote_addr remote_user time_local  request status  body_bytes_sent http_referer  http_user_agent
-        是否有效 访客IP         访客用户信息  请求时间     请求url  响应码    相应字节数       来源url         访客终端信息
----------------------------------------------------------------------------------------------------------------
-    宽表：把某些融合各种信息的字段 提取出不同的信息作为新的字段
-        相对于之前的窄表 字段增加了，所以叫宽表，
-        比如时间戳，如果是之前的话 &apos;2018-09-09 18:09:09&apos;这种时间不利于分析，
-        如果分成年，月，日，那么分析时直接group by day 或者 year 或者day 就ok了
-        还有referer_url也是如此，可以拆分为host或者参数之类的
-
-2.维度表的设计如：
-    时间维度 t_dim_time: date_key year month day hour 
-    访客地域纬度t_dim_area: area_ID 北京 上海 广州 深圳
-    终端类型维度 t_dim_termination: uc firefox chrome safari ios android
-    网站栏目纬度 t_dim_section: 进口食品、生鲜日配、时令果蔬、奶制品、
-                                休闲保健、酒饮冲调茶叶、粮油副食、母婴玩具、个护清洁、家具家电
-    维度表的数据一般要结合业务情况自己写脚本按照规则生成，也可以用工具来生成，方便后续关联分析
-    比如事先生成时间维度表中的数据，跨度从业务需求的日期到当前的日期即可，具体根据分析粒度，
-    库生成年，季，月，周，天，时等相关信息，用于分析
-</code></pre><p>数据仓库三层架构：</p>
-<pre><code>ods层：数据就是通过mr清洗过的数据，带有标签valid或者标识的数据
-    1.创建ODS层数据表
-        1.1. 原始日志数据表 :创建按照时间来分区的hive 分区表
-            drop table if exists ods_weblog_origin;
-            create table ods_weblog_origin
-            (
-            valid string,remote_addr string,remote_user string, time_local string,request string,status string, body_bytes_sent string, http_referer string, http_user_agent string
-            )
-            partitioned by (datestr string)
-            row format delimited 
-            fields terminated by &apos;\001&apos;;
-        1.2. 点击流模型 PageViews表
-            drop table if exists ods_click_pageviews;
-            create table ods_click_pageviews
-            (
-            session string,remote_addr string,remote_user string, time_local string,request string,visit_step string, page_staylong string, http_referer string, http_user_agent string, body_bytes_sent string, status string
-            )
-            partitioned by (datestr string)
-            row format delimited 
-            fields terminated by &apos;\001&apos;;
-        1.3. 点击流模型 Visits
-            drop table if exists ods_click_visits;
-            create table ods_click_visits
-            (
-            )
-            partitioned by (datestr string)
-            row format delimited 
-            fields terminated by &apos;\001&apos;;
-        1.4. 维度表创建(这里举例：时间，年、月、日、时)
-            drop table if exists t_dim_time;
-            create table t_dim_time 
-            (
-            date_key int,...
-            )
-            row format delimited 
-            fields terminated by &apos;,&apos;;
-        1.5 创建明细宽表 ods_weblog_detail 时间可以明细为 年月日时分秒，
-            referer_url 可以明细为 host、path、query、queryid
-            从预清洗后的表中得到这些数据，如果是referer_url 需要使用Hive里定义的函数：
-                lateral view parse_url_tuple(正则表达式)这个方法，自动把url转换为host、path等
-            如果是时间拓宽明细表的话 就是 substring
-dw层：ods通过ETL处理之后得到dw层
-        多维度统计PV总量：
-            b) 与时间维度表关联查询
-                insert into table dw_pvs_everyday select count(*) as pvs,a.month as month,a.day as day 
-                from 
-                (select distinct month, day from t_dim_time) a 
-                join 
-                ods_weblog_detail b 
-                on a.month=b.month and a.day=b.day group by a.month,a.day;
-            c) 按照referer维度进行统计每小时各来访 url 产生的 PV 量
-                insert into table dw_pvs_referer_everyhour partition(datestr=&apos;20130918&apos;)
-                select http_referer,ref_host,month,day,hour,count(1) as pv_referer_cnt
-                from 
-                ods_weblog_detail
-                group by http_referer,ref_host,month,day,hour
-                having ref_host is not null
-                order by hour asc,day asc,month asc,pv_referer_cnt desc;
-            d) 人均浏览量
-                统计今日所有来访者平均请求的页面数。
-                    insert into table dw_avgpv_user_everyday
-                    select 
-                    &apos;20130918&apos;,sum(b.pvs)/count(b.remote_addr) 
-                    from
-                    (select remote_addr,count(1) as pvs from ods_weblog_detail where datestr=&apos;20130918&apos; group by remote_addr) b; 
-            e)特别重要：分组求TopN ************非常重要**********
-                row_number()函数
-                    row_number() over (partition by xxx order by xxx) rank
-                insert into table dw_pvs_refhost_topn_everyhour partition(datestr=&apos;20130918&apos;) 
-                select t.hour,t.od,t.ref_host,t.ref_host_cnts 
-                from(
-                select ref_host,ref_host_cnts,concat(month,day,hour) as hour,row_number() over (partition by concat(month,day,hour) order by ref_host_cnts desc
-                ) as od 
-                from 
-                dw_pvs_refererhost_everyhour) t 
-                where od&lt;=3;
-            f) 受访分析(从页面的角度分析)
-                热门页面统计
-                    统计每日最热门的页面 top10
-                        insert into table dw_hotpages_everydayselect &apos;20130918&apos;,a.request,a.request_counts 
-                        from
-                        (select request as request,count(request) as request_counts 
-                        from 
-                        ods_weblog_detail 
-                        where datestr=&apos;20130918&apos; 
-                        group by request having request is not null
-                        ) a 
-                        order by a.request_counts desc 
-                        limit 10;
-            g) 每小时独立访客及其产生的 pv
-                insert into table dw_user_dstc_ip_h 
-                select remote_addr,count(1) as pvs,concat(month,day,hour) as hour 
-                from 
-                ods_weblog_detail Where datestr=&apos;20130918&apos; 
-                group by concat(month,day,hour),remote_addr;
-                    在以上的结果基础上，统计每小时独立访客总数
-                        select count(1) as dstc_ip_cnts,hour from dw_user_dstc_ip_h group by hour;
-                    统计每日独立访客总数
-                        select remote_addr,count(1) as counts,concat(month,day) as day 
-                        from 
-                        ods_weblog_detail Where datestr=&apos;20130918&apos; 
-                        group by concat(month,day),remote_addr;
-                    统计每月独立访客总数
-                        select 
-                        remote_addr,count(1) as counts,month 
-                        from 
-                        ods_weblog_detail 
-                        group by month,remote_addr;
-            h) 每日新访访客 today left join old ***************非常重要*************
-                insert into table dw_user_new_d partition(datestr=&apos;20130918&apos;) 
-                select tmp.day as day,tmp.today_addr as new_ip 
-                from 
-                ( select today.day as day,today.remote_addr as today_addr,old.ip as old_addr from (select distinct remote_addr as remote_addr,&quot;20130918&quot; as day from ods_weblog_detail where datestr=&quot;20130918&quot;) today left outer join dw_user_dsct_history old on today.remote_addr=old.ip ) tmp 
-                where tmp.old_addr is null;
-            注意：每日新用户追加到累计表
-            i) 访客 Visit 分析(点击流模型)
-                查询今日所有回头访客及其访问次数。
-                    insert overwrite table dw_user_returning partition(datestr=&apos;20130918&apos;) 
-                    select tmp.day,tmp.remote_addr,tmp.acc_cnt 
-                    from 
-                    (select &apos;20130918&apos; as day,remote_addr,count(session) as acc_cnt from ods_click_stream_visit group by remote_addr) tmp 
-                    where tmp.acc_cnt&gt;1;
-            j) 人均访问频次
-                统计出每天所有用户访问网站的平均次数(visit)
-                    select sum(pagevisits)/count(distinct remote_addr) from ods_click_stream_visit where datestr=&apos;20130918&apos;;
-            k) 关键路径转化率分析(漏斗模型) -- 基于PageViews模型
-                定义好业务流程中的页面标识，下例中的步骤为[模型设计]: Step1、 /item
-                                                          Step2、 /category
-                                                         Step3、 /index
-                                                        Step4、 /order
-                --查询每一步人数存入 dw_oute_numbs
-                create table dw_oute_numbs as
-                select &apos;step1&apos; as step,count(distinct remote_addr) and request like &apos;/item%&apos;
-                union
-                select &apos;step2&apos; as step,count(distinct remote_addr) and request like &apos;/category%&apos;
-                union
-                select &apos;step3&apos; as step,count(distinct remote_addr) and request like &apos;/order%&apos;
-                union
-                select &apos;step4&apos; as step,count(distinct remote_addr) and request like &apos;/index%&apos;;
-                as numbs from ods_click_pageviews where datestr=&apos;20130920&apos;
-                as numbs from ods_click_pageviews where datestr=&apos;20130920&apos;
-                as numbs from ods_click_pageviews where datestr=&apos;20130920&apos;
-                as numbs from ods_click_pageviews where datestr=&apos;20130920&apos;
-                注:UNION 将多个 SELECT 语句的结果集合并为一个独立的结果集。
-                ***利用级联求和自己和自己join ******************非常重要********************
-                inner join
-                select abs.step,abs.numbs,abs.rate as abs_ratio,rel.rate as leakage_rate
-                from
-                (
-                select tmp.rnstep as step,tmp.rnnumbs as numbs,tmp.rnnumbs/tmp.rrnumbs as rate
-                from
-                (
-                select rn.step as rnstep,rn.numbs as rnnumbs,rr.step as rrstep,rr.numbs as rrnumbs inner join
-                dw_oute_numbs rr) tmp
-                where tmp.rrstep=&apos;step1&apos;
-                ) abs
-                left outer join
-                (
-                select tmp.rrstep as step,tmp.rrnumbs/tmp.rnnumbs as rate
-                from
-                (
-                select rn.step as rnstep,rn.numbs as rnnumbs,rr.step as rrstep,rr.numbs as rrnumbs inner join
-                dw_oute_numbs rr) tmp
-                where cast(substr(tmp.rnstep,5,1) as int)=cast(substr(tmp.rrstep,5,1) as int)-1
-                ) rel
-                on abs.step=rel.step;
-                from dw_oute_numbs rn
-                其中 cast(substr(tmp.rnstep,5,1) as int) 是 把字符串截取字符 然后强制转化为int
-            ) 还可以按照栏目纬度和UA（user agent）纬度来分析PV,
-                为了说明PV是可以从各个纬度去分析的
-
-app层：应用层来拿数据展示
-</code></pre><p>Sqoop：是Hadoop和关系数据库服务器之间传送数据的一种工具-sql到Hadoop和Hadoop到sql</p>
-<pre><code>sqoop工作机制是将导入或导出命令翻译成MapReduce程序来实现，
-在翻译出的MapReduce中主要是对inputformat和outputformat进行定制
-1.从关系型数据库(mysql)导入到hadoop 是 DBIputformat，import命令
-    bin/sqoop import \
-    --connect jdbc:mysql://node-21:3306/sqoopdb \ --username root \
-    --password hadoop \
-    --target-dir /sqoopresult \ //--target-dir 可以用来指定导出数据存放至 HDFS 的目录;
-    --table emp --m 1   //m 1 表示一个map来跑
-2.导入 mysql 表数据到 HIVE
-    2.1 将关系型数据的表结构复制到 hive 中
-    bin/sqoop create-hive-table \
-    --connect jdbc:mysql://node-21:3306/sqoopdb \ --table emp_add \
-    --username root \
-    --password hadoop \
-    --hive-table test.emp_add_sp
-    2.2 以上只是复制表的结构，并没有将数据导进去，将数据导入Hive表中
-        bin/sqoop import \
-        --connect jdbc:mysql://node-21:3306/sqoopdb \ --username root \
-        --password hadoop \
-        --table emp_add \
-        --hive-table test.emp_add_sp \
-        --hive-import \   ****
-        --m 1
-    2.3 复杂查询条件:如果不指定分隔符是默认逗号
-        bin/sqoop import \
-        --connect jdbc:mysql://node-21:3306/sqoopdb \ --username root \
-        --password hadoop \
-        --target-dir /wherequery12 \
-        --query &apos;select id,name,deg from emp WHERE --split-by id \
-        --fields-terminated-by &apos;\t&apos; \
-        --m 1
-    2.4 下面的命令用于在 EMP 表执行增量导入:
-        bin/sqoop import \
-        --connect jdbc:mysql://node-21:3306/sqoopdb \ --username root \
-        --password hadoop \
-        --table emp --m 1 \
-        --incremental append \  ****
-        --check-column id \  ****
-        --last-value 1205    ****
-    3. Sqoop 导出
-        将数据从 HDFS 导出到 RDBMS 数据库导出前，目标表必须存在于目标数据库中。
-        bin/sqoop export \
-        --connect jdbc:mysql://node-21:3306/sqoopdb \ --username root \
-        --password hadoop \
-        --table employee \
-        --export-dir /emp/emp_data
-        还可以用下面命令指定输入文件的分隔符
-        --input-fields-terminated-by &apos;\t&apos;
-</code></pre><h4 id="工作流调度："><a href="#工作流调度：" class="headerlink" title="工作流调度："></a>工作流调度：</h4><pre><code>整个项目的数据按照处理过程，从数据采集到数据分析，再到结果数据的到处，
-一系列的任务可以分割成若干个azkaban的job单元，然后由工作流调度器调度执行。
-调度脚本的编写难点在于shell脚本
-shell脚本大体框架如下：
-    #!/bin/bash
-    #set java env
-    #set hadoop env
-    #设置一些主类、目录等常量
-    #获取时间信息
-    #shell 主程序、结合流程控制(if....else)去分别执行 shell 命令。 更多工作流及 hql 脚本定义见参考资料。
-    hive -e执行sql语句
-</code></pre><h4 id="数据可视化"><a href="#数据可视化" class="headerlink" title="数据可视化"></a>数据可视化</h4><pre><code>Echarts：
-    百度前端技术部开发的，基于JavaScript的数据可视化图标库，
-    可以构建折线图(区域图)、柱状 图(条状图)、散点图(气泡图)、饼图(环形图)、
-    K 线图、地图、力导向布局图以及和弦图， 同时支持任意维度的堆积和多图表混合展现。
-javaEE中web.xml 的&lt;url-pattern&gt;/&lt;/url-pattern&gt; 是拦截所有，jsp除外
-
-1.Mybatis example 排序问题 example.setOrderByClause(&quot;`dateStr` ASC&quot;);
-查询结果便可以根据 dataStr 字段正序排列(从小到大)
-如何区分不同数据仓库层的表：
-2.Echarts 前端数据格式问题
-注意，当异步加载数据的时候，前端一般需要的是数据格式是数组。一定要对应上。在 这里我们可以使用 Java Bean 封装数据，然后转换成 json 扔到前端，对应    上相应的字段即 可。
-ObjectMapper om = new ObjectMapper(); beanJson = om.writeValueAsString(bean);
-3.Controller 返回的 json @RequestMapping(value=&quot;/xxxx&quot;,produces=&quot;application/json;charset=UTF-8&quot;)
-@ResponseBody    
-
-一般使用第一种[业内默认的]
-1.表之前加前缀 ods_T_access.log
-                dw_T_access.log
-2.针对不同的数据仓库层 建立对应的数据库 database
-</code></pre>
+2.2：可达性分析【从根节点搜索，如果没有搜索到就是没有被使用，所以互相引用且搜索不到的也会被清除】
+</code></pre><h4 id="怎么回收？—-gt-垃圾回收算法-3种"><a href="#怎么回收？—-gt-垃圾回收算法-3种" class="headerlink" title="怎么回收？—-&gt; 垃圾回收算法[3种]"></a>怎么回收？—-&gt; 垃圾回收算法[3种]</h4><h4 id="1-标记清除算法-Mark-Sweep"><a href="#1-标记清除算法-Mark-Sweep" class="headerlink" title="1.标记清除算法 [Mark-Sweep]"></a>1.标记清除算法 [Mark-Sweep]</h4><pre><code>遍历所有的GC Root，分别标记处可达的对象和不可达的对象，然后将不可达的对象回收。
+**缺点**是：效率低、回收得到的空间不连续 【当比较大的对象被创建时由于被回收的是不连续的，
+所以被回收的空间就存不下，造成了浪费】
+</code></pre><h4 id="2-标记整理算法"><a href="#2-标记整理算法" class="headerlink" title="2.标记整理算法"></a>2.标记整理算法</h4><pre><code>将所有可用的对象往前移动[标记谁是活跃对象，整理，会把内存对象整理成一棵树一个连续的空间]，这样会很耗资源
+</code></pre><h4 id="3-复制算法"><a href="#3-复制算法" class="headerlink" title="3.复制算法"></a>3.复制算法</h4><pre><code>将内存分为两块，每次只使用一块。当这一块内存满了，就将还存活的对象复制到另一块上，并且严格按照内存地址排列，然后把已使用的那块内存统一回收。
+**优点**是：能够得到连续的内存空间 
+**缺点**是：浪费了一半内存
+年轻代使用的是复制整理算法
+</code></pre><h5 id="有一点需要注意："><a href="#有一点需要注意：" class="headerlink" title="有一点需要注意："></a>有一点需要注意：</h5>
       
     </div>
     
@@ -805,10 +396,10 @@ ObjectMapper om = new ObjectMapper(); beanJson = om.writeValueAsString(bean);
 
 
   
-    <article id="post-storm的架构" class="article article-type-post" itemscope itemprop="blogPost">
+    <article id="post-Spark性能调优：" class="article article-type-post" itemscope itemprop="blogPost">
   
     <div class="article-meta">
-      <a href="/2018/05/01/storm的架构/" class="article-date">
+      <a href="/2018/05/01/Spark性能调优：/" class="article-date">
   	<time datetime="2018-05-01T13:29:30.000Z" itemprop="datePublished">2018-05-01</time>
 </a>
     </div>
@@ -822,8 +413,8 @@ ObjectMapper om = new ObjectMapper(); beanJson = om.writeValueAsString(bean);
         
   
     <h1 itemprop="name">
-      <a class="article-title" href="/2018/05/01/storm的架构/">
-        storm
+      <a class="article-title" href="/2018/05/01/Spark性能调优：/">
+        Spark性能调优
         
       </a>
     </h1>
@@ -834,79 +425,518 @@ ObjectMapper om = new ObjectMapper(); beanJson = om.writeValueAsString(bean);
     
     <div class="article-entry" itemprop="articleBody">
       
-        <h1 id="storm"><a href="#storm" class="headerlink" title="storm"></a>storm</h1><p><img src="http://m.qpic.cn/psb?/V11BXxlE33Kp9F/t7Rbr8aYgIO4*9TbdsjJMgxTPY8JHwAmijtuJfP2rbo!/b/dEMBAAAAAAAA&amp;bo=wAY4BAAAAAADN.g!&amp;rf=viewer_4" alt=""></p>
-<h3 id="Storm架构"><a href="#Storm架构" class="headerlink" title="Storm架构"></a>Storm架构</h3><pre><code>类似于Hadoop的架构，主从(Master/Slave)
-Nimbus: 主
-    集群的主节点，负责任务(task)的指派和分发、资源的分配
-Supervisor: 从
-    可以启动多个Worker，具体几个呢？可以通过配置来指定
-    一个Topo可以运行在多个Worker之上，也可以通过配置来指定
-    集群的从节点，(负责干活的)，负责执行任务的具体部分
-    启动和停止自己管理的Worker进程
-无状态，在他们上面的信息(元数据)会存储在ZK中
-Worker: 运行具体组件逻辑(Spout/Bolt)的进程
-=====================分割线===================
-task： 
-    Spout和Bolt
-    Worker中每一个Spout和Bolt的线程称为一个Task
-executor： spout和bolt可能会共享一个线程
-</code></pre><h5 id="提交代码到集群："><a href="#提交代码到集群：" class="headerlink" title="提交代码到集群："></a>提交代码到集群：</h5><pre><code>storm jar /home/hadoop/lib/storm-1.0.jar com.bigdata.ClusterSumStormTopology
-</code></pre><h5 id="storm-其他命令的使用"><a href="#storm-其他命令的使用" class="headerlink" title="storm 其他命令的使用"></a>storm 其他命令的使用</h5><pre><code>list
-    Syntax: storm list
-    List the running topologies and their statuses.
-如何停止作业
-    kill
-        Syntax: storm kill topology-name [-w wait-time-secs]
-</code></pre><p>并行度</p>
-<pre><code>一个worker进程执行的是一个topo的子集
-一个worker进程会启动1..n个executor线程来执行一个topo的component
-一个运行的topo就是由集群中多台物理机上的多个worker进程组成
+        <h1 id="Spark性能调优："><a href="#Spark性能调优：" class="headerlink" title="Spark性能调优："></a>Spark性能调优：</h1><h2 id="1-分配更多的资源-–-性能调优的王道"><a href="#1-分配更多的资源-–-性能调优的王道" class="headerlink" title="1.分配更多的资源  – 性能调优的王道"></a>1.分配更多的资源  – 性能调优的王道</h2><pre><code>真实项目里的脚本：
+    bin/spark-submit \
+    --class com.xx.xx \
+    --num-executors 80 \
+    --driver-memory 6g \
+    --executor-cores 3 \
+    --master yarn-cluster \
+    --queue root.default \
+    --conf spark.yarn.executor.memoryOverhead=2048 \
+    --conf spark.core.connection.ack.waite.timeout=300 \
+    /usr/xx/xx.jar \
+    args
+</code></pre><h6 id="分配资源之前，要先看机器能够给我们提供多少资源，并且最大化的利用这些资源才是最好的；"><a href="#分配资源之前，要先看机器能够给我们提供多少资源，并且最大化的利用这些资源才是最好的；" class="headerlink" title="分配资源之前，要先看机器能够给我们提供多少资源，并且最大化的利用这些资源才是最好的；"></a>分配资源之前，要先看机器能够给我们提供多少资源，并且最大化的利用这些资源才是最好的；</h6><pre><code>1.standalone模式：
+    根据实际情况分配spark作业资源，比如每台机器4G，2个cpu，20台机器
+2.spark-on-yarn模式：
+    要看spark作业要提交到的资源队列，大概有多少资源？
+</code></pre><h6 id="SparkContext、DAGScheduler、taskScheduler，会将我们的算子切割成大量的task提交到Application的executor上去执行-比如分配给其中一个的executor100个task，他的cpu只有2个，那么并行只能执行2个task，如果cpu为5个，那么久先执行5个再执行5个"><a href="#SparkContext、DAGScheduler、taskScheduler，会将我们的算子切割成大量的task提交到Application的executor上去执行-比如分配给其中一个的executor100个task，他的cpu只有2个，那么并行只能执行2个task，如果cpu为5个，那么久先执行5个再执行5个" class="headerlink" title="SparkContext、DAGScheduler、taskScheduler，会将我们的算子切割成大量的task提交到Application的executor上去执行,比如分配给其中一个的executor100个task，他的cpu只有2个，那么并行只能执行2个task，如果cpu为5个，那么久先执行5个再执行5个"></a>SparkContext、DAGScheduler、taskScheduler，会将我们的算子切割成大量的task提交到Application的executor上去执行,比如分配给其中一个的executor100个task，他的cpu只有2个，那么并行只能执行2个task，如果cpu为5个，那么久先执行5个再执行5个</h6><pre><code>a.增加executor的数量：
+    如果executor的数量比较少，那么意味着可以并行执行的task的数量就比较少，
+    就意味着Application的并行执行能力比较弱；
+        比如：
+            有3个executor，每个executor有2个cup core，
+            那么能够并行执行的task就是6个，6个执行完换下一批6个
+    增加executor的个数后，并行执行的task就会变多，性能得到提升
+b.增加每个executor的cpu core
+        比如：
+            之前：3个exexutor，每个executor的cpu core为2个，那么并执行的task是6个
+                 把cpu core增加到5个，那么并行执行的task就是15个，提高了性能
+c.增加每个executor的内存量：
+    1.如果需要对RDD进行cache，那么更多的内存就能缓存更多的数据，
+      将更少的数据写入磁盘，甚至不写入磁盘，减少了磁盘IO。
+    2.对于shuffle操作，reduce端会需要内存来存储拉取过来的数据进行聚合，如果内存不够，
+      也会写入磁盘，增加executor内存，就会有更少的数据写入磁盘，较少磁盘IO，提高性能。
+    3.对于task的执行，需要创建很多对象，如果内存比较小，可能导致JVM堆内存满了，
+      然后频繁的GC，垃圾回收，minorGC和fullGC，速度会很慢，如果加大内存，
+      带来更少的GC，速度提升。
+</code></pre><h2 id="2-调节并行度"><a href="#2-调节并行度" class="headerlink" title="2.调节并行度"></a>2.调节并行度</h2><pre><code>并行度：spark作业中，各个stage的task个数，也就代表了saprk作业中各个阶段[stage]的并行度。
+[spark作业，Application，jobs，action会触发一个job，每个job会拆成多个stage，发生shuffle的时候，会拆出一个stage]
+</code></pre><h5 id="如果不调节并行度，导致并行度过低，会怎么样？？？"><a href="#如果不调节并行度，导致并行度过低，会怎么样？？？" class="headerlink" title="如果不调节并行度，导致并行度过低，会怎么样？？？"></a>如果不调节并行度，导致并行度过低，会怎么样？？？</h5><pre><code>比如：
+    1.我们通过上面的分配好资源后，有50个executor，每个executor10G内存，每个executor有3个cpu core
+      基本已经达到了集群或者yarn的资源上限
+    2. 50个executor * 3个cpu = 150个task,即可以并行执行150个task；
+      而我们设置的时候只设置了100个并行度的task，这时候每个executor分配到2个task，同时运行task的数量只有100个，导致每个executor剩下的1个cpu core在那空转，浪费资源。
+    资源虽然够了，但是并行度没有和资源相匹配，导致分配下去的资源浪费掉了！！！
+    **合理的并行度设置，应该要设置的足够大，大到完全合理的利用集群资源！而且减少了每个task要处理的数据量[比如150g的数据分别分发给100个task处理就是每个task处理1.5G，但是如果是150个task的话，每个task就处理1G]**
+总结：
+    a. task数量，至少设置成与Spark application的总cpu数相同(理想状态下，比如150个cpu core，分配150个task，差不多同时运行完毕)
+    b.官方推荐做法：task的数量设置成 Spark application的cpu core的个数的3~5倍！！
+      比如总共150个cpu core，设置成300~500个task
+      为什么这么设置呢？？？
+           实际情况下和理想状态下是不一样的，因为有些task运行的快，有些运行的慢，
+           比如有些运行需要50s，有些需要几分钟运行完毕，如果刚好设置task数量和cpu core的数量相同，可能会导致资源的浪费；
+           比如150个task，10个运行完了，还有140个在运行，那么势必会导致10个cpu core的闲置，
+           所以如果设置task的数量为cpu数量的2~3倍，一旦有task运行完，另一个task就会立刻补上来，
+           尽量让cpu core不要空闲，提升了spark作业运行效率，提升性能。
 
-executor是一个被worker进程启动的单独线程，每个executor只会运行1个topo的一个component
-task是最终运行spout或者bolt代码的最小执行单元
+    c.如何设置一个 Spark application的并行度？？？
+        SparkConf sc = new SparkConf()
+                       .set(&quot;spark.default.parallelism&quot;,&quot;500&quot;);
+</code></pre><h2 id="3-重构RDD架构及RDD持久化"><a href="#3-重构RDD架构及RDD持久化" class="headerlink" title="3.重构RDD架构及RDD持久化:"></a>3.重构RDD架构及RDD持久化:</h2><pre><code>默认情况下 RDD出现的问题：             
+                                              RDD4
+                                            /
+           hdfs --&gt; RDD1 --&gt; RDD2 --&gt;RDD3
+                                            \
+                                              RDD5
+    以上情况： 执行RDD4和RDD5的时候都会从RDD1到RDD2然后到RDD3，执行期间的算子操作，
+    而不会说到RDD3的算子操作后的结果给缓存起来，所以这样很麻烦，
+    出现了RDD重复计算的情况，导致性能急剧下降！
+结论：
+    对于要多次计算和使用的公共RDD,一定要进行持久化！
+    持久化也就是：BlockManager将RDD的数据缓存到内存或者磁盘上，后续无论对这个RDD进行多少次计算，都只需要到缓存中取就ok了。
+    持久化策略：
+        rdd.persist(StorageLevel.xx()) 或者 cache
+        1.优先会把数据缓存到内存中 -- StorageLevel.MEMORY_ONLY
+        2.如果纯内存空间无法支撑公共RDD的数据时，就会优先考虑使用序列化的机制在纯内存中存储，
+        将RDD中的每个partition中的数据序列化成一个大的字节数组，也就是一个对象，
+        序列化后，大大减少了内存空间的占用。-- StorageLevel.MEMORY_ONLY_SER
+            序列化唯一的缺点：在获取数据的时候需要反序列化
+        3.如果序列化纯内存的方式还是导致OOM，内存溢出的话，那就要考虑磁盘的方式。
+          内存+磁盘的普通方式(无序列化) -- StorageLevel.MEMORY_AND_DISK
+        4.如果上面的还是无法存下的话，就用 内存+磁盘+序列化 -- StorageLevel.MEMORY_AND_DISK_SER
+另：在机器内存**极度充足**的情况下，可以使用双副本机制，来持久化，保证数据的高可靠性
+    如果机器宕机了，那么还有一份副本数据，就不用再次进行算子计算了。[锦上添花--一般不要这么做] -- StorageLevel.MEMORY_ONLY_SER_2
+</code></pre><h3 id="4-广播大变量-sc-broadcast-rdd-collect"><a href="#4-广播大变量-sc-broadcast-rdd-collect" class="headerlink" title="4.广播大变量 [sc.broadcast(rdd.collect)]"></a>4.广播大变量 [sc.broadcast(rdd.collect)]</h3><pre><code>问题情景：
+    当我们在写程序用到外部的维度表的数据进行使用的时候，程序默认会给每个task都发送相同的这个数据，
+    如果这个数据为100M，如果我们有1000个task，100G的数据，通过网络传输到task，
+    集群瞬间因为这个原因消耗掉100G的内存，对spark作业运行速度造成极大的影响，性能想想都很可怕！！！
+解决方案：
+    sc.broadcast(rdd.collect)
+    分析原理：
+        [BlockManager:负责管理某个executor上的内存和磁盘上的数据]
+        广播变量会在Driver上有一份副本，当一个task使用到广播变量的数据时，会在自己本地的executor的BlockManager去取数据，
+        发现没有，BlockManager就会到Driver上远程去取数据，并保存在本地，
+        然后第二个task需要的时候来找BlockManager直接就可以找到该数据，
+        executor的Blockmanager除了可以到Driver远程的取数据，
+        还可能到邻近节点的BlockManager上去拉取数据，越近越好!
+    举例说明：
+        50个executor，1000个task，外部数据10M，
+        默认情况下，1000个task，1000个副本，10G数据，网络传输，集群中10G的内存消耗
+        如果使用广播，50个executor，500M的数据，网络传输速率大大增加，
+        10G=10000M 和 500M的对比 20倍啊。。。
+**之前的一个测试[真实]：
+        没有经过任何调优的spark作业，运行下来16个小时，
+        合理分配资源+合理分配并行度+RDD持久化，作业下来5个小时,
+        非常重要的一个调优Shuffle优化之后，2~3个小时，
+        应用了其他的性能调优之后，JVM调参+广播等等，30分钟
+        16个小时 和 30分钟对比，太可怕了！！！性能调优真的真的很重要！！！
+</code></pre><h3 id="5-Kryo序列化机制："><a href="#5-Kryo序列化机制：" class="headerlink" title="5.Kryo序列化机制："></a>5.Kryo序列化机制：</h3><p>默认情况下，Spark内部使用java的序列化机制</p>
+<pre><code>ObjectOutPutStream/ObjectInputStream,对象输入输出流机制来进行序列化
+这种序列化机制的好处：
+    处理方便，只是需要在算子里使用的变量是实现Serializable接口即可
+缺点在于：
+    默认序列化机制效率不高，序列化的速度比较慢，序列化后的数据占用内存空间还比较大
+</code></pre><p> 解决：手动进行序列化格式的优化：Kryo [spark支持的]</p>
+<pre><code>Kryo序列化机制比默认的java序列化机制速度快，
+序列化后的数据更小，是java序列化后数据的 1/10 。
+所以Kryo序列化后，会让网络传输的数据更少，在集群中耗费的资源大大减少。
 
-默认：
-    一个supervisor节点最多启动4个worker进程  
-    每一个topo默认占用一个worker进程         
-    每个worker进程会启动一个executor        
-    每个executor启动一个task   
+Kryo序列化机制：[一旦启用，会生效的几个地方]
+    a.算子函数中使用到的外部变量[比如广播的外部维度表数据]
+        优化网络传输性能，较少集群的内存占用和消耗
+    b.持久化RDD时进行序列化，StorageLevel.MEMORY_ONLY_SER
+        将每个RDD partition序列化成一个大的字节数组时，就会使用Kryo进一步优化序列化的效率和性能。
+        持久化RDD占用的内存越少，task执行的时候，创建的对象，不至于频繁的占满内存，频繁的GC
+    c.shuffle
+        在stage间的task的shuffle操作时，节点与节点之间的task会通过网络拉取和传输数据，
+        此时这些数据也是可能需要序列化的，就会使用Kryo
+</code></pre><p> 实现Kryo：</p>
+<pre><code>step1. 在SparkConf里设置 new SparkConf()
+                       .set(&quot;spark.serializer&quot;,&quot;org.apache.spark.serializer.KyroSerializer&quot;)
+                       .registerKryoClasses(new Class[]{MyCategory.class})
+    [Kryo之所以没有没有作为默认的序列化类库，就是因为Kryo要求，如果要达到它的最佳效果的话]
+    [一定要注册我们自定义的类，不如：算子函数中使用到了外部自定义的对象变量，这时要求必须注册这个类，否则Kyro就达不到最佳性能]
+step2. 注册使用到的，需要Kryo序列化的一些自定义类
+</code></pre><h3 id="6-使用FastUtil优化数据格式："><a href="#6-使用FastUtil优化数据格式：" class="headerlink" title="6.使用FastUtil优化数据格式："></a>6.使用FastUtil优化数据格式：</h3><p>FastUtil是什么？？</p>
+<pre><code>fastutil是扩展了Java标准集合框架（Map、List、Set；HashMap、ArrayList、HashSet）的类库，提供了特殊类型的map、set、list和queue；
+fastutil能够提供更小的内存占用，更快的存取速度；我们使用fastutil提供的集合类，来替代自己平时使用的JDK的原生的Map、List、Set，
+fastutil的每一种集合类型，都实现了对应的Java中的标准接口（比如fastutil的map，实现了Java的Map接口），因此可以直接放入已有系统的任何代码中。 
+fastutil还提供了一些JDK标准类库中没有的额外功能（比如双向迭代器）。 
+fastutil除了对象和原始类型为元素的集合，fastutil也提供引用类型的支持，但是对引用类型是使用等于号（=）进行比较的，而不是equals()方法。 
+fastutil尽量提供了在任何场景下都是速度最快的集合类库。
+</code></pre><p>Spark中FastUtil运用的场景？？</p>
+<pre><code>1.如果算子函数使用了外部变量，
+    第一可以使用broadcast广播变量优化；
+    第二可以使用Kryo序列化类库，提升序列化性能和效率；
+    第三如果外部变量是某种比较大的集合(Map、List等)，可以考虑fastutil来改写外部变量，
+        首先从源头上就减少了内存的占用，通过广播变量进一步减少内存占用，
+        再通过Kryo类库进一步减少内存占用
+    避免了executor内存频繁占满，频繁唤起GC，导致性能下降的现象
+</code></pre><p>使用步骤：</p>
+<pre><code>step1:导入pom依赖
+    &lt;dependency&gt;
+        &lt;groupId&gt;fastutil&lt;/groupId&gt;
+            &lt;artifactId&gt;fastutil&lt;/artifactId&gt;
+        &lt;version&gt;5.0.9&lt;/version&gt;
+    &lt;/dependency&gt;
+step2:
+    List&lt;Integer&gt; =&gt; IntList
+     基本都是类似于IntList的格式，前缀就是集合的元素类型，
+     特殊的就是Map，Int2IntMap，代表了Key-Value映射的元素类型
+</code></pre><h3 id="7-调节数据本地化等待时长"><a href="#7-调节数据本地化等待时长" class="headerlink" title="7.调节数据本地化等待时长:"></a>7.调节数据本地化等待时长:</h3><p>问题发生的场景：</p>
+<pre><code>spark在Driver上，对Application的每一个stage的task分配之前，
+都会计算出每个task要计算的是哪个分片数据，RDD的某个partition；
+spark的分配算法：
+    a.优先把每一个task正好分配到他要计算的数据所在的节点，这样的话不用在网络间传输数据
+    b.但是，task没有机会分配到数据所在的节点上，为什么呢？？？
+        因为那个节点上的计算资源和计算能力都满了，这个时候 spark会等待一段时间，
+        默认情况下是3s钟，到最后，实在等不了了，就会选择一个较差的本地化级别，
+        比如说会把task分配到靠他要计算的数据的节点最近的节点，然后进行计算
+    c.对于b来说肯定要发生网络传输，task会通过其所在节点的executor的BlockManager来获取数据，
+    BlockManager发现自己本地没有，就会用getRemote()的方法，通过TransferService(网络数据传输组件)
+    从数据所在节点的BlockManager中获取数据，通过网络传输给task所在的节点
+总结：
+  我们肯定是希望看到 task和数据都在同一个节点上，直接从本地的executor中的BlockManager中去获取数据，
+  纯内存或者带点IO，如果通过网络传输，那么大量的网络传输和磁盘IO都是性能的杀手
+</code></pre><p>本地化的级别类型：</p>
+<pre><code>1.PROCESS_LOCAL: 进程本地化,代码和数据都在同一个进程中，也就是在同一个executor进程中，
+  task由executor来执行，数据在executor的BlockManager中，性能最好
+2.NODE_LOCAL: 节点本地化，比如说一个节点上有两个executor，其中一个task需要第一个executor的数据，
+  但是他被分配给了第二个executor，他会找第二个executor的BlockManager去取数据，但是没有，
+  BlockManager会去第一个的executor的BlockManager去取数据，这是发生在进程中的
+3.NOPREF: 数据从哪里获取都一样，没有好坏之分
+4.RACK_LOCAL: 数据在同一个机架上的不同节点上，需要进行网络间的数据传输
+5.ANY: 数据可能在集群中的任何地方，而且不在同一个机架，这种性能最差！！
+</code></pre><p>开发时的流程：</p>
+<pre><code>观察spark作业时的日志，先测试，先用client模式，在本地就可以看到比较全的日志。
+日志里面会显示：starting task...,PROCESS_LOCAL,或者是NODE_LOCAL，观察大部分数据本地化的级别
+如果发现大部分都是PROCESS_LOCAL的级别，那就不用调了，如果大部分都是NODE_LOCAL或者ANY，那就要调节一下等待时长了
+要反复调节，反复观察本地化级别是否提升，查看spark作业运行的时间有没有缩短
+不要本末倒置，如果是 本地化级别提升了，但是因为大量的等待时间，spark作业的运行时常变大了，这就不要调节了
+spark.locality.waite
+spark.locality.waite.process
+spark.locality.waite.node
+spark.locality.waite.rack
+默认等待时长都是3s
+设置方法：
+    new SparkConf().set(&quot;spark.locality.waite&quot;,&quot;10&quot;)//不要带s
+</code></pre><h3 id="8-JVM调优：1个executor对应1个JVM进程"><a href="#8-JVM调优：1个executor对应1个JVM进程" class="headerlink" title="8.JVM调优：1个executor对应1个JVM进程"></a>8.JVM调优：1个executor对应1个JVM进程</h3><p>A. 降低cache操作的内存占比</p>
+<pre><code>JVM模块：
+    每一次存放对象的时候都会放入eden区域，其中有一个survivor区域，另一个survivor区域是空闲的[新生代]，
+    当eden区域和一个survivor区域放满了以后(spark运行产生的对象太多了)，
+    就会触发minor gc，小型垃圾回收，把不再使用的对象从内存中清空，给后面新创建的对象腾出空间
+    清理掉了不在使用的对象后，还有一部分存活的对象(还要继续使用的对象)，
+    将存活的对象放入空闲的那个survivor区域里，这里默认eden:survivor1: survivor2 = 8:1:1,
+    假如对象占了1.5放不下survivor区域了，那么就会放到[老年代]里；
+    假如JVM的内存不够大的话，可能导致频繁的新生代内存满溢，频繁的进行minor gc，
+    频繁的minor gc会导致短时间内，有些存活的对象，多次垃圾回收都没有回收掉，
+    会导致这种短生命周期的对象(其实是不一定要长期使用的对象)年龄过大，
+    垃圾回收次数太多，还没有回收到，就已经跑到了老年代；
+    老年代中可能会因为内存不足，囤积一大堆短生命周期的对象(本来应该在年轻代中的)，
+    可能马上就要回收掉的对象，此时可能造成老年代内存满溢，造成频繁的full gc(全局/全面垃圾回收)，full gc就会去老年代中回收对象；
+    由于full gc算法的设计，是针对老年代中的对象，数量很少，满溢进行full gc的频率应该很少，
+    因此采取了不太复杂的但是耗费性能和时间的垃圾回收算法。full gc 很慢很慢；
+    full gc 和 minor gc，无论是快还是慢，都会导致JVM的工作线程停止工作，即 stop the world，
+    简言之：gc的时候，spark停止工作，等待垃圾回收结束;
+在spark中，堆内存被分为了两块：
+    一块是专门用来给RDD cache和persist操作进行RDD数据缓存用的；
+    一块是给spark算子函数的运行使用的，存放函数中自己创建的对象；
+默认情况下，给RDD cache的内存占比是60%,但是在某些情况下，比如RDD cache不那么紧张，
+而task算子函数中创建的对象过多，内存不太大，导致频繁的minor gc，甚至频繁的full gc，
+导致spark频繁的暂停工作，性能影响会非常大，
+解决办法：
+    集群是spark-onyarn的话就可以通过spark ui来查看，spark的作业情况，
+    可以看到每个stage的运行情况，包括每个task的运行时间，gc时间等等，
+    如果发现gc太频繁，时间太长，此时可以适当调节这个比例；
+总结：
+    降低cache的内存占比，大不了用persist操作，选择将一部分的RDD数据存入磁盘，
+    或者序列化方式Kryo，来减少RDD缓存的内存占比；
+    对应的RDD算子函数的内存占比就增多了，就可以减少minor gc的频率，同时减少full gc的频率，提高性能
+具体实现：0.6-&gt;0.5-&gt;0.4-&gt;0.2
+    new SparkConf().set(&quot;spark.storage.memoryFraction&quot;,&quot;0.5&quot;)
+</code></pre><p>B. executor堆外内存与连接时常</p>
+<pre><code>1. executor堆外内存[off-heap memory]:
+   场景：
+        比如两个stage，第二个stage的executor的task需要第一个executor的数据，
+        虽然可以通过Driver的MapOutputTracker可以找到自己数据的地址[也就是第一个executor的BlockManager]，
+        但是第一个executor已经挂掉了，关联的BlockManager也没了，就没办法获取到数据；
 
-Total slots:4  
-Executors: 3   但是stormUI上是 spout + bolt = 2  why 3?
-隐藏的acker 导致的
-</code></pre><h5 id="通过代码对并行度的理解："><a href="#通过代码对并行度的理解：" class="headerlink" title="通过代码对并行度的理解："></a>通过代码对并行度的理解：</h5><pre><code>Config conf = new Config();
-conf.setNumWorkers(2); // use two worker processes
-topologyBuilder.setSpout(&quot;blue-spout&quot;, new BlueSpout(), 2); // set parallelism hint to 2
-topologyBuilder.setBolt(&quot;green-bolt&quot;, new GreenBolt(), 2)
-           .setNumTasks(4)
-           .shuffleGrouping(&quot;blue-spout&quot;);topologyBuilder.setBolt(&quot;yellow-bolt&quot;, new YellowBolt(), 6)
-           .shuffleGrouping(&quot;green-bolt&quot;);StormSubmitter.submitTopology(
-    &quot;mytopology&quot;,
-    conf,
-    topologyBuilder.createTopology()
-);
+    有时候，如果你的spark作业处理的数据量特别大，几亿数据量；
+    spark作业一运行，是不是报错诸如：shuffle file cannot find,executor task lost,out of memory,
+    这时候可能是executor的堆外内存不够用了，导致executor在运行的时候出现了内存溢出；
+    导致后续的stage的task在运行的时候，可能从一些executor中拉取shuffle map output 文件，
+    但是executor已经挂掉了，关联的BlockManager也没有了，所以可能会报shuffle output file not found，resubmitting task，executor lost，spark作业彻底失败；
+  这个时候就可以考虑调节executor的堆外内存，堆外内存调节的比较大的话，也会提升性能；
 
-##解释：
-conf.setNumWorkers(2) ---&gt;两个worker
-setSpout(&quot;blue-spout&quot;, new BlueSpout(), 2)---&gt; 2个spout executor 对应默认的2个task
-setBolt(&quot;green-bolt&quot;, new GreenBolt(), 2).setNumTasks(4) ---&gt; 2个executor 4个task(因为它指定了setNumTasks个数)
-
-结果：
-1个topology
-2个workers  
-2+2+2[2个worker 就有2个acker] = 6个executors  
-2+4+2[2个worker 就有2个acker默认2个task] = 8个task
-</code></pre><h5 id="修改正在运行的topology的并行度："><a href="#修改正在运行的topology的并行度：" class="headerlink" title="修改正在运行的topology的并行度："></a>修改正在运行的topology的并行度：</h5><pre><code>#Reconfigure the topology &quot;mytopology&quot; to use 5 worker processes,
-#the spout &quot;blue-spout&quot; to use 3 executors 
-#the bolt &quot;yellow-bolt&quot; to use 10 executors.
-
-1.可以使用StormUI来rebalance the topology.
-2.也可以使用命令行来修改：$ storm rebalance mytopology -n 5 -e blue-spout=3 -e yellow-bolt=10
-</code></pre><p>stream grouping分组策略内置[build-in]有8种：</p>
-<pre><code>常用的有两种：
-1.shuffle grouping 随机分配也就是轮询RoundRobin 这样不会造成数据倾斜
-2.fileds grouping 比如按照字段hash取模分组 
-如果想自定义分组策略：--&gt; 自定义分组策略需要实现CustomStreamGroup接口
+    怎么调价堆外内存的大小？？
+        在spark-submit 的脚本中添加 
+                    --conf spark.yarn.executor.memoryOverhead=2048
+        注意：这个设置是在spark-submit脚本中，不是在 new SparkConf()里设置的！！！
+        这个是在spark-onyarn的集群中设置的，企业也是这么设置的！
+        默认情况下,堆外内存是300多M，我们在项目中通常都会出现问题，导致spark作业反复崩溃，
+        我们就可以调节这个参数 ，一般来说至少1G(1024M)，有时候也会2G、4G，
+        来避免JVM oom的异常问题，提高整体spark作业的性能
+2. 连接时常的等待：
+          知识回顾：如果JVM处于垃圾回收过程，所有的工作线程将会停止，相当于一旦进行垃圾回收，
+          spark/executor就会停止工作，无法提供响应
+   场景：
+          通常executor优先会从自己关联的BlockManager去取数据，如果本地没有，
+          会通过TransferService，去远程连接其他节点上的executor的BlockManager去取；
+          如果这个远程的executor正好创建的对象特别大，特别多，频繁的让JVM的内存满溢，进行垃圾回收，
+          此时就没有反应，无法建立网络连接，会有卡住的现象。spark默认的网络连接超时时间是60s，
+          如果卡住60秒都无法建立网络连接的话，就宣布失败；
+          出现的现象：偶尔会出现，一串fileId诸如：hg3y4h5g4j5h5g5h3 not found，file lost，
+          报错几次，几次都拉取不到数据的话，可能导致spark作业的崩溃！
+          也可能会导致DAGScheduler多次提交stage，TaskScheduler反复提交多次task，
+          大大延长了spark作业的运行时间
+  解决办法：[注意是在shell脚本上不是在SparkConf上set！！]
+          spark-submit 
+                       --conf spark.core.connection.ack.waite.timeout=300
+</code></pre><h2 id="9-shuffle调优"><a href="#9-shuffle调优" class="headerlink" title="9.shuffle调优"></a>9.shuffle调优</h2><pre><code>shuffle的概念以及场景
+    什么情况下会发生shuffle？？
+        在spark中，主要是这几个算子：groupByKey、reduceByKey、countByKey、join等
+    什么是shuffle？
+        a) groupByKey：把分布在集群中各个节点上的数据中同一个key，对应的values都集中到一块，
+        集中到集群中的同一个节点上，更严密的说就是集中到一个节点上的一个executor的task中。
+        集中一个key对应的values后才能交给我们处理，&lt;key,iterable&lt;value&gt;&gt;
+          b) reduceByKey：算子函数对values集中进行reduce操作，最后变成一个value
+          c) join  RDD&lt;key,value&gt;    RDD&lt;key,value&gt;,只要两个RDD中key相同的value都会到一个节点的executor的task中，供我们处理
+      以reduceByKey为例：
+</code></pre><p><img src="http://m.qpic.cn/psb?/V11BXxlE33Kp9F/62Boojghtc6iLB8KUOFgXQfCRbAwTZoOek9gr3ocl*o!/b/dDMBAAAAAAAA&amp;bo=YgrgAgAAAAADB6g!&amp;rf=viewer_4" alt=""></p>
+<h4 id="9-1-shuffle调优之-map端合并输出文件"><a href="#9-1-shuffle调优之-map端合并输出文件" class="headerlink" title="9.1. shuffle调优之 map端合并输出文件"></a>9.1. shuffle调优之 map端合并输出文件</h4><pre><code>默认的shuffle对性能有什么影响？？
+    实际生产环境的条件：
+        100个节点，每个节点一个executor：100个executor，每个executor2个cpu core，
+        总格1000个task，平均到每个executor是10个task；按照第二个stage的task个数和第一个stage的相同，
+        那么每个节点map端输出的文件个数就是：10 * 1000 = 10000 个
+        总共100个节点，总共map端输出的文件数：10000 * 100 = 100W 个
+        100万个。。。太吓人了！！！
+    shuffle中的写磁盘操作，基本上是shuffle中性能消耗最严重的部分，
+    通过上面的分析可知，一个普通的生产环境的spark job的shuffle环节，会写入磁盘100万个文件，
+    磁盘IO性能和对spark作业执行速度的影响，是极其惊人的！！
+    基本上，spark作业的性能，都消耗在了shuffle中了，虽然不只是shuffle的map端输出文件这一部分，但是这也是非常大的一个性能消耗点。
+怎么解决？
+    开启map端输出文件合并机制：
+        new SparkConf().set(&apos;spark.shuffle.consolidateFiles&apos;,&apos;true&apos;)
+    实际开发中，开启了map端输出文件合并机制后，有什么变化？
+        100个节点，100个executor，
+        每个节点2个cpu core，
+        总共1000个task，每个executor10个task，
+        每个节点的输出文件个数：
+            2*1000 = 2000 个文件
+        总共输出文件个数：
+            100 * 2000 = 20万 个文件
+        相比开启合并之前的100万个，相差了5倍！！
+合并map端输出文件，对spark的性能有哪些影响呢？
+    1. map task写入磁盘文件的IO，减少：100万 -&gt; 20万个文件
+    2. 第二个stage，原本要拉取第一个stage的task数量文件，1000个task，第二个stage的每个task都会拉取1000份文件，走网络传输；合并以后，100个节点，每个节点2个cpu，第二个stage的每个task只需要拉取 100 * 2 = 200 个文件，网络传输的性能大大增强
+    实际生产中，使用了spark.shuffle.consolidateFiles后，实际的调优效果：
+        对于上述的生产环境的配置，性能的提升还是相当可观的，从之前的5个小时 降到了 2~3个小时
+总结：
+    不要小看这个map端输出文件合并机制，实际上在数据量比较大的情况下，本身做了前面的优化，
+    executor上去了 -&gt; cpu core 上去了 -&gt; 并行度（task的数量）上去了，但是shuffle没调优，
+    这时候就很糟糕了，大量的map端输出文件的产生，会对性能有比较恶劣的影响 
+</code></pre><h4 id="9-2-map端内存缓冲与reduce端内存占比"><a href="#9-2-map端内存缓冲与reduce端内存占比" class="headerlink" title="9.2. map端内存缓冲与reduce端内存占比"></a>9.2. map端内存缓冲与reduce端内存占比</h4><pre><code>spark.shuffle.file.buffer,默认32k
+spark.shuffle.memoryFraction,占比默认0.2
+调优的分量：
+    map端内存缓冲和reduce端内存占比，网上对他俩说的是shuffle调优的不二之选，其实这是不对的，
+    因为以实际的生产经验来说，这两个参数没那么重要，但是还是有一点效果的，
+    就像是很多小的细节综合起来效果就很明显了，
+</code></pre><p>原理：</p>
+<pre><code>map：
+    默认情况下，shuffle的map task输出到磁盘文件的时候，统一都会先写入每个task自己关联的一个内存缓冲区中，
+    这个缓冲区默认大小是32k，每一次，当内存缓冲区满溢后，才会进行spill操作，溢写到磁盘文件中
+reduce：
+    reduce端task，在拉取数据之后，会用hashmap的数据格式来对每个key对应的values进行汇聚，
+    针对每个key对应的value，执行我们自定义的聚合函数的代码，比如_+_,(把所有values相加)
+    reduce task,在进行汇聚、聚合等操作的时候，实际上，使用的就是自己对应的executor的内存，
+    executor(jvm进程，堆),默认executor内存中划分给reduce task进行聚合的比例是20%。
+    问题来了，内存占比是20%，所以很有可能会出现，拉取过来的数据很多，那么在内存中，
+    放不下，这个时候就会发生spill(溢写)到磁盘文件中取.
+</code></pre><p>如果不调优会出现什么问题？？</p>
+<pre><code>默认map端内存缓冲是32k，
+默认reduce端聚合内存占比是20%
+如果map端处理的数据比较大，而内存缓冲是固定的，会出现什么问题呢？
+    每个task处理320k，32k的内存缓冲，总共向磁盘溢写10次，
+    每个task处理32000k，32k的内存缓冲，总共向磁盘溢写1000次，
+    这样就造成了多次的map端往磁盘文件的spill溢写操作，发生大量的磁盘IO，降低性能
+map数据量比较大，reduce端拉取过来的数据很多，就会频繁的发生reduce端聚合内存不够用，
+频繁发生spill操作，溢写到磁盘上去，这样一来，磁盘上溢写的数据量越大，
+后面进行聚合操作的时候，很可能会多次读取磁盘中的数据进行聚合
+默认情况下，在数据量比较大的时候，可能频繁的发生reduce端磁盘文件的读写；
+这两点是很像的，而且有关联的，数据量变大，map端肯定出现问题，reduce也出现问题，
+出的问题都是一样的，都是磁盘IO频繁，变多，影响性能
+</code></pre><p>调优解决：</p>
+<pre><code>我们要看spark UI，
+    1. 如果公司用的是standalone模式，那么很简单，把spark跑起来，会显示sparkUI的地址，
+    4040端口号，进去看，依次点击可以看到，每个stage的详情，有哪些executor，有哪些task，
+    每个task的shuffle write 和 shuffle read的量，shuffle的磁盘和内存，读写的数据量
+    2. 如果是yarn模式提交，从yarn的界面进去，点击对应的application，进入spark ui，查看详情
+如果发现磁盘的read和write很大，就意味着要调节一下shuffle的参数，进行调优，
+首先当然要考虑map端输出文件合并机制
+   调节上面两个的参数，原则是：
+      spark.shuffle.buffer，每次扩大一倍，然后看看效果，64k，128k
+    spark.shuffle.memoryFraction,每次提高0.1，看看效果
+不能调节的过大，因为你这边调节的很大，相对应的其他的就会变得很小，其他环节就会出问题
+调节后的效果：
+    map task内存缓冲变大了，减少了spill到磁盘文件的次数；
+    reduce端聚合内存变大了，减少了spill到磁盘的次数，而且减少了后面聚合时读取磁盘的数量
+    new SparkConf()
+    .set(&quot;spark.shuffle.file.buffer&quot;,&quot;64&quot;)
+    .set(&quot;spark.shuffle.file.memoryFraction&quot;,&quot;0.3&quot;)
+</code></pre><h2 id="10-算子调优"><a href="#10-算子调优" class="headerlink" title="10.算子调优"></a>10.算子调优</h2><h5 id="1-算子调优之MapPartitons提升map的操作性能"><a href="#1-算子调优之MapPartitons提升map的操作性能" class="headerlink" title="1.算子调优之MapPartitons提升map的操作性能"></a>1.算子调优之MapPartitons提升map的操作性能</h5><pre><code>在spark中最近本的原则：每个task处理RDD中的每一个partition
+优缺点对比：
+    普通Map：
+        优点：比如处理了一千条数据，内存不够了，那么就可以将已经处理的一千条数据从内存里面垃圾回收掉，
+        或者用其他办法腾出空间；通常普通的map操作不会导致内存OOM异常；
+        缺点：比如一个partition中有10000条数据，那么function会执行和计算一万次
+    MapPartitions:
+        优点：一个task仅仅会执行一次function，一次function接收partition中的所有数据
+        只要执行一次就可以了，性能比较高
+        缺点：对于大数据量来说，比如一个partition100万条数据，一次传入一个function后，
+        可能一下子内存就不够了，但是又没办法腾出空间来，可能就OOM，内存溢出
+那么什么时候使用MapPartitions呢？
+    当数据量不太大的时候，都可以使用MapPartitions来操作，性能还是很不错的，
+    不过也有经验表明用了MapPartitions后，内存直接溢出，
+    所以在项目中自己先估算一下RDD的数据量，以每个partition的量，还有分配给executor的内存大小，
+    可以试一下，如果直接OOM了，那就放弃吧，如果能够跑通，那就可以使用。
+</code></pre><h5 id="2-算子调优之filter之后-filter-之后-用-coalesce来减少partition的数量"><a href="#2-算子调优之filter之后-filter-之后-用-coalesce来减少partition的数量" class="headerlink" title="2.算子调优之filter之后 filter 之后  用 coalesce来减少partition的数量"></a>2.算子调优之filter之后 filter 之后  用 coalesce来减少partition的数量</h5><pre><code>默认情况下，RDD经过filter之后，RDD中每个partition的数据量会不太一样，(原本partition里的数据量可能是差不多的)
+问题：
+    1.每一个partition的数据量变少了，但是在后面进行处理的时候，
+    还是要和partition的数量一样的task数量去处理，有点浪费task计算资源
+    2.每个partition的数据量不一样，后面会导致每个处理partition的task要处理的数据量不一样，
+    这时候很容易出现**数据倾斜**
+    比如说，有一个partition的数据量是100，而另一个partition的数据量是900，
+    在task处理逻辑一样的情况下，不同task要处理的数据量可能差别就到了9倍，甚至10倍以上，
+    同样导致速度差别在9倍或者10倍以上
+    这样就是导致了有的task运行的速度很快，有的运行的很慢，这就是数据倾斜。
+解决：
+    针对以上问题，我们希望把partition压缩，因为数据量变小了，partition完全可以对应的变少，
+    比如原来4个partition，现在可以变成2个partition，那么就只要用后面的2个task来处理，
+    不会造成task资源的浪费(不必要针对只有一点点数据的partition来启动一个task进行计算)
+    避免了数据倾斜的问题
+</code></pre><h5 id="3-算子调优之使用foreachPartition优化写入数据库性能"><a href="#3-算子调优之使用foreachPartition优化写入数据库性能" class="headerlink" title="3.算子调优之使用foreachPartition优化写入数据库性能"></a>3.算子调优之使用foreachPartition优化写入数据库性能</h5><pre><code>默认的foreach有哪些缺点？
+    首先和map一样，对于每条数据都要去调一次function，task为每个数据，都要去执行一次task；
+    如果一个partition有100万条数据，就要调用100万次，性能极差！
+    如果每条数据都要创建一个数据库连接，那么就要创建100万个数据库连接，
+    但是数据库连接的创建和销毁都是非常耗性能的，虽然我们用了数据库连接池，只要创建固定数量的连接，
+    还是得多次通过数据库连接，往数据库里(mysql)发送一条sql语句，mysql需要去执行这条sql语句，
+    有100万条数据，那么就是要发送100万次sql语句；
+用了foreachPartition以后，有哪些好处？
+    1.对于我们写的函数就调用一次就行了，一次传入一个partition的所有数据
+    2.主要创建或者获取一个数据库连接就可以了
+    3.只要向数据里发送一条sql语句和一组参数就可以了
+在实际开发中，我们都是清一色使用foreachPartition算子操作，
+但是有个问题，跟mapPartitions操作一样，如果partition的数据量非常大，
+比如真的是100万条，那几本就不行了！一下子进来可能会发生OOM，内存溢出的问题
+一组数据的对比：
+    生产环境中：
+        一个partition中有1000条数据，用foreach，跟用foreachPartition，
+        性能提高了2~3分；
+数据库里是：
+    for循环里preparestatement.addBatch
+    外面是preparestatement.executeBatch
+</code></pre><h5 id="4-算子调优之repartition解决SparkSQL低并行度的问题"><a href="#4-算子调优之repartition解决SparkSQL低并行度的问题" class="headerlink" title="4.算子调优之repartition解决SparkSQL低并行度的问题"></a>4.算子调优之repartition解决SparkSQL低并行度的问题</h5><pre><code>并行度： 我们是可以自己设置的
+    1.spark.default.parallelism
+    2.sc.textFile(),第二个参数传入指定的数量(这个方法用的非常少)
+在生产环境中，我们是要自己手动设置一下并行度的，官网推荐就是在spark-submit脚本中，
+指定你的application总共要启动多少个executor，100个，每个executor多少个cpu core，
+2~3个，假设application的总cpu core有200个；
+官方推荐设置并行度要是总共cpu core个数的2~3倍，一般最大值，所以是 600；
+设置的这个并行度，在哪些情况下生效？哪些情况下不生效？
+    1.如果没有使用SparkSQL(DataFrame)的话，那么整个spark应用的并行度就是我们设置的那个并行度
+    2.如果第一个stage使用了SparkSQL从Hive表中查询了一些数据，然后做了一些transformatin的操作，
+    接着做了一个shuffle操作(groupByKey)；下一个stage，在shuffle之后，做了一些transformation的操作
+    如果Hive表对应了20个block，而我们自己设置的并行度是100，
+    那么第一个stage的并行度是不受我们控制的，就只有20个task，第二个stage的才是我们设置的并行度100个
+问题出在哪里了？
+    SparkSQL 默认情况下，我们是没办法手动设置并行度的，所以可能造成问题，也可能不造成问题，
+    SparkSQL后面的transformation算子操作，可能是很复杂的业务逻辑，甚至是很复杂的算法，
+    如果SparkSQL默认的并行度设置的很少，20个，然后每个task要处理为数不少的数据量，
+    还要执行很复杂的算法，这就导致第一个stage特别慢，第二个stage 1000个task，特别快！
+解决办法：
+    repartition：
+        使用SparkSQL这一步的并行度和task的数量肯定是没办法改变了，但是可以将SparkSQL查出来的RDD，
+        使用repartition算子进行重新分区，比如分多个partition，20 -&gt; 100个；
+        然后从repartition以后的RDD，并行度和task数量，就会按照我们预期的来了，
+        就可以避免在跟SparkSQL绑定在一起的stage中的算子，只能使用少量的task去处理大量数据以及复杂的算法逻辑
+</code></pre><p>5.算子操作reduceByKey：</p>
+<pre><code>reduceByKey相较于普通的shuffle操作(不如groupByKey)，他的一个特点就是会进行map端的本地聚合；
+对map端给下个stage每个task创建的输出文件中，写数据之前，就会进行本地的combiner操作，也就是多每个key的value，都会执行算子函数(_+_)，减少了磁盘IO，较少了磁盘空间的占用,在reduce端的缓存也变少了
+</code></pre><h2 id="11-troubleshooting之控制reduce端缓冲大小以避免内存溢出-OOM"><a href="#11-troubleshooting之控制reduce端缓冲大小以避免内存溢出-OOM" class="headerlink" title="11.troubleshooting之控制reduce端缓冲大小以避免内存溢出(OOM)"></a>11.troubleshooting之控制reduce端缓冲大小以避免内存溢出(OOM)</h2><pre><code>new SparkConf().set(&quot;spark.reducer.maxSizeInFlight&quot;,&quot;24&quot;) //默认是48M
+Map端的task是不断地输出数据的，数据量可能是很大的，
+    但是其reduce端的task，并不是等到Map端task将属于自己的那个分数据全部写入磁盘后，再去拉取的
+    Map端写一点数据，reduce端task就会去拉取一小部分数据，立刻进行后面的聚合，算子函数的应用；
+    每次reduce能够拉取多少数据，是由reduce端buffer来定，因为拉取过来的数据都是放入buffer中的，
+    然后采用后面的executor分配的堆内存占比(0.2),去进行后续的聚合，函数操作
+reduce端buffer 可能会出现什么问题？
+    reduce端buffer默认是48M，也许大多时候，还没有拉取满48M，也许是10M，就计算掉了，
+    但是有时候，Map端的数据量特别大，写出的速度特别快，reduce端拉取的时候，全部到达了自己缓冲的最大极限48M，全部填满，
+    这个时候，再加上reduce端执行的聚合函数代码，可能会创建大量的对象，也许一下子内存就撑不住了，就会造成OOM，reduce端的内存就会造成内存泄漏
+如何解决？
+    这个时候，我们应该减少reduce端task缓冲的大小，我们宁愿多拉取几次，但是每次同时能拉取到reduce端每个task的数据量比较少，就不容易发生OOM，比如调成12M；
+    在实际生产中，这种问题是很常见的，这是典型的以性能换执行的原理，
+    reduce的缓冲小了，不容易造成OOM了，但是性能一定是有所下降的，你要拉取的次数多了，
+    就会走更多的网络IO流，这时候只能走牺牲性能的方式了；
+曾经一个经验：
+    曾经写了一个特别复杂的spark作业，写完代码后，半个月就是跑步起来，里面各种各样的问题，
+    需要进行troubleshooting，调节了十几个参数，其中里面就有reduce端缓冲的大小，最后，
+    总算跑起来了！
+</code></pre><h3 id="12-troubleshooting之解决JVM-GC导致的shuffle拉取文件失败："><a href="#12-troubleshooting之解决JVM-GC导致的shuffle拉取文件失败：" class="headerlink" title="12. troubleshooting之解决JVM GC导致的shuffle拉取文件失败："></a>12. troubleshooting之解决JVM GC导致的shuffle拉取文件失败：</h3><pre><code>过程：
+    第一个stage的task输出文件的同时 ，会像Driver上记录这些数据信息，然后下一个stage的task想要得到上个stage的数据，
+    就得像Driver所要元数据信息，然后去像上一个的stage的task生成的文件中拉取数据。
+问题场景：
+    在spark作业中，有时候经常出现一种情况，就是log日志报出：shuffle file not found..,
+    有时候他会偶尔出现一次，有的时候出现一次后重新提交stage、task，重新执行一遍 就好了。
+分析问题：
+    executor在JVM进程中，可能内存不太够用，那么此时就很可能执行GC，minor gc 或者 full gc，
+    总之一旦发生gc后，就会导致所有工作线程全部停止，比如BlockManager，基于netty的网络通信。
+    第二个stage的task去拉取数据的时候，上一个executor正好在进行gc，就导致拉取了半天也没拉取到数据，
+    那为什么第二次提交stage的时候，就又可以了呢？
+        因为第二次提交的时候，上一个executor已经完成了gc。
+解决：
+    spark.shuffle.io.maxRetries 3[默认3次]
+        shuffle 文件拉取时，如果没有拉取到，最多或者重试几次，默认3次
+    spark.shuffle.io.retryWait 5s [默认5s]
+        每一次重新拉取文件的时间间隔，默认5s
+    默认情况下，第一个stage的executor正在漫长的full gc，第二个stage的executor尝试去拉取数据，
+    结果没拉取到，这样会反复重试拉取3次，中间间隔时间5s，也就是总共15s，拉取不成功，就报 shuffle file not found
+        我们可以增大上面两个参数的值：
+            spark.shuffle.io.maxRetries 60次
+            spark.shuffle.io.retryWait 60s
+            最多可以忍受一个小时没有拉取到shuffle file，这只是一个设置最大的可能值，
+            full gc 也不可能一个小时都没结束把，
+            这样就解决了因为gc 而无法拉取到数据的问题
+</code></pre><h3 id="13-troubleshooting之解决yarn-cluster模式的JVM栈内存溢出问题"><a href="#13-troubleshooting之解决yarn-cluster模式的JVM栈内存溢出问题" class="headerlink" title="13. troubleshooting之解决yarn-cluster模式的JVM栈内存溢出问题"></a>13. troubleshooting之解决yarn-cluster模式的JVM栈内存溢出问题</h3><pre><code>yarn-cluster运行流程：
+    1.本地机器执行spark-submit脚本[yarn-cluster模式]，提交spark application给resourceManager
+    2. resourceManager找到一个节点[nodeManager]启动applicationMaster[Driver进程]
+    3. applicationMaster找resourceManager申请executor
+    4. resourceManager分配container(内存+cpu)
+    5. applicationMaster找到对应nodeManager申请启动executor
+    6. nodeManager启动executor
+    7. executor找applicationMaster进行反向注册
+    到这里为止，applicationMaster(Driver)就知道自己有哪些资源可以用(executor)，
+    然后就会去执行job，拆分stage，提交stage的task，进行task调度，
+    分配到各个executor上面去执行。
+yarn-client 和 yarn-cluster的区别：
+    yarn-client模式Driver运行在本地机器上；yarn-cluster模式Driver是运行在yarn集群上的某个nodeManager节点上的；
+    yarn-client模式会导致本地机器负责spark作业的调用，所以网卡流量会激增，yarn-cluster没有这个问题；
+    yarnclient的Driver运行在本地，通常来说本地机器和yarn集群都不会在一个机房，所以性能不是特别好；
+    yarn-cluster模式下，Driver是跟yarn集群运行在一个机房内，性能上也会好很好；
+实践经验碰到的yarn-cluster的问题：
+    有时候运行了包含spark sql的spark作业，可能会遇到 在yarn-client上运行好好地，在yarn-cluster模式下，
+    可能无法提交运行，会报出JVM的PermGen(永久代)的内存溢出-OOM；
+    Yarn-client模式下，Driver是运行在本地机器的，spark使用的JVM的PerGen的配置，是本地的spark-class文件，
+    (spark客户端是默认有配置的),JVM的永久代大小默认是128M，这个是没问题的；
+    但是在Yarn-cluster模式下，Driver是运行在yarn集群的某个节点上的，使用的是没有经过配置的默认设置82M(PerGen永久代大小)
+    spark sql内部会进行很负责的sl语义解析、语法树的转换，特别复杂，在这种情况下，如果sql特别复杂，
+    很可能会导致性能的消耗，内存的消耗，可能对PermGen永久代的内存占比就很大
+    所以此时，如果对PermGen的内存占比需求多与82M，但是又小于128M，就会出现类似上面的情况，
+    yarn-client可以正常运行因为他的默认permgen大小是128M，但是yarn-cluster的默认是82M，就会出现PermGen OOM -- PermGen out of memory
+解决：
+    spark-submit脚本中加入参数：
+        --conf spark.driver.extraJavaOptions=&apos;-XX:PermSize=128M -XX:MxPermSize=256M&apos;
+        这样就设置了永久代的大小默认128M，最大256M，那么这样的话，就可以保证spark作业不会出现上面的PermGen out of memory
 </code></pre>
       
     </div>
@@ -999,6 +1029,105 @@ setBolt(&quot;green-bolt&quot;, new GreenBolt(), 2).setNumTasks(4) ---&gt; 2个e
 <p> 亚洲一流：日本，韩国，伊朗，沙特<br> 亚洲二流：乌兹别克斯坦，巴林，朝鲜<br> 亚洲三流：中国，伊拉克，卡塔尔，阿联酋，泰国，越南，阿曼，印尼</p>
 </blockquote>
 <p> 看来数据告诉我们，说国足近几年处在亚洲三流水平真的是没有冤枉他们，至少从国际杯赛战绩是这样的。<br> 其实上面的分析数据不仅告诉了我们聚类信息，还提供了一些其它有趣的信息，例如从中可以定量分析出各个球队之间的差距，例如，在亚洲一流队伍中，日本与沙特水平最接近，而伊朗则相距他们较远，这也和近几年伊朗没落的实际相符。另外，乌兹别克斯坦和巴林虽然没有打进近两届世界杯，不过凭借预算赛和亚洲杯上的出色表现占据B组一席之地，而朝鲜由于打入了2010世界杯决赛圈而有幸进入B组，可是同样奇迹般夺得2007年亚洲杯的伊拉克却被分在三流，看来亚洲杯冠军的分量还不如打进世界杯决赛圈重啊。其它有趣的信息，有兴趣的朋友可以进一步挖掘。</p>
+
+      
+    </div>
+    
+    <div class="article-info article-info-index">
+      
+      
+      
+
+      
+      <div class="clearfix"></div>
+    </div>
+      
+    
+  </div>
+  
+</article>
+
+
+
+
+
+
+
+  
+    <article id="post-Logistic Regression模型" class="article article-type-post" itemscope itemprop="blogPost">
+  
+    <div class="article-meta">
+      <a href="/2018/04/08/Logistic Regression模型/" class="article-date">
+  	<time datetime="2018-04-08T14:20:10.000Z" itemprop="datePublished">2018-04-08</time>
+</a>
+    </div>
+  
+  <div class="article-inner">
+    
+      <input type="hidden" class="isFancy" />
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2018/04/08/Logistic Regression模型/">
+        逻辑回归模型（Logistic Regression）
+        
+      </a>
+    </h1>
+  
+
+      </header>
+      
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <p>逻辑回归（Logistic Regression）是机器学习中的一种分类模型，由于算法的简单和高效，在实际中应用非常广泛。本文主要关注逻辑回归算法的数学模型和参数求解方法，最后也会简单讨论下逻辑回归和贝叶斯分类的关系，以及在多分类问题上的推广。</p>
+<h2 id="逻辑回归"><a href="#逻辑回归" class="headerlink" title="逻辑回归"></a>逻辑回归</h2><h3 id="问题"><a href="#问题" class="headerlink" title="问题"></a>问题</h3><p>实际工作中，我们可能会遇到如下问题：</p>
+<blockquote>
+<p>1.预测一个用户是否点击特定的商品<br>2.判断用户的性别<br>3.预测用户是否会购买给定的品类<br>4.判断一条评论是正面的还是负面的</p>
+</blockquote>
+<p>这些都可以看做是分类问题，更准确地，都可以看做是二分类问题。同时，这些问题本身对美团也有很重要的价值，能够帮助我们更好的了解我们的用户，服务我们的用户。要解决这些问题，通常会用到一些已有的分类算法，比如逻辑回归，或者支持向量机。它们都属于有监督的学习，因此在使用这些算法之前，必须要先收集一批标注好的数据作为训练集。有些标注可以从log中拿到（用户的点击，购买），有些可以从用户填写的信息中获得（性别），也有一些可能需要人工标注（评论情感极性）。另一方面，知道了一个用户或者一条评论的标签后，我们还需要知道用什么样的特征去描述我们的数据，对用户来说，可以从用户的浏览记录和购买记录中获取相应的统计特征，而对于评论来说，最直接的则是文本特征。这样拿到数据的特征和标签后，就得到一组训练数据：</p>
+<p><img src="https://s1.ax1x.com/2018/05/15/Csn3M6.png" alt="Csn3M6.png"><br>其中 xi 是一个 m 维的向量，<img src="https://s1.ax1x.com/2018/05/15/CsnYZD.png" alt="CsnYZD.png"> ，y 在 {0, 1} 中取值。（本文用{1，0}表示正例和负例，后文沿用此定义。）</p>
+<p>我们的问题可以简化为，如何找到这样一个决策函数<img src="https://s1.ax1x.com/2018/05/15/Csntde.png" alt="Csntde.png">，它在未知数据集上能有足够好的表现。至于如何衡量一个二分类模型的好坏，我们可以用分类错误率这样的指标：<img src="https://s1.ax1x.com/2018/05/15/Csnaid.png" alt="Csnaid.png"> 。也可以用准确率，召回率，AUC等指标来衡量。</p>
+<p>值得一提的是，模型效果往往和所用特征密切相关。特征工程在任何一个实用的机器学习系统中都是必不可少的。</p>
+<h3 id="模型"><a href="#模型" class="headerlink" title="模型"></a>模型</h3><h4 id="sigmoid-函数"><a href="#sigmoid-函数" class="headerlink" title="sigmoid 函数"></a>sigmoid 函数</h4><p>在介绍逻辑回归模型之前，我们先引入sigmoid函数，其数学形式是：</p>
+<p><img src="https://s1.ax1x.com/2018/05/15/CsnWJs.png" alt="CsnWJs.png"><br>对应的函数曲线如下图所示：<br><img src="https://s1.ax1x.com/2018/05/15/Csnhzq.png" alt="Csnhzq.png"></p>
+<p>从上图可以看到sigmoid函数是一个s形的曲线，它的取值在[0, 1]之间，在远离0的地方函数的值会很快接近0/1。这个性质使我们能够以概率的方式来解释（后边延伸部分会简单讨论为什么用该函数做概率建模是合理的)。</p>
+<h4 id="决策函数"><a href="#决策函数" class="headerlink" title="决策函数"></a>决策函数</h4><p>一个机器学习的模型，实际上是把决策函数限定在某一组条件下，这组限定条件就决定了模型的假设空间。当然，我们还希望这组限定条件简单而合理。而逻辑回归模型所做的假设是：</p>
+<p><img src="https://s1.ax1x.com/2018/05/15/Csn5Q0.png" alt="Csn5Q0.png"><br>这里的 g(h) 是上边提到的 sigmoid 函数，相应的决策函数为：</p>
+<p><img src="https://s1.ax1x.com/2018/05/15/CsnIyV.png" alt="CsnIyV.png"><br>选择0.5作为阈值是一个一般的做法，实际应用时特定的情况可以选择不同阈值，如果对正例的判别准确性要求高，可以选择阈值大一些，对正例的召回要求高，则可以选择阈值小一些。</p>
+<h4 id="参数求解"><a href="#参数求解" class="headerlink" title="参数求解"></a>参数求解</h4><p>模型的数学形式确定后，剩下就是如何去求解模型中的参数。统计学中常用的一种方法是最大似然估计，即找到一组参数，使得在这组参数下，我们的数据的似然度（概率）越大。在逻辑回归模型中，似然度可表示为：</p>
+<p><img src="https://s1.ax1x.com/2018/05/15/Csn7eU.png" alt="Csn7eU.png"><br>取对数可以得到对数似然度：</p>
+<p><img src="https://s1.ax1x.com/2018/05/15/Csnbo4.png" alt="Csnbo4.png"><br>另一方面，在机器学习领域，我们更经常遇到的是损失函数的概念，其衡量的是模型预测错误的程度。常用的损失函数有0-1损失，log损失，hinge损失等。其中log损失在单个数据点上的定义为<img src="https://s1.ax1x.com/2018/05/15/CsnOY9.png" alt="CsnOY9.png"><br>如果取整个数据集上的平均log损失，我们可以得到</p>
+<p><img src="https://s1.ax1x.com/2018/05/15/CsnXWR.png" alt="CsnXWR.png"><br>即在逻辑回归模型中，我们最大化似然函数和最小化log损失函数实际上是等价的。对于该优化问题，存在多种求解方法，这里以梯度下降的为例说明。梯度下降(Gradient Descent)又叫作最速梯度下降，是一种迭代求解的方法，通过在每一步选取使目标函数变化最快的一个方向调整参数的值来逼近最优值。基本步骤如下：</p>
+<blockquote>
+<p>选择下降方向（梯度方向，∇J(θ)）<br>选择步长，更新参数 <img src="https://s1.ax1x.com/2018/05/15/CsnvS1.png" alt="CsnvS1.png"><br>重复以上两步直到满足终止条件<br><img src="https://s1.ax1x.com/2018/05/15/CsnxQx.png" alt="CsnxQx.png"><br>其中损失函数的梯度计算方法为：</p>
+</blockquote>
+<p><img src="https://s1.ax1x.com/2018/05/15/Csnzy6.png" alt="Csnzy6.png"><br>沿梯度负方向选择一个较小的步长可以保证损失函数是减小的，另一方面，逻辑回归的损失函数是凸函数（加入正则项后是严格凸函数），可以保证我们找到的局部最优值同时是全局最优。此外，常用的凸优化的方法都可以用于求解该问题。例如共轭梯度下降，牛顿法，LBFGS等。</p>
+<h4 id="分类边界"><a href="#分类边界" class="headerlink" title="分类边界"></a>分类边界</h4><p>知道如何求解参数后，我们来看一下模型得到的最后结果是什么样的。很容易可以从sigmoid函数看出，当<img src="https://s1.ax1x.com/2018/05/15/CsuCwD.png" alt="CsuCwD.png"> 时，y=1，否则 y=0。<img src="https://s1.ax1x.com/2018/05/15/CsuFFH.png" alt="CsuFFH.png"> 是模型隐含的分类平面（在高维空间中，我们说是超平面）。所以说逻辑回归本质上是一个线性模型，但是，这不意味着只有线性可分的数据能通过LR求解，实际上，我们可以通过特征变换的方式把低维空间转换到高维空间，而在低维空间不可分的数据，到高维空间中线性可分的几率会高一些。下面两个图的对比说明了线性分类曲线和非线性分类曲线（通过特征映射）。<br><img src="https://s1.ax1x.com/2018/05/15/CsuAfA.png" alt="CsuAfA.png"></p>
+<p>左图是一个线性可分的数据集，右图在原始空间中线性不可分，但是在特征转换 <img src="https://s1.ax1x.com/2018/05/15/CsuVSI.png" alt="CsuVSI.png"> 后的空间是线性可分的，对应的原始空间中分类边界为一条类椭圆曲线。</p>
+<h4 id="正则化"><a href="#正则化" class="headerlink" title="正则化"></a>正则化</h4><p>当模型的参数过多时，很容易遇到过拟合的问题。这时就需要有一种方法来控制模型的复杂度，典型的做法在优化目标中加入正则项，通过惩罚过大的参数来防止过拟合：</p>
+<p><img src="https://s1.ax1x.com/2018/05/15/CsulkQ.png" alt="CsulkQ.png"><br>一般情况下，取p=1或p=2，分别对应L1，L2正则化，两者的区别可以从下图中看出来，L1正则化（左图）倾向于使参数变为0，因此能产生稀疏解。<br><img src="https://s1.ax1x.com/2018/05/15/Csu3fs.png" alt="Csu3fs.png"></p>
+<p>实际应用时，由于我们数据的维度可能非常高，L1正则化因为能产生稀疏解，使用的更为广泛一些。</p>
+<h2 id="延伸"><a href="#延伸" class="headerlink" title="延伸"></a>延伸</h2><h3 id="生成模型和判别模型"><a href="#生成模型和判别模型" class="headerlink" title="生成模型和判别模型"></a>生成模型和判别模型</h3><p>逻辑回归是一种判别模型，表现为直接对条件概率P(y|x)建模，而不关心背后的数据分布P(x,y)。而高斯贝叶斯模型（Gaussian Naive Bayes）是一种生成模型，先对数据的联合分布建模，再通过贝叶斯公式来计算样本属于各个类别的后验概率，即：</p>
+<p><img src="https://s1.ax1x.com/2018/05/15/CsuGpn.png" alt="CsuGpn.png"><br>通常假设P(x|y)是高斯分布，P(y)是多项式分布，相应的参数都可以通过最大似然估计得到。如果我们考虑二分类问题，通过简单的变化可以得到：</p>
+<p><img src="https://s1.ax1x.com/2018/05/15/CsuJlq.png" alt="CsuJlq.png"><br>如果 σ1=σ0，二次项会抵消，我们得到一个简单的线性关系：</p>
+<p><img src="https://s1.ax1x.com/2018/05/15/CsuY60.png" alt="CsuY60.png"><br>由上式进一步可以得到：</p>
+<p><img src="https://s1.ax1x.com/2018/05/15/CsuBtJ.png" alt="CsuBtJ.png"><br>可以看到，这个概率和逻辑回归中的形式是一样的。这种情况下GNB 和 LR 会学习到同一个模型。实际上，在更一般的假设（P(x|y)的分布属于指数分布族）下，我们都可以得到类似的结论。</p>
+<h3 id="多分类（softmax"><a href="#多分类（softmax" class="headerlink" title="多分类（softmax)"></a>多分类（softmax)</h3><p>如果y不是在[0,1]中取值，而是在K个类别中取值，这时问题就变为一个多分类问题。有两种方式可以出处理该类问题：一种是我们对每个类别训练一个二元分类器（One-vs-all），当K个类别不是互斥的时候，比如用户会购买哪种品类，这种方法是合适的。如果K个类别是互斥的，即 y=i 的时候意味着 y 不能取其他的值，比如用户的年龄段，这种情况下 Softmax 回归更合适一些。Softmax 回归是直接对逻辑回归在多分类的推广，相应的模型也可以叫做多元逻辑回归（Multinomial Logistic Regression）。模型通过 softmax 函数来对概率建模，具体形式如下：</p>
+<p><img src="https://s1.ax1x.com/2018/05/15/Csu66x.png" alt="Csu66x.png"><br>而决策函数为：<img src="https://s1.ax1x.com/2018/05/15/CsucX6.png" alt="CsucX6.png"><br>对应的损失函数为：</p>
+<p><img src="https://s1.ax1x.com/2018/05/15/Csu5hd.png" alt="Csu5hd.png"><br>类似的，我们也可以通过梯度下降或其他高阶方法来求解该问题，这里不再赘述。</p>
+<h3 id="应用"><a href="#应用" class="headerlink" title="应用"></a>应用</h3><p>本文开始部分提到了几个在实际中遇到的问题，这里以预测用户对品类的购买偏好为例，介绍一下美团是如何用逻辑回归解决工作中问题的。该问题可以转换为预测用户在未来某个时间段是否会购买某个品类，如果把会购买标记为1，不会购买标记为0，就转换为一个二分类问题。我们用到的特征包括用户在美团的浏览，购买等历史信息，见下表</p>
+<blockquote>
+<p>类别    特征<br>用户    购买频次，浏览频次，时间，地理位置 …<br>品类    销量，购买用户，浏览用户 …<br>交叉    购买频次，浏览频次，购买间隔 …</p>
+</blockquote>
+<p>其中提取的特征的时间跨度为30天，标签为2天。生成的训练数据大约在7000万量级（美团一个月有过行为的用户），我们人工把相似的小品类聚合起来，最后有18个较为典型的品类集合。如果用户在给定的时间内购买某一品类集合，就作为正例。哟了训练数据后，使用Spark版的LR算法对每个品类训练一个二分类模型，迭代次数设为100次的话模型训练需要40分钟左右，平均每个模型2分钟，测试集上的AUC也大多在0.8以上。训练好的模型会保存下来，用于预测在各个品类上的购买概率。预测的结果则会用于推荐等场景。</p>
+<p>由于不同品类之间正负例分布不同，有些品类正负例分布很不均衡，我们还尝试了不同的采样方法，最终目标是提高下单率等线上指标。经过一些参数调优，品类偏好特征为推荐和排序带来了超过1%的下单率提升。</p>
+<p>此外，由于LR模型的简单高效，易于实现，可以为后续模型优化提供一个不错的baseline，我们在排序等服务中也使用了LR模型。</p>
+<h3 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h3><p>逻辑回归的数学模型和求解都相对比较简洁，实现相对简单。通过对特征做离散化和其他映射，逻辑回归也可以处理非线性问题，是一个非常强大的分类器。因此在实际应用中，当我们能够拿到许多低层次的特征时，可以考虑使用逻辑回归来解决我们的问题。</p>
+<h2 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h2><p>Wikipedia, <a href="http://en.wikipedia.org/wiki/Logistic_regression" target="_blank" rel="noopener">http://en.wikipedia.org/wiki/Logistic_regression</a></p>
 
       
     </div>
@@ -1142,6 +1271,105 @@ setBolt(&quot;green-bolt&quot;, new GreenBolt(), 2).setNumTasks(4) ---&gt; 2个e
 </blockquote>
 <p>接着，计算机通过信息增益结果，选择最大的，作为一品大员<br><img src="https://s1.ax1x.com/2018/05/08/CdrEi6.png" alt="CdrEi6.png"></p>
 <p>且看一品大员对子弹多的情况下料事如神（暂且不说本例样本少），但是其在子弹少的情况下，决策还是不行的，那么，再用同样的方法，再去选择二品，三品，这就是决策树的训练。</p>
+
+      
+    </div>
+    
+    <div class="article-info article-info-index">
+      
+      
+      
+
+      
+      <div class="clearfix"></div>
+    </div>
+      
+    
+  </div>
+  
+</article>
+
+
+
+
+
+
+
+  
+    <article id="post-电商分析指标" class="article article-type-post" itemscope itemprop="blogPost">
+  
+    <div class="article-meta">
+      <a href="/2018/04/05/电商分析指标/" class="article-date">
+  	<time datetime="2018-04-05T13:29:30.000Z" itemprop="datePublished">2018-04-05</time>
+</a>
+    </div>
+  
+  <div class="article-inner">
+    
+      <input type="hidden" class="isFancy" />
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2018/04/05/电商分析指标/">
+        电商常见分析指标
+        
+      </a>
+    </h1>
+  
+
+      </header>
+      
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <p>电商常见分析指标<br>信息流、物流和资金流三大平台是电子商务的三个最为重要的平台。而电子商务信息系统最核心的能力是大数据能力，包括大数据处理、数据分析和数据挖掘能力。无论是电商平台（如淘宝）还是在电商平台上销售产品的卖家，都需要掌握大数据分析的能力。越成熟的电商平台，越需要以通过大数据能力驱动电子商务运营的精细化，更好的提升运营效果，提升业绩。构建系统的电子商务数据分析指标体系是数据电商精细化运营的重要前提，本文将重点介绍电商数据分析指标体系。<br>电商数据分析指标体系分为八大类指标，包括总体运营指标、网站流量累指标、销售转化指标、客户价值指标、商品及供应链指标、营销活动指标、风险控制指标和市场竞争指标。不同类别指标对应电商运营的不同环节，如网站流量指标对应的是网站运营环节，销售转化、客户价值和营销活动指标对应的是电商销售环节。<br>1.电商总体运营指标<br><img src="https://s1.ax1x.com/2018/05/03/CYaO3t.png" alt="CYaO3t.png"></p>
+<p>电商总体运营整体指标主要面向的人群电商运营的高层，通过总体运营指标评估电商运营的整体效果。电商总体运营整体指标包括四方面的指标：</p>
+<p>（1）流量类指标</p>
+<p>独立访客数（UV），指访问电商网站的不重复用户数。对于PC网站，统计系统会在每个访问网站的用户浏览器上“种”一个cookie来标记这个用户，这样每当被标记cookie的用户访问网站时，统计系统都会识别到此用户。在一定统计周期内如（一天）统计系统会利用消重技术，对同一cookie在一天内多次访问网站的用户仅记录为一个用户。而在移动终端区分独立用户的方式则是按独立设备计算独立用户。</p>
+<p>页面访问数（PV），即页面浏览量，用户每一次对电商网站或着移动电商应用中的每个网页访问均被记录一次，用户对同一页面的多次访问，访问量累计。<br>人均页面访问数，即页面访问数（PV）／独立访客数，该指标反映的是网站访问粘性。</p>
+<p>（2）订单产生效率指标</p>
+<p>总订单数量，即访客完成网上下单的订单数之和。<br>访问到下单的转化率，即电商网站下单的次数与访问该网站的次数之比。</p>
+<p>（3）总体销售业绩指标</p>
+<p>网站成交额（GMV），电商成交金额，即只要网民下单，生成订单号，便可以计算在GMV里面。<br>销售金额。销售金额是货品出售的金额总额。</p>
+<p>注：无论这个订单最终是否成交，有些订单下单未付款或取消，都算GMV，销售金额一般只指实际成交金额，所以，GMV的数字一般比销售金额大。</p>
+<p>客单价，即订单金额与订单数量的比值。</p>
+<p>（4）整体指标</p>
+<p>销售毛利，是销售收入与成本的差值。销售毛利中只扣除了商品原始成本，不扣除没有计入成本的期间费用（管理费用、财务费用、营业费用）。<br>毛利率，是衡量电商企业盈利能力的指标，是销售毛利与销售收入的比值。如京东的2014年毛利率连续四个季度稳步上升，从第一季度的10.0％上升至第四季度的12.7％，体现出京东盈利能力的提升。</p>
+<p>2.网站流量指标<br><img src="https://s1.ax1x.com/2018/05/03/CYa6AJ.png" alt="CYa6AJ.png"></p>
+<p>（1）流量规模类指标<br>常用的流量规模类指标包括独立访客数和页面访问数，相应的指标定义在前文（电商总体运营指标）已经描述，在此不在赘述</p>
+<p>（2）流量成本累指标<br>单位访客获取成本。该指标指在流量推广中，广告活动产生的投放费用与广告活动带来的独立访客数的比值。单位访客成本最好与平均每个访客带来的收入以及这些访客带来的转化率进行关联分析。若单位访客成本上升，但访客转化率和单位访客收入不变或下降，则很可能流量推广出现问题，尤其要关注渠道推广的作弊问题。</p>
+<p>（3）流量质量类指标<br>跳出率（Bounce Rate）也被称为蹦失率，为浏览单页即退出的次数/该页访问次数，跳出率只能衡量该页做为着陆页面（LandingPage）的访问。如果花钱做推广，着落页的跳出率高，很可能是因为推广渠道选择出现失误，推广渠道目标人群和和被推广网站到目标人群不够匹配，导致大部分访客来了访问一次就离开。</p>
+<p>页面访问时长。页访问时长是指单个页面被访问的时间。并不是页面访问时长越长越好，要视情况而定。对于电商网站，页面访问时间要结合转化率来看，如果页面访问时间长，但转化率低，则页面体验出现问题的可能性很大。</p>
+<p>人均页面浏览量。人均页面浏览量是指在统计周期内，平均每个访客所浏览的页面量。人均页面浏览量反应的是网站的粘性。</p>
+<p>（4）会员类指标</p>
+<p>注册会员数。指一定统计周期内的注册会员数量。<br>活跃会员数。活跃会员数，指在一定时期内有消费或登录行为的会员总数。<br>活跃会员率。即活跃会员占注册会员总数的比重。<br>会员复购率。指在统计周期内产生二次及二次以上购买的会员占购买会员的总数。<br>会员平均购买次数。指在统计周期内每个会员平均购买的次数，即订单总数/购买用户总数。会员复购率高的电商网站平均购买次数也高。<br>会员回购率。指上一期末活跃会员在下一期时间内有购买行为的会员比率。<br>会员留存率。会员在某段时间内开始访问你的网站，经过一段时间后，仍然会继续访问你的网站就被认作是留存，这部分会员占当时新增会员的比例就是新会员留存率，这种留存的计算方法是按照活跃来计算，另外一种计算留存的方法是按消费来计算，即某段的新增消费用户在往后一段时间时间周期（时间周期可以是日、周、月、季度和半年度）还继续消费的会员比率。留存率一般看新会员留存率，当然也可以看活跃会员留存。留存率反应的是电商留住会员的能力。</p>
+<p>3.网站销售（转化率）类指标<br><img src="https://s1.ax1x.com/2018/05/03/CYaghR.png" alt="CYaghR.png"></p>
+<p>（1）购物车类指标<br>基础类指标，包括一定统计周期内加入购物车次数、加入购物车买家数、加入购物车买家数以及加入购物车商品数。<br>转化类指标，主要是购物车支付转化率，即一定周期内加入购物车商品支付买家数与加入购物车购买家数的比值。</p>
+<p>（2）下单类指标<br>基础类指标，包括一定统计周期内的下单笔数、下单金额以及下单买家数。<br>转化类指标，主要是浏览下单转化率，即下单买家数与网站访客数（UV）的比值。</p>
+<p>（3）支付类指标<br>基础统计类指标，包括一定统计周期内支付金额、支付买家数和支付商品数。<br>转化类指标。包括浏览-支付买家转化率（支付买家数/网站访客数）、下单-支付金额转化率（支付金额/下单金额）、下单-支付买家数转化率（支付买家数/下单买家数）和下单-支付时长（下单时间到支付时间的差值）。</p>
+<p>4.客户价值类指标<br><img src="https://s1.ax1x.com/2018/05/03/CYaW1x.png" alt="CYaW1x.png"></p>
+<p>客户指标。常见客户指标包括一定统计周期内的累计购买客户数和客单价。客单价是指每一个客户平均购买商品的金额，也即是平均交易金额，即成交金额与成交用户数的比值。</p>
+<p>新客户指标。常见新客户指标包括一定统计周期内的新客户数量、新客户获取成本和新客户客单价。其中，新客户客单价是指第一次在店铺中产生消费行为的客户所产生交易额与新客户数量的比值。影响新客户客单价的因素除了与推广渠道的质量有关系，还与电商店铺活动以及关联销售有关。</p>
+<p>老客户指标。常见老客户指标包括消费频率、最近一次购买时间、消费金额和重复购买率。消费频率是指客户在一定期间内所购买的次数；最近一次购买时间表示客户最近一次购买的时间离现在有多远；客户消费金额指客户在最近一段时间内购买的金额。消费频率越高，最近一次购买时间离现在越近，消费金额越高的客户越有价值。重复购买率则指消费者对该品牌产品或者服务的重复购买次数，重复购买率越多，则反应出消费者对品牌的忠诚度就越高，反之则越低。重复购买率可以按两种口径来统计：第一种，从客户数角度，重复购买率指在一定周期内下单次数在两次及两次以上的人数与总下单人数之比，如在一个月内，有100个客户成交，其中有20个是购买两次及以上，则重复购买率为20%；第二种，按交易计算，即重复购买交易次数与总交易次数的比值，如某月内，一共产生了100笔交易，其中有20个人有了二次购买，这20人中的10个人又有了三次购买，则重复购买次数为30次，重复购买率为30%。</p>
+<p>5.商品类指标<br><img src="https://s1.ax1x.com/2018/05/03/CYafc6.png" alt="CYafc6.png"></p>
+<p>产品总数指标。包括SKU、SPU和在线SPU。SKU是物理上不可分割的最小存货单位。SPU即Standard Product Unit （标准化产品单元），SPU是商品信息聚合的最小单位，是一组可复用、易检索的标准化信息的集合，该集合描述了一个产品的特性。通俗点讲，属性值、特性相同的商品就可以称为一个SPU。如iphone5S是一个SPU，而iPhone 5S配置为16G版、4G手机、颜色为金色、网络类型为TD-LTE/TD-SCDMA/WCDMA/GSM则是一个SKU。在线SPU则是在线商品的SPU数。</p>
+<p>产品优势性指标。主要是独家产品的收入占比，即独家销售的产品收入占总销售收入的比例。</p>
+<p>品牌存量指标。包括品牌数和在线品牌数指标。品牌数指商品的品牌总数量。在线品牌数则指在线商品的品牌总数量。</p>
+<p>上架。包括上架商品SKU数、上架商品SPU数、上架在线SPU数、上架商品数和上架在线商品数。</p>
+<p>首发。包括首次上架商品数和首次上架在线商品数。</p>
+<p>6.市场营销活动指标<br><img src="https://s1.ax1x.com/2018/05/03/CYaIBD.png" alt="CYaIBD.png"></p>
+<p>市场营销活动指标。包括新增访问人数、新增注册人数、总访问次数、订单数量、下单转化率以及ROI。其中，下单转化率是指活动期间，某活动所带来的下单的次数与访问该活动的次数之比。投资回报率（ROI）是指，某一活动期间，产生的交易金额与活动投放成本金额的比值。</p>
+<p>广告投放指标。包括新增访问人数、新增注册人数、总访问次数、订单数量、UV订单转化率、广告投资回报率。其中，下单转化率是指某广告所带来的下单的次数与访问该活动的次数之比。投资回报率（ROI）是指，某广告产生的交易金额与广告投放成本金额的比值。</p>
+<p>7.风控类指标<br><img src="https://s1.ax1x.com/2018/05/03/CYa7AH.png" alt="CYa7AH.png"></p>
+<p>买家评价指标。包括买家评价数，买家评价卖家数、买家评价上传图片数、买家评价率、买家好评率以及卖家差评率。其中，买家评价率是指某段时间参与评价的卖家与该时间段买家数量的比值，是反映用户对评价的参与度，电商网站目前都在积极引导用户评价，以作为其他买家购物时候的参考。买家好评率指某段时间内好评的买家数量与该时间段买家数量的比值。同样，买家差评率指某段时间内差评的买家数量与该时间段买家数量的比值。尤其是买家差评率，是非常值得关注的指标，需要监控起来，一旦发现买家差评率在加速上升，一定要提高警惕，分析引起差评率上升的原因，及时改进。</p>
+<p>买家投诉类指标。包括发起投诉（或申诉），撤销投诉（或申诉），投诉率（买家投诉人数占买家数量的比例）等。投诉量和投诉率都需要及时监控，以发现问题，及时优化。</p>
+<p>8.市场竞争类指标<br><img src="https://s1.ax1x.com/2018/05/03/CYaHNd.png" alt="CYaHNd.png"></p>
+<p>市场份额相关指标，包括市场占有率、市场扩大率和用户份额。市场占有率指电商网站交易额占同期所有同类型电商网站整体交易额的比重；市场扩大率指购物网站占有率较上一个统计周期增长的百分比；用户份额指购物网站独立访问用户数占同期所有B2C购物网站合计独立访问用户数的比例。</p>
+<p>网站排名，包括交易额排名和流量排名。交易额排名指电商网站交易额在所有同类电商网站中的排名；流量排名指电商网站独立访客数量在所有同类电商网站中的排名。</p>
+<p>总之，本文介绍了电商数据分析的基础指标体系，涵盖了流量、销售转化率、客户价值、商品类目、营销活动、风控和市场竞争指标，这些指标都需要系统化的进行统计和监控，才能更好的发现电商运营健康度的问题，以更好及时改进和优化，提升电商收入。如销售转化率，其本质上是一个漏斗模型，如从网站首页到最终购买各个阶段的转化率的监控和分析是网站运营健康度很重要的分析方向。</p>
 
       
     </div>
@@ -1340,105 +1568,6 @@ b).根据业务来对RowKey的设计：
 </code></pre><h5 id="补充文件类型-tsv-tab-csv-comma-："><a href="#补充文件类型-tsv-tab-csv-comma-：" class="headerlink" title="补充文件类型 .tsv[tab] .csv[comma]："></a>补充文件类型 .tsv[tab] .csv[comma]：</h5><pre><code>user.tsv tsv后缀格式的文件：每行数据以tab 制表符分割的 
 user.csv csv后缀格式的文件：每行数据以逗号分割的
 </code></pre>
-      
-    </div>
-    
-    <div class="article-info article-info-index">
-      
-      
-      
-
-      
-      <div class="clearfix"></div>
-    </div>
-      
-    
-  </div>
-  
-</article>
-
-
-
-
-
-
-
-  
-    <article id="post-电商分析指标" class="article article-type-post" itemscope itemprop="blogPost">
-  
-    <div class="article-meta">
-      <a href="/2018/04/05/电商分析指标/" class="article-date">
-  	<time datetime="2018-04-05T13:29:30.000Z" itemprop="datePublished">2018-04-05</time>
-</a>
-    </div>
-  
-  <div class="article-inner">
-    
-      <input type="hidden" class="isFancy" />
-    
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2018/04/05/电商分析指标/">
-        电商常见分析指标
-        
-      </a>
-    </h1>
-  
-
-      </header>
-      
-    
-    <div class="article-entry" itemprop="articleBody">
-      
-        <p>电商常见分析指标<br>信息流、物流和资金流三大平台是电子商务的三个最为重要的平台。而电子商务信息系统最核心的能力是大数据能力，包括大数据处理、数据分析和数据挖掘能力。无论是电商平台（如淘宝）还是在电商平台上销售产品的卖家，都需要掌握大数据分析的能力。越成熟的电商平台，越需要以通过大数据能力驱动电子商务运营的精细化，更好的提升运营效果，提升业绩。构建系统的电子商务数据分析指标体系是数据电商精细化运营的重要前提，本文将重点介绍电商数据分析指标体系。<br>电商数据分析指标体系分为八大类指标，包括总体运营指标、网站流量累指标、销售转化指标、客户价值指标、商品及供应链指标、营销活动指标、风险控制指标和市场竞争指标。不同类别指标对应电商运营的不同环节，如网站流量指标对应的是网站运营环节，销售转化、客户价值和营销活动指标对应的是电商销售环节。<br>1.电商总体运营指标<br><img src="https://s1.ax1x.com/2018/05/03/CYaO3t.png" alt="CYaO3t.png"></p>
-<p>电商总体运营整体指标主要面向的人群电商运营的高层，通过总体运营指标评估电商运营的整体效果。电商总体运营整体指标包括四方面的指标：</p>
-<p>（1）流量类指标</p>
-<p>独立访客数（UV），指访问电商网站的不重复用户数。对于PC网站，统计系统会在每个访问网站的用户浏览器上“种”一个cookie来标记这个用户，这样每当被标记cookie的用户访问网站时，统计系统都会识别到此用户。在一定统计周期内如（一天）统计系统会利用消重技术，对同一cookie在一天内多次访问网站的用户仅记录为一个用户。而在移动终端区分独立用户的方式则是按独立设备计算独立用户。</p>
-<p>页面访问数（PV），即页面浏览量，用户每一次对电商网站或着移动电商应用中的每个网页访问均被记录一次，用户对同一页面的多次访问，访问量累计。<br>人均页面访问数，即页面访问数（PV）／独立访客数，该指标反映的是网站访问粘性。</p>
-<p>（2）订单产生效率指标</p>
-<p>总订单数量，即访客完成网上下单的订单数之和。<br>访问到下单的转化率，即电商网站下单的次数与访问该网站的次数之比。</p>
-<p>（3）总体销售业绩指标</p>
-<p>网站成交额（GMV），电商成交金额，即只要网民下单，生成订单号，便可以计算在GMV里面。<br>销售金额。销售金额是货品出售的金额总额。</p>
-<p>注：无论这个订单最终是否成交，有些订单下单未付款或取消，都算GMV，销售金额一般只指实际成交金额，所以，GMV的数字一般比销售金额大。</p>
-<p>客单价，即订单金额与订单数量的比值。</p>
-<p>（4）整体指标</p>
-<p>销售毛利，是销售收入与成本的差值。销售毛利中只扣除了商品原始成本，不扣除没有计入成本的期间费用（管理费用、财务费用、营业费用）。<br>毛利率，是衡量电商企业盈利能力的指标，是销售毛利与销售收入的比值。如京东的2014年毛利率连续四个季度稳步上升，从第一季度的10.0％上升至第四季度的12.7％，体现出京东盈利能力的提升。</p>
-<p>2.网站流量指标<br><img src="https://s1.ax1x.com/2018/05/03/CYa6AJ.png" alt="CYa6AJ.png"></p>
-<p>（1）流量规模类指标<br>常用的流量规模类指标包括独立访客数和页面访问数，相应的指标定义在前文（电商总体运营指标）已经描述，在此不在赘述</p>
-<p>（2）流量成本累指标<br>单位访客获取成本。该指标指在流量推广中，广告活动产生的投放费用与广告活动带来的独立访客数的比值。单位访客成本最好与平均每个访客带来的收入以及这些访客带来的转化率进行关联分析。若单位访客成本上升，但访客转化率和单位访客收入不变或下降，则很可能流量推广出现问题，尤其要关注渠道推广的作弊问题。</p>
-<p>（3）流量质量类指标<br>跳出率（Bounce Rate）也被称为蹦失率，为浏览单页即退出的次数/该页访问次数，跳出率只能衡量该页做为着陆页面（LandingPage）的访问。如果花钱做推广，着落页的跳出率高，很可能是因为推广渠道选择出现失误，推广渠道目标人群和和被推广网站到目标人群不够匹配，导致大部分访客来了访问一次就离开。</p>
-<p>页面访问时长。页访问时长是指单个页面被访问的时间。并不是页面访问时长越长越好，要视情况而定。对于电商网站，页面访问时间要结合转化率来看，如果页面访问时间长，但转化率低，则页面体验出现问题的可能性很大。</p>
-<p>人均页面浏览量。人均页面浏览量是指在统计周期内，平均每个访客所浏览的页面量。人均页面浏览量反应的是网站的粘性。</p>
-<p>（4）会员类指标</p>
-<p>注册会员数。指一定统计周期内的注册会员数量。<br>活跃会员数。活跃会员数，指在一定时期内有消费或登录行为的会员总数。<br>活跃会员率。即活跃会员占注册会员总数的比重。<br>会员复购率。指在统计周期内产生二次及二次以上购买的会员占购买会员的总数。<br>会员平均购买次数。指在统计周期内每个会员平均购买的次数，即订单总数/购买用户总数。会员复购率高的电商网站平均购买次数也高。<br>会员回购率。指上一期末活跃会员在下一期时间内有购买行为的会员比率。<br>会员留存率。会员在某段时间内开始访问你的网站，经过一段时间后，仍然会继续访问你的网站就被认作是留存，这部分会员占当时新增会员的比例就是新会员留存率，这种留存的计算方法是按照活跃来计算，另外一种计算留存的方法是按消费来计算，即某段的新增消费用户在往后一段时间时间周期（时间周期可以是日、周、月、季度和半年度）还继续消费的会员比率。留存率一般看新会员留存率，当然也可以看活跃会员留存。留存率反应的是电商留住会员的能力。</p>
-<p>3.网站销售（转化率）类指标<br><img src="https://s1.ax1x.com/2018/05/03/CYaghR.png" alt="CYaghR.png"></p>
-<p>（1）购物车类指标<br>基础类指标，包括一定统计周期内加入购物车次数、加入购物车买家数、加入购物车买家数以及加入购物车商品数。<br>转化类指标，主要是购物车支付转化率，即一定周期内加入购物车商品支付买家数与加入购物车购买家数的比值。</p>
-<p>（2）下单类指标<br>基础类指标，包括一定统计周期内的下单笔数、下单金额以及下单买家数。<br>转化类指标，主要是浏览下单转化率，即下单买家数与网站访客数（UV）的比值。</p>
-<p>（3）支付类指标<br>基础统计类指标，包括一定统计周期内支付金额、支付买家数和支付商品数。<br>转化类指标。包括浏览-支付买家转化率（支付买家数/网站访客数）、下单-支付金额转化率（支付金额/下单金额）、下单-支付买家数转化率（支付买家数/下单买家数）和下单-支付时长（下单时间到支付时间的差值）。</p>
-<p>4.客户价值类指标<br><img src="https://s1.ax1x.com/2018/05/03/CYaW1x.png" alt="CYaW1x.png"></p>
-<p>客户指标。常见客户指标包括一定统计周期内的累计购买客户数和客单价。客单价是指每一个客户平均购买商品的金额，也即是平均交易金额，即成交金额与成交用户数的比值。</p>
-<p>新客户指标。常见新客户指标包括一定统计周期内的新客户数量、新客户获取成本和新客户客单价。其中，新客户客单价是指第一次在店铺中产生消费行为的客户所产生交易额与新客户数量的比值。影响新客户客单价的因素除了与推广渠道的质量有关系，还与电商店铺活动以及关联销售有关。</p>
-<p>老客户指标。常见老客户指标包括消费频率、最近一次购买时间、消费金额和重复购买率。消费频率是指客户在一定期间内所购买的次数；最近一次购买时间表示客户最近一次购买的时间离现在有多远；客户消费金额指客户在最近一段时间内购买的金额。消费频率越高，最近一次购买时间离现在越近，消费金额越高的客户越有价值。重复购买率则指消费者对该品牌产品或者服务的重复购买次数，重复购买率越多，则反应出消费者对品牌的忠诚度就越高，反之则越低。重复购买率可以按两种口径来统计：第一种，从客户数角度，重复购买率指在一定周期内下单次数在两次及两次以上的人数与总下单人数之比，如在一个月内，有100个客户成交，其中有20个是购买两次及以上，则重复购买率为20%；第二种，按交易计算，即重复购买交易次数与总交易次数的比值，如某月内，一共产生了100笔交易，其中有20个人有了二次购买，这20人中的10个人又有了三次购买，则重复购买次数为30次，重复购买率为30%。</p>
-<p>5.商品类指标<br><img src="https://s1.ax1x.com/2018/05/03/CYafc6.png" alt="CYafc6.png"></p>
-<p>产品总数指标。包括SKU、SPU和在线SPU。SKU是物理上不可分割的最小存货单位。SPU即Standard Product Unit （标准化产品单元），SPU是商品信息聚合的最小单位，是一组可复用、易检索的标准化信息的集合，该集合描述了一个产品的特性。通俗点讲，属性值、特性相同的商品就可以称为一个SPU。如iphone5S是一个SPU，而iPhone 5S配置为16G版、4G手机、颜色为金色、网络类型为TD-LTE/TD-SCDMA/WCDMA/GSM则是一个SKU。在线SPU则是在线商品的SPU数。</p>
-<p>产品优势性指标。主要是独家产品的收入占比，即独家销售的产品收入占总销售收入的比例。</p>
-<p>品牌存量指标。包括品牌数和在线品牌数指标。品牌数指商品的品牌总数量。在线品牌数则指在线商品的品牌总数量。</p>
-<p>上架。包括上架商品SKU数、上架商品SPU数、上架在线SPU数、上架商品数和上架在线商品数。</p>
-<p>首发。包括首次上架商品数和首次上架在线商品数。</p>
-<p>6.市场营销活动指标<br><img src="https://s1.ax1x.com/2018/05/03/CYaIBD.png" alt="CYaIBD.png"></p>
-<p>市场营销活动指标。包括新增访问人数、新增注册人数、总访问次数、订单数量、下单转化率以及ROI。其中，下单转化率是指活动期间，某活动所带来的下单的次数与访问该活动的次数之比。投资回报率（ROI）是指，某一活动期间，产生的交易金额与活动投放成本金额的比值。</p>
-<p>广告投放指标。包括新增访问人数、新增注册人数、总访问次数、订单数量、UV订单转化率、广告投资回报率。其中，下单转化率是指某广告所带来的下单的次数与访问该活动的次数之比。投资回报率（ROI）是指，某广告产生的交易金额与广告投放成本金额的比值。</p>
-<p>7.风控类指标<br><img src="https://s1.ax1x.com/2018/05/03/CYa7AH.png" alt="CYa7AH.png"></p>
-<p>买家评价指标。包括买家评价数，买家评价卖家数、买家评价上传图片数、买家评价率、买家好评率以及卖家差评率。其中，买家评价率是指某段时间参与评价的卖家与该时间段买家数量的比值，是反映用户对评价的参与度，电商网站目前都在积极引导用户评价，以作为其他买家购物时候的参考。买家好评率指某段时间内好评的买家数量与该时间段买家数量的比值。同样，买家差评率指某段时间内差评的买家数量与该时间段买家数量的比值。尤其是买家差评率，是非常值得关注的指标，需要监控起来，一旦发现买家差评率在加速上升，一定要提高警惕，分析引起差评率上升的原因，及时改进。</p>
-<p>买家投诉类指标。包括发起投诉（或申诉），撤销投诉（或申诉），投诉率（买家投诉人数占买家数量的比例）等。投诉量和投诉率都需要及时监控，以发现问题，及时优化。</p>
-<p>8.市场竞争类指标<br><img src="https://s1.ax1x.com/2018/05/03/CYaHNd.png" alt="CYaHNd.png"></p>
-<p>市场份额相关指标，包括市场占有率、市场扩大率和用户份额。市场占有率指电商网站交易额占同期所有同类型电商网站整体交易额的比重；市场扩大率指购物网站占有率较上一个统计周期增长的百分比；用户份额指购物网站独立访问用户数占同期所有B2C购物网站合计独立访问用户数的比例。</p>
-<p>网站排名，包括交易额排名和流量排名。交易额排名指电商网站交易额在所有同类电商网站中的排名；流量排名指电商网站独立访客数量在所有同类电商网站中的排名。</p>
-<p>总之，本文介绍了电商数据分析的基础指标体系，涵盖了流量、销售转化率、客户价值、商品类目、营销活动、风控和市场竞争指标，这些指标都需要系统化的进行统计和监控，才能更好的发现电商运营健康度的问题，以更好及时改进和优化，提升电商收入。如销售转化率，其本质上是一个漏斗模型，如从网站首页到最终购买各个阶段的转化率的监控和分析是网站运营健康度很重要的分析方向。</p>
-
       
     </div>
     
